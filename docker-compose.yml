@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:17-alpine
+    container_name: medconsult-postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: medconsult_user
+      POSTGRES_PASSWORD: medconsult_password_dev
+      POSTGRES_DB: medconsult_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - medconsult-network
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: medconsult-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: medconsult_user
+      RABBITMQ_DEFAULT_PASS: medconsult_password_dev
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - medconsult-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: medconsult-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - medconsult-network
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
+
+networks:
+  medconsult-network:
+    driver: bridge

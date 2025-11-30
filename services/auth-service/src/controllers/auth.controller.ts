@@ -1,0 +1,355 @@
+// ============================================
+// AUTH CONTROLLER - MANEJO DE PETICIONES HTTP
+// ============================================
+// El controller es el intermediario entre las rutas HTTP y el service.
+//
+// Responsabilidades:
+// 1. Recibir peticiones HTTP (req, res)
+// 2. Extraer datos (body, params, query)
+// 3. Validar datos con Zod schemas
+// 4. Llamar al servicio correspondiente
+// 5. Retornar respuestas HTTP con códigos apropiados
+// 6. Manejar errores y convertirlos en respuestas HTTP
+//
+// NO debe contener lógica de negocio (eso va en services)
+// ============================================
+
+import { Request, Response, NextFunction } from 'express';
+import { authService } from '../services/auth.service';
+import {
+  registerSchema,
+  loginSchema,
+  refreshTokenSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+} from '../validators/auth.validator';
+import { AppError } from '../types';
+
+// ============================================
+// CLASE: AuthController
+// ============================================
+// Contiene métodos para manejar cada endpoint de autenticación
+// Cada método es un "handler" de Express
+// ============================================
+
+export class AuthController {
+  // ==========================================
+  // ENDPOINT: POST /auth/register
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Valida los datos del body con Zod
+  // 2. Llama al service para registrar usuario
+  // 3. Retorna 201 (Created) con los datos del usuario y tokens
+  //
+  // Códigos de respuesta:
+  // - 201: Usuario creado exitosamente
+  // - 400: Datos de entrada inválidos
+  // - 409: Email ya registrado
+  // - 500: Error del servidor
+  // ==========================================
+
+  async register(req: Request, res: Response, next: NextFunction) {
+    try {
+      // 1. Validar datos de entrada con Zod
+      const validacion = registerSchema.safeParse(req.body);
+
+      if (!validacion.success) {
+        // Datos inválidos → retornar errores de validación
+        return res.status(400).json({
+          success: false,
+          message: 'Datos de entrada inválidos',
+          errors: validacion.error.issues.map((err) => ({
+            campo: err.path.join('.'),
+            mensaje: err.message,
+          })),
+        });
+      }
+
+      // 2. Llamar al service para crear usuario
+      const resultado = await authService.register(validacion.data);
+
+      // 3. Retornar respuesta exitosa (201 Created)
+      return res.status(201).json(resultado);
+    } catch (error) {
+      // 4. Pasar errores al middleware de manejo de errores
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: POST /auth/login
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Valida email y contraseña
+  // 2. Extrae IP y User-Agent para auditoría
+  // 3. Llama al service para autenticar
+  // 4. Retorna 200 con tokens
+  //
+  // Códigos de respuesta:
+  // - 200: Login exitoso
+  // - 400: Datos inválidos
+  // - 401: Credenciales incorrectas
+  // - 500: Error del servidor
+  // ==========================================
+
+  async login(req: Request, res: Response, next: NextFunction) {
+    try {
+      // 1. Validar datos de entrada
+      const validacion = loginSchema.safeParse(req.body);
+
+      if (!validacion.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Datos de entrada inválidos',
+          errors: validacion.error.issues.map((err) => ({
+            campo: err.path.join('.'),
+            mensaje: err.message,
+          })),
+        });
+      }
+
+      // 2. Extraer información del request para auditoría
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent'] || 'unknown';
+
+      // 3. Llamar al service
+      const resultado = await authService.login(
+        validacion.data,
+        ip,
+        userAgent
+      );
+
+      // 4. Retornar respuesta exitosa
+      return res.status(200).json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: POST /auth/refresh-token
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Valida que se envíe el refresh token
+  // 2. Llama al service para renovar el access token
+  // 3. Retorna nuevo access token
+  //
+  // ¿Por qué es importante?
+  // - Los access tokens expiran rápido (ej: 15min)
+  // - El refresh token permite obtener uno nuevo sin re-login
+  // - Mejora la UX (usuario no tiene que loguearse cada 15min)
+  //
+  // Códigos de respuesta:
+  // - 200: Token renovado
+  // - 400: Datos inválidos
+  // - 401: Refresh token inválido/expirado
+  // ==========================================
+
+  async refreshToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      // 1. Validar datos
+      const validacion = refreshTokenSchema.safeParse(req.body);
+
+      if (!validacion.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Datos de entrada inválidos',
+          errors: validacion.error.issues.map((err) => ({
+            campo: err.path.join('.'),
+            mensaje: err.message,
+          })),
+        });
+      }
+
+      // 2. Renovar token
+      const resultado = await authService.refreshToken(validacion.data);
+
+      // 3. Retornar nuevo access token
+      return res.status(200).json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: POST /auth/forgot-password
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Valida el email
+  // 2. Genera token de recuperación
+  // 3. (TODO) Envía email con link de reseteo
+  // 4. Retorna mensaje genérico (seguridad)
+  //
+  // ¿Por qué mensaje genérico?
+  // - No revelar si el email existe (prevenir enumeración)
+  // - Siempre: "Si el email existe, recibirás instrucciones"
+  //
+  // Códigos de respuesta:
+  // - 200: Siempre (aunque el email no exista)
+  // - 400: Email inválido
+  // ==========================================
+
+  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      // 1. Validar email
+      const validacion = forgotPasswordSchema.safeParse(req.body);
+
+      if (!validacion.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Datos de entrada inválidos',
+          errors: validacion.error.issues.map((err) => ({
+            campo: err.path.join('.'),
+            mensaje: err.message,
+          })),
+        });
+      }
+
+      // 2. Procesar solicitud
+      const resultado = await authService.forgotPassword(validacion.data);
+
+      // 3. Siempre retornar 200 (seguridad)
+      return res.status(200).json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: POST /auth/reset-password
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Valida token y nueva contraseña
+  // 2. Verifica que token no haya expirado
+  // 3. Actualiza la contraseña
+  // 4. Revoca todos los refresh tokens (seguridad)
+  //
+  // ¿Por qué revocar tokens?
+  // - Si alguien robó tus tokens, al cambiar contraseña pierden acceso
+  //
+  // Códigos de respuesta:
+  // - 200: Contraseña actualizada
+  // - 400: Token inválido/expirado
+  // ==========================================
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      // 1. Validar datos
+      const validacion = resetPasswordSchema.safeParse(req.body);
+
+      if (!validacion.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Datos de entrada inválidos',
+          errors: validacion.error.issues.map((err) => ({
+            campo: err.path.join('.'),
+            mensaje: err.message,
+          })),
+        });
+      }
+
+      // 2. Resetear contraseña
+      const resultado = await authService.resetPassword(validacion.data);
+
+      // 3. Retornar confirmación
+      return res.status(200).json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: POST /auth/verify-email
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Valida el token de verificación
+  // 2. Marca el email como verificado
+  // 3. Permite al usuario acceder a funciones completas
+  //
+  // ¿Por qué verificar emails?
+  // - Asegurar que el usuario tiene acceso al email
+  // - Prevenir cuentas falsas
+  // - Cumplir regulaciones (GDPR, HIPAA)
+  //
+  // Códigos de respuesta:
+  // - 200: Email verificado
+  // - 400: Token inválido
+  // ==========================================
+
+  async verifyEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      // 1. Validar token (puede venir en body o query)
+      const token = req.body.token || req.query.token;
+
+      const validacion = verifyEmailSchema.safeParse({ token });
+
+      if (!validacion.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Token de verificación inválido',
+          errors: validacion.error.issues.map((err) => ({
+            campo: err.path.join('.'),
+            mensaje: err.message,
+          })),
+        });
+      }
+
+      // 2. Verificar email
+      const resultado = await authService.verifyEmail(validacion.data);
+
+      // 3. Retornar confirmación
+      return res.status(200).json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: POST /auth/logout
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Recibe el refresh token
+  // 2. Lo marca como revocado en BD
+  // 3. El cliente debe eliminar los tokens del storage
+  //
+  // ¿Por qué revocar el token?
+  // - Invalidar la sesión en el servidor
+  // - Prevenir uso del token después del logout
+  //
+  // Códigos de respuesta:
+  // - 200: Logout exitoso
+  // ==========================================
+
+  async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { refreshToken } = req.body;
+
+      if (!refreshToken) {
+        return res.status(400).json({
+          success: false,
+          message: 'Refresh token es requerido',
+        });
+      }
+
+      // Revocar el refresh token
+      await authService.logout(refreshToken);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Logout exitoso',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+// ==========================================
+// EXPORTAR INSTANCIA ÚNICA
+// ==========================================
+// Creamos una única instancia del controller
+// que será usada en las rutas
+// ==========================================
+
+export const authController = new AuthController();

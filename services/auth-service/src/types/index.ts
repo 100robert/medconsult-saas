@@ -2,7 +2,7 @@
 // TIPOS Y INTERFACES - AUTH SERVICE
 // ============================================
 
-import { RolUsuario } from '../generated/prisma/enums';
+import { RolUsuario } from '@prisma/client';
 
 // ============================================
 // DTOs (Data Transfer Objects)

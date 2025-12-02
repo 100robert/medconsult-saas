@@ -1,3 +1,7 @@
+// ============================================
+// CONFIGURACIÓN DE BASE DE DATOS (PRISMA COMPARTIDO)
+// ============================================
+
 import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
@@ -26,7 +30,7 @@ export async function disconnectDatabase(): Promise<void> {
 export async function checkDatabaseConnection(): Promise<boolean> {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    console.log('✅ Conexión a base de datos establecida');
+    console.log('✅ Conexión a base de datos establecida (desde shared)');
     return true;
   } catch (error) {
     console.error('❌ Error al conectar con la base de datos:', error);

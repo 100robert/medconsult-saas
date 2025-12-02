@@ -12,5 +12,12 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "express-rate-limit": "^8.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.5",
+    "@types/morgan": "^1.9.10"
+  }
 }

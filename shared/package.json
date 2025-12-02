@@ -1,0 +1,22 @@
+{
+  "name": "@medconsult/shared",
+  "version": "1.0.0",
+  "description": "Código compartido entre microservicios",
+  "main": "index.js",
+  "scripts": {
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:reset": "prisma migrate reset"
+  },
+  "keywords": ["shared", "prisma", "types"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.0.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.0.0",
+    "typescript": "^5.9.3"
+  }
+}

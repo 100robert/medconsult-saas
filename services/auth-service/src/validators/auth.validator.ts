@@ -9,7 +9,7 @@
 // ============================================
 
 import { z } from 'zod';
-import { RolUsuario } from '../generated/prisma/enums';
+import { RolUsuario } from '@prisma/client';
 
 // ============================================
 // VALIDADOR: REGISTRO DE USUARIO

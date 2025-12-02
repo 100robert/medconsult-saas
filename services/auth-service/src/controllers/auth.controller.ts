@@ -24,7 +24,6 @@ import {
   resetPasswordSchema,
   verifyEmailSchema,
 } from '../validators/auth.validator';
-import { AppError } from '../types';
 
 // ============================================
 // CLASE: AuthController
@@ -49,14 +48,14 @@ export class AuthController {
   // - 500: Error del servidor
   // ==========================================
 
-  async register(req: Request, res: Response, next: NextFunction) {
+  async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // 1. Validar datos de entrada con Zod
       const validacion = registerSchema.safeParse(req.body);
 
       if (!validacion.success) {
         // Datos inválidos → retornar errores de validación
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
           errors: validacion.error.issues.map((err) => ({
@@ -64,13 +63,14 @@ export class AuthController {
             mensaje: err.message,
           })),
         });
+        return;
       }
 
       // 2. Llamar al service para crear usuario
       const resultado = await authService.register(validacion.data);
 
       // 3. Retornar respuesta exitosa (201 Created)
-      return res.status(201).json(resultado);
+      res.status(201).json(resultado);
     } catch (error) {
       // 4. Pasar errores al middleware de manejo de errores
       next(error);
@@ -93,13 +93,13 @@ export class AuthController {
   // - 500: Error del servidor
   // ==========================================
 
-  async login(req: Request, res: Response, next: NextFunction) {
+  async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // 1. Validar datos de entrada
       const validacion = loginSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
           errors: validacion.error.issues.map((err) => ({
@@ -107,6 +107,7 @@ export class AuthController {
             mensaje: err.message,
           })),
         });
+        return;
       }
 
       // 2. Extraer información del request para auditoría
@@ -121,7 +122,7 @@ export class AuthController {
       );
 
       // 4. Retornar respuesta exitosa
-      return res.status(200).json(resultado);
+      res.status(200).json(resultado);
     } catch (error) {
       next(error);
     }
@@ -146,13 +147,13 @@ export class AuthController {
   // - 401: Refresh token inválido/expirado
   // ==========================================
 
-  async refreshToken(req: Request, res: Response, next: NextFunction) {
+  async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // 1. Validar datos
       const validacion = refreshTokenSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
           errors: validacion.error.issues.map((err) => ({
@@ -160,13 +161,14 @@ export class AuthController {
             mensaje: err.message,
           })),
         });
+        return;
       }
 
       // 2. Renovar token
       const resultado = await authService.refreshToken(validacion.data);
 
       // 3. Retornar nuevo access token
-      return res.status(200).json(resultado);
+      res.status(200).json(resultado);
     } catch (error) {
       next(error);
     }
@@ -190,13 +192,13 @@ export class AuthController {
   // - 400: Email inválido
   // ==========================================
 
-  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // 1. Validar email
       const validacion = forgotPasswordSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
           errors: validacion.error.issues.map((err) => ({
@@ -204,13 +206,13 @@ export class AuthController {
             mensaje: err.message,
           })),
         });
+        return;
       }
-
       // 2. Procesar solicitud
       const resultado = await authService.forgotPassword(validacion.data);
 
       // 3. Siempre retornar 200 (seguridad)
-      return res.status(200).json(resultado);
+      res.status(200).json(resultado);
     } catch (error) {
       next(error);
     }
@@ -233,13 +235,13 @@ export class AuthController {
   // - 400: Token inválido/expirado
   // ==========================================
 
-  async resetPassword(req: Request, res: Response, next: NextFunction) {
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // 1. Validar datos
       const validacion = resetPasswordSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Datos de entrada inválidos',
           errors: validacion.error.issues.map((err) => ({
@@ -247,15 +249,18 @@ export class AuthController {
             mensaje: err.message,
           })),
         });
+        return;
       }
 
       // 2. Resetear contraseña
       const resultado = await authService.resetPassword(validacion.data);
 
       // 3. Retornar confirmación
-      return res.status(200).json(resultado);
+      res.status(200).json(resultado);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 
@@ -277,7 +282,7 @@ export class AuthController {
   // - 400: Token inválido
   // ==========================================
 
-  async verifyEmail(req: Request, res: Response, next: NextFunction) {
+  async verifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // 1. Validar token (puede venir en body o query)
       const token = req.body.token || req.query.token;
@@ -285,7 +290,7 @@ export class AuthController {
       const validacion = verifyEmailSchema.safeParse({ token });
 
       if (!validacion.success) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Token de verificación inválido',
           errors: validacion.error.issues.map((err) => ({
@@ -293,15 +298,18 @@ export class AuthController {
             mensaje: err.message,
           })),
         });
+        return;
       }
 
       // 2. Verificar email
       const resultado = await authService.verifyEmail(validacion.data);
 
       // 3. Retornar confirmación
-      return res.status(200).json(resultado);
+      res.status(200).json(resultado);
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 
@@ -321,26 +329,29 @@ export class AuthController {
   // - 200: Logout exitoso
   // ==========================================
 
-  async logout(req: Request, res: Response, next: NextFunction) {
+  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { refreshToken } = req.body;
 
       if (!refreshToken) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           message: 'Refresh token es requerido',
         });
+        return;
       }
 
       // Revocar el refresh token
       await authService.logout(refreshToken);
 
-      return res.status(200).json({
+      res.status(200).json({
         success: true,
         message: 'Logout exitoso',
       });
+      return;
     } catch (error) {
       next(error);
+      return;
     }
   }
 }

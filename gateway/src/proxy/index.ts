@@ -8,14 +8,26 @@ import { services } from '../config/services';
 
 /**
  * Crear opciones de proxy para un servicio
+ * @param serviceUrl - URL base del servicio
+ * @param serviceName - Nombre del servicio para logs
+ * @param pathPrefix - Prefijo que se debe agregar a la ruta (ej: '/auth')
  */
-function createProxyOptions(serviceUrl: string, serviceName: string): Options {
+function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix: string = ''): Options {
   return {
     target: serviceUrl,
     changeOrigin: true,
     pathRewrite: (path, req) => {
-      // Remover el prefijo /api si existe
-      return path.replace(/^\/api/, '');
+      // Cuando Express monta con router.use('/auth', proxy), 
+      // el path que llega al proxy es solo /login (sin /auth)
+      // pero req.baseUrl contiene /auth
+      // Necesitamos reconstruir la ruta completa para el servicio
+      const expressReq = req as any;
+      const baseUrl = expressReq.baseUrl || '';
+      // baseUrl es /api/auth, necesitamos solo /auth
+      const servicePrefix = baseUrl.replace(/^\/api/, '');
+      const newPath = servicePrefix + path;
+      console.log(`📝 PathRewrite: baseUrl=${baseUrl}, path=${path}, newPath=${newPath}`);
+      return newPath;
     },
     on: {
       proxyReq: (proxyReq: ClientRequest, req: IncomingMessage, res: ServerResponse) => {
@@ -42,7 +54,9 @@ function createProxyOptions(serviceUrl: string, serviceName: string): Options {
         const clientIp = req.headers['x-forwarded-for'] || expressReq.ip;
         proxyReq.setHeader('X-Forwarded-For', clientIp as string);
 
-        console.log(`🔀 Proxy: ${req.method} ${expressReq.originalUrl || req.url} → ${serviceUrl}${req.url}`);
+        // Calcular la ruta final
+        const finalPath = pathPrefix + req.url;
+        console.log(`🔀 Proxy: ${req.method} ${expressReq.originalUrl || req.url} → ${serviceUrl}${finalPath}`);
       },
       proxyRes: (proxyRes, req, res) => {
         // Agregar header indicando qué servicio respondió
@@ -68,35 +82,40 @@ function createProxyOptions(serviceUrl: string, serviceName: string): Options {
   };
 }
 
-// Crear proxies para cada servicio
+// Crear proxies para cada servicio con sus prefijos correctos
+// Cuando el gateway monta router.use('/auth', authProxy), el path que llega
+// al proxy INCLUYE el /auth del mount point. Entonces:
+// - Request: /api/auth/login
+// - Después del mount /auth: el path es /auth/login (el mount point se conserva)
+// - Proxy recibe: /auth/login y lo envía tal cual
 export const authProxy = createProxyMiddleware(
-  createProxyOptions(services.auth.url, services.auth.name)
+  createProxyOptions(services.auth.url, services.auth.name, '')
 );
 
 export const usersProxy = createProxyMiddleware(
-  createProxyOptions(services.users.url, services.users.name)
+  createProxyOptions(services.users.url, services.users.name, '')
 );
 
 export const appointmentsProxy = createProxyMiddleware(
-  createProxyOptions(services.appointments.url, services.appointments.name)
+  createProxyOptions(services.appointments.url, services.appointments.name, '')
 );
 
 export const consultationsProxy = createProxyMiddleware(
-  createProxyOptions(services.consultations.url, services.consultations.name)
+  createProxyOptions(services.consultations.url, services.consultations.name, '')
 );
 
 export const paymentsProxy = createProxyMiddleware(
-  createProxyOptions(services.payments.url, services.payments.name)
+  createProxyOptions(services.payments.url, services.payments.name, '')
 );
 
 export const notificationsProxy = createProxyMiddleware(
-  createProxyOptions(services.notifications.url, services.notifications.name)
+  createProxyOptions(services.notifications.url, services.notifications.name, '')
 );
 
 export const reviewsProxy = createProxyMiddleware(
-  createProxyOptions(services.reviews.url, services.reviews.name)
+  createProxyOptions(services.reviews.url, services.reviews.name, '')
 );
 
 export const auditProxy = createProxyMiddleware(
-  createProxyOptions(services.audit.url, services.audit.name)
+  createProxyOptions(services.audit.url, services.audit.name, '')
 );

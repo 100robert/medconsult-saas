@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/@prisma/client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  PACIENTE
+  MEDICO
+  ADMIN
+}
+
+model Usuario {
+  id                String    @id @default(uuid()) @db.Char(36)
+  correo            String    @unique @db.VarChar(255)
+  hashContrasena    String    @db.VarChar(255)
+  nombre            String    @db.VarChar(100)
+  apellido          String    @db.VarChar(100)
+  telefono          String?   @db.VarChar(20)
+  imagenPerfil      String?   @db.Text
+  rol               RolUsuario
+  correoVerificado  Boolean   @default(false)
+  activo            Boolean   @default(true)
+  ultimoAcceso      DateTime?
+  tokenVerificacion String?   @unique @db.VarChar(255)
+  tokenRecuperacion String?   @unique @db.VarChar(255)
+  expirationTokenRecuperacion DateTime?
+  fechaCreacion     DateTime  @default(now())
+  fechaActualizacion DateTime @updatedAt
+
+  refreshTokens     RefreshToken[]
+  intentosLogin     IntentoLogin[]
+
+  @@index([correo])
+  @@index([rol])
+  @@index([activo])
+  @@index([correoVerificado])
+  @@map("usuarios")
+}
+
+model RefreshToken {
+  id             String   @id @default(uuid()) @db.Uuid
+  token          String   @unique @db.Text
+  idUsuario      String   @db.Uuid
+  usuario        Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  expiraEn       DateTime
+  esRevocado     Boolean  @default(false)
+  direccionIP    String?  @db.VarChar(45)
+  agenteUsuario  String?  @db.Text
+  fechaCreacion  DateTime @default(now())
+
+  @@index([token])
+  @@index([idUsuario])
+  @@index([expiraEn])
+  @@index([esRevocado])
+  @@map("refresh_tokens")
+}
+
+model IntentoLogin {
+  id            String   @id @default(uuid()) @db.Uuid
+  correo        String   @db.VarChar(255)
+  idUsuario     String?  @db.Uuid
+  usuario       Usuario? @relation(fields: [idUsuario], references: [id], onDelete: SetNull)
+  exitoso       Boolean
+  direccionIP   String   @db.VarChar(45)
+  agenteUsuario String?  @db.Text
+  razon         String?  @db.Text
+  fecha         DateTime @default(now())
+
+  @@index([correo])
+  @@index([fecha])
+  @@index([exitoso])
+  @@index([direccionIP])
+  @@map("intentos_login")
+}

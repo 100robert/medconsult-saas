@@ -194,15 +194,47 @@ router.post('/logout', authController.logout.bind(authController));
 // ============================================
 // RUTAS PROTEGIDAS (Requieren autenticación)
 // ============================================
-// Estas rutas requieren que el usuario esté logueado.
-// Se agregan cuando implementemos el middleware de autenticación.
-//
-// Ejemplo futuro:
-// router.get('/me', authMiddleware, authController.getProfile);
-// router.put('/me', authMiddleware, authController.updateProfile);
+// Estas rutas requieren que el usuario esté logueado
+// y tenga el rol adecuado.
 // ============================================
 
-// TODO: Agregar cuando tengamos el middleware de autenticación
+import { authMiddleware, requireRole } from '../middlewares/auth.middleware';
+
+/**
+ * @route   POST /auth/admin/create-user
+ * @desc    Crear usuario (médico/admin) - SOLO ADMINISTRADORES
+ * @access  Private (requiere rol ADMIN)
+ * @body    { correo, contrasena, nombre, apellido, telefono?, rol, correoVerificado?, activo? }
+ * @returns { success, message, data: { usuario } }
+ * 
+ * ¿Cuándo usar este endpoint?
+ * - Después de que un médico pase el proceso de verificación
+ *   (entrevistas, revisión de CV, certificados, etc.)
+ * - Para crear nuevos administradores
+ * 
+ * IMPORTANTE:
+ * - Los pacientes se registran públicamente en /auth/register
+ * - Los médicos/admins SOLO se crean por este endpoint
+ * - Esto asegura que solo personal verificado acceda como médico
+ */
+router.post(
+  '/admin/create-user',
+  authMiddleware,
+  requireRole(['ADMIN']),
+  authController.adminCreateUser.bind(authController)
+);
+
+/**
+ * @route   GET /auth/me
+ * @desc    Obtener perfil del usuario autenticado
+ * @access  Private
+ * @returns { success, data: { usuario } }
+ */
+router.get(
+  '/me',
+  authMiddleware,
+  authController.getProfile.bind(authController)
+);
 
 // ============================================
 // EXPORTAR ROUTER

@@ -12,13 +12,11 @@ import { z } from 'zod';
 import { RolUsuario } from '@prisma/client';
 
 // ============================================
-// VALIDADOR: REGISTRO DE USUARIO
+// VALIDADOR: REGISTRO PÚBLICO DE USUARIO
 // ============================================
-// ¿Por qué validar el registro?
-// - Evitar emails inválidos (formato incorrecto)
-// - Asegurar contraseñas fuertes (seguridad)
-// - Verificar que todos los campos requeridos estén presentes
-// - Prevenir inyección de datos maliciosos
+// IMPORTANTE: El registro público SOLO permite crear PACIENTES
+// Los MÉDICOS y ADMINS solo pueden ser creados por administradores
+// después de pasar el proceso de verificación (entrevistas, CV, etc.)
 // ============================================
 
 export const registerSchema = z.object({
@@ -68,9 +66,18 @@ export const registerSchema = z.object({
     .optional()
     .or(z.literal('')), // Permitir string vacío como opcional
 
-  rol: z.enum([RolUsuario.PACIENTE, RolUsuario.MEDICO, RolUsuario.ADMIN], {
-    message: 'Rol inválido. Debe ser: PACIENTE, MEDICO o ADMIN',
-  }),
+  // RESTRICCIÓN DE SEGURIDAD: El registro público solo permite PACIENTE
+  // Si alguien intenta pasar MEDICO o ADMIN, será rechazado
+  rol: z
+    .enum([RolUsuario.PACIENTE, RolUsuario.MEDICO, RolUsuario.ADMIN])
+    .optional()
+    .default(RolUsuario.PACIENTE)
+    .refine(
+      (rol) => rol === RolUsuario.PACIENTE,
+      {
+        message: 'El registro público solo permite crear cuentas de paciente. Para cuentas de médico, contacte al administrador.',
+      }
+    ),
 });
 
 // ============================================
@@ -185,6 +192,70 @@ export const verifyEmailSchema = z.object({
 // Zod infiere automáticamente los tipos TypeScript
 // Esto evita duplicar definiciones de tipos
 // ============================================
+
+// ============================================
+// VALIDADOR: CREAR USUARIO POR ADMIN
+// ============================================
+// Este schema es para cuando un ADMIN crea usuarios
+// (médicos, otros admins) después del proceso de verificación
+// ============================================
+
+export const adminCreateUserSchema = z.object({
+  correo: z
+    .string({
+      message: 'El correo es requerido',
+    })
+    .email('Formato de correo inválido')
+    .toLowerCase()
+    .trim(),
+
+  contrasena: z
+    .string({
+      message: 'La contraseña es requerida',
+    })
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .max(100, 'La contraseña es demasiado larga')
+    .regex(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
+    .regex(/[a-z]/, 'Debe contener al menos una letra minúscula')
+    .regex(/[0-9]/, 'Debe contener al menos un número')
+    .regex(
+      /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+      'Debe contener al menos un carácter especial'
+    ),
+
+  nombre: z
+    .string({
+      message: 'El nombre es requerido',
+    })
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(100, 'El nombre es demasiado largo')
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El nombre solo puede contener letras')
+    .trim(),
+
+  apellido: z
+    .string({
+      message: 'El apellido es requerido',
+    })
+    .min(2, 'El apellido debe tener al menos 2 caracteres')
+    .max(100, 'El apellido es demasiado largo')
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El apellido solo puede contener letras')
+    .trim(),
+
+  telefono: z
+    .string()
+    .regex(/^\+?[1-9]\d{1,14}$/, 'Formato de teléfono inválido (usar formato internacional)')
+    .optional()
+    .or(z.literal('')),
+
+  // ADMIN puede crear cualquier tipo de usuario
+  rol: z.enum([RolUsuario.PACIENTE, RolUsuario.MEDICO, RolUsuario.ADMIN], {
+    message: 'Rol inválido. Debe ser: PACIENTE, MEDICO o ADMIN',
+  }),
+
+  // Opciones adicionales para admin
+  correoVerificado: z.boolean().optional().default(true), // Admin puede pre-verificar
+  activo: z.boolean().optional().default(true),
+});
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

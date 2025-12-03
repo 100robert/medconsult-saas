@@ -519,6 +519,101 @@ async logout(refreshToken: string): Promise<MessageResponse> {
     message: 'Sesión cerrada exitosamente',
   };
 }
+
+  // ==========================================
+  // MÉTODO: CREAR USUARIO POR ADMIN
+  // ==========================================
+  // Este método es para cuando un ADMIN crea usuarios
+  // (médicos, otros admins) después del proceso de verificación
+  // NO genera tokens de sesión (el usuario debe hacer login)
+  // ==========================================
+
+  async adminCreateUser(data: {
+    correo: string;
+    contrasena: string;
+    nombre: string;
+    apellido: string;
+    telefono?: string;
+    rol: 'PACIENTE' | 'MEDICO' | 'ADMIN';
+    correoVerificado?: boolean;
+    activo?: boolean;
+  }): Promise<{ success: boolean; message: string; data: { usuario: UserData } }> {
+    // 1. Verificar si el email ya está registrado
+    const existeUsuario = await prisma.usuario.findUnique({
+      where: { correo: data.correo },
+    });
+
+    if (existeUsuario) {
+      throw new ConflictError('El correo ya está registrado');
+    }
+
+    // 2. Hashear contraseña
+    const hashContrasena = await hashPassword(data.contrasena);
+
+    // 3. Crear usuario en la base de datos
+    const usuario = await prisma.usuario.create({
+      data: {
+        correo: data.correo,
+        hashContrasena,
+        nombre: data.nombre,
+        apellido: data.apellido,
+        telefono: data.telefono || null,
+        rol: data.rol,
+        correoVerificado: data.correoVerificado ?? true, // Admin puede pre-verificar
+        activo: data.activo ?? true,
+        tokenVerificacion: null, // No necesita verificación si admin lo crea
+      },
+    });
+
+    // 4. Retornar datos del usuario creado (sin tokens, debe hacer login)
+    return {
+      success: true,
+      message: `Usuario ${data.rol} creado exitosamente. El usuario debe iniciar sesión con sus credenciales.`,
+      data: {
+        usuario: {
+          id: usuario.id,
+          correo: usuario.correo,
+          nombre: usuario.nombre,
+          apellido: usuario.apellido,
+          rol: usuario.rol,
+          correoVerificado: usuario.correoVerificado,
+          activo: usuario.activo,
+        },
+      },
+    };
+  }
+
+  // ==========================================
+  // MÉTODO: OBTENER PERFIL
+  // ==========================================
+  // Obtiene los datos del usuario autenticado
+  // ==========================================
+
+  async getProfile(userId: string): Promise<{ success: boolean; data: { usuario: UserData } }> {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+
+    if (!usuario) {
+      throw new NotFoundError('Usuario no encontrado');
+    }
+
+    return {
+      success: true,
+      data: {
+        usuario: {
+          id: usuario.id,
+          correo: usuario.correo,
+          nombre: usuario.nombre,
+          apellido: usuario.apellido,
+          rol: usuario.rol,
+          correoVerificado: usuario.correoVerificado,
+          activo: usuario.activo,
+        },
+      },
+    };
+  }
+
   // ==========================================
   // MÉTODO AUXILIAR: REGISTRAR INTENTO DE LOGIN
   // ==========================================

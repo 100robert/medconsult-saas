@@ -23,6 +23,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  adminCreateUserSchema,
 } from '../validators/auth.validator';
 
 // ============================================
@@ -352,6 +353,74 @@ export class AuthController {
     } catch (error) {
       next(error);
       return;
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: POST /auth/admin/create-user
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Verifica que el solicitante sea ADMIN
+  // 2. Valida los datos del nuevo usuario
+  // 3. Crea el usuario (médico, admin, etc.)
+  //
+  // IMPORTANTE: Este endpoint permite crear MÉDICOS y ADMINS
+  // Solo puede ser usado por administradores después del proceso
+  // de verificación (entrevistas, CV, certificados, etc.)
+  // ==========================================
+
+  async adminCreateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      // 1. Validar datos de entrada
+      const validacion = adminCreateUserSchema.safeParse(req.body);
+
+      if (!validacion.success) {
+        res.status(400).json({
+          success: false,
+          message: 'Datos de entrada inválidos',
+          errors: validacion.error.issues.map((err) => ({
+            campo: err.path.join('.'),
+            mensaje: err.message,
+          })),
+        });
+        return;
+      }
+
+      // 2. Llamar al service para crear usuario (sin generar tokens de login)
+      const resultado = await authService.adminCreateUser(validacion.data);
+
+      // 3. Retornar respuesta exitosa
+      res.status(201).json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: GET /auth/me
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Obtiene el usuario autenticado desde el token
+  // 2. Retorna los datos del perfil
+  // ==========================================
+
+  async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      // El middleware de auth ya validó el token y agregó user al request
+      const userId = (req as any).user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'No autenticado',
+        });
+        return;
+      }
+
+      const resultado = await authService.getProfile(userId);
+      res.status(200).json(resultado);
+    } catch (error) {
+      next(error);
     }
   }
 }

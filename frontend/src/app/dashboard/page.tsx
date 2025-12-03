@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import {
   Calendar,
   Users,
@@ -16,9 +17,61 @@ import {
   Bell,
   Star,
   Activity,
+  Heart,
+  Droplets,
+  Thermometer,
+  Scale,
 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+} from 'recharts';
 import { useAuthStore } from '@/store/authStore';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
+import { GlassCard } from '@/components/ui';
+
+// Health data for charts
+const healthData = [
+  { day: 'Lun', heartRate: 72, pressure: 120, steps: 8500 },
+  { day: 'Mar', heartRate: 75, pressure: 118, steps: 10200 },
+  { day: 'Mie', heartRate: 68, pressure: 122, steps: 7800 },
+  { day: 'Jue', heartRate: 71, pressure: 119, steps: 9100 },
+  { day: 'Vie', heartRate: 73, pressure: 117, steps: 11500 },
+  { day: 'Sab', heartRate: 69, pressure: 121, steps: 6200 },
+  { day: 'Dom', heartRate: 70, pressure: 120, steps: 5400 },
+];
+
+const appointmentData = [
+  { month: 'Ene', citas: 12 },
+  { month: 'Feb', citas: 19 },
+  { month: 'Mar', citas: 15 },
+  { month: 'Abr', citas: 22 },
+  { month: 'May', citas: 28 },
+  { month: 'Jun', citas: 25 },
+];
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 },
+};
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -27,55 +80,63 @@ export default function DashboardPage() {
   const getStats = () => {
     if (user?.rol === 'ADMIN') {
       return [
-        { label: 'Usuarios Totales', value: '1,234', icon: Users, change: '+12%', color: 'blue', gradient: 'from-blue-500 to-blue-600' },
-        { label: 'Citas Hoy', value: '45', icon: Calendar, change: '+5%', color: 'green', gradient: 'from-emerald-500 to-teal-600' },
-        { label: 'Ingresos del Mes', value: '$12,450', icon: CreditCard, change: '+18%', color: 'purple', gradient: 'from-purple-500 to-pink-600' },
-        { label: 'Consultas Activas', value: '23', icon: FileText, change: '+8%', color: 'orange', gradient: 'from-orange-500 to-amber-600' },
+        { label: 'Usuarios Totales', value: '1,234', icon: Users, change: '+12%', color: 'from-[#667eea] to-[#764ba2]' },
+        { label: 'Citas Hoy', value: '45', icon: Calendar, change: '+5%', color: 'from-emerald-500 to-teal-600' },
+        { label: 'Ingresos del Mes', value: '$12,450', icon: CreditCard, change: '+18%', color: 'from-purple-500 to-pink-600' },
+        { label: 'Consultas Activas', value: '23', icon: FileText, change: '+8%', color: 'from-orange-500 to-amber-600' },
       ];
     }
 
     if (user?.rol === 'MEDICO') {
       return [
-        { label: 'Citas Hoy', value: '8', icon: Calendar, change: '', color: 'blue', gradient: 'from-blue-500 to-blue-600' },
-        { label: 'Pacientes Totales', value: '156', icon: Users, change: '+3', color: 'green', gradient: 'from-emerald-500 to-teal-600' },
-        { label: 'Consultas Pendientes', value: '5', icon: Clock, change: '', color: 'orange', gradient: 'from-orange-500 to-amber-600' },
-        { label: 'Calificación', value: '4.8', icon: Star, change: '', color: 'purple', gradient: 'from-purple-500 to-pink-600' },
+        { label: 'Citas Hoy', value: '8', icon: Calendar, change: '', color: 'from-[#667eea] to-[#764ba2]' },
+        { label: 'Pacientes Totales', value: '156', icon: Users, change: '+3', color: 'from-emerald-500 to-teal-600' },
+        { label: 'Consultas Pendientes', value: '5', icon: Clock, change: '', color: 'from-orange-500 to-amber-600' },
+        { label: 'Calificación', value: '4.8', icon: Star, change: '', color: 'from-purple-500 to-pink-600' },
       ];
     }
 
     // PACIENTE
     return [
-      { label: 'Próximas Citas', value: '2', icon: Calendar, change: '', color: 'blue', gradient: 'from-blue-500 to-blue-600' },
-      { label: 'Consultas Realizadas', value: '12', icon: CheckCircle, change: '', color: 'green', gradient: 'from-emerald-500 to-teal-600' },
-      { label: 'Médicos Favoritos', value: '3', icon: Users, change: '', color: 'purple', gradient: 'from-purple-500 to-pink-600' },
-      { label: 'Pendientes de Pago', value: '1', icon: AlertCircle, change: '', color: 'orange', gradient: 'from-orange-500 to-amber-600' },
+      { label: 'Próximas Citas', value: '2', icon: Calendar, change: '', color: 'from-[#667eea] to-[#764ba2]' },
+      { label: 'Consultas Realizadas', value: '12', icon: CheckCircle, change: '', color: 'from-emerald-500 to-teal-600' },
+      { label: 'Médicos Favoritos', value: '3', icon: Users, change: '', color: 'from-purple-500 to-pink-600' },
+      { label: 'Pendientes de Pago', value: '1', icon: AlertCircle, change: '', color: 'from-orange-500 to-amber-600' },
     ];
   };
 
   const stats = getStats();
 
+  // Health Metrics for patient
+  const healthMetrics = [
+    { label: 'Ritmo Cardíaco', value: '72', unit: 'bpm', icon: Heart, color: 'from-red-500 to-rose-600', status: 'Normal' },
+    { label: 'Presión Arterial', value: '120/80', unit: 'mmHg', icon: Activity, color: 'from-blue-500 to-cyan-600', status: 'Óptima' },
+    { label: 'Glucosa', value: '95', unit: 'mg/dL', icon: Droplets, color: 'from-purple-500 to-violet-600', status: 'Normal' },
+    { label: 'Peso', value: '70', unit: 'kg', icon: Scale, color: 'from-emerald-500 to-green-600', status: 'IMC: 22.5' },
+  ];
+
   // Quick actions según el rol
   const getQuickActions = () => {
     if (user?.rol === 'ADMIN') {
       return [
-        { label: 'Crear Usuario', href: '/dashboard/users/new', icon: Users, color: 'bg-blue-500' },
-        { label: 'Ver Reportes', href: '/dashboard/reports', icon: FileText, color: 'bg-purple-500' },
-        { label: 'Configuración', href: '/dashboard/settings', icon: TrendingUp, color: 'bg-emerald-500' },
+        { label: 'Crear Usuario', href: '/dashboard/users/new', icon: Users, color: 'from-[#667eea] to-[#764ba2]' },
+        { label: 'Ver Reportes', href: '/dashboard/reports', icon: FileText, color: 'from-purple-500 to-pink-600' },
+        { label: 'Configuración', href: '/dashboard/settings', icon: TrendingUp, color: 'from-emerald-500 to-teal-600' },
       ];
     }
 
     if (user?.rol === 'MEDICO') {
       return [
-        { label: 'Ver Agenda', href: '/dashboard/appointments', icon: Calendar, color: 'bg-blue-500' },
-        { label: 'Mis Pacientes', href: '/dashboard/patients', icon: Users, color: 'bg-purple-500' },
-        { label: 'Nueva Consulta', href: '/dashboard/consultations/new', icon: FileText, color: 'bg-emerald-500' },
+        { label: 'Ver Agenda', href: '/dashboard/appointments', icon: Calendar, color: 'from-[#667eea] to-[#764ba2]' },
+        { label: 'Mis Pacientes', href: '/dashboard/patients', icon: Users, color: 'from-purple-500 to-pink-600' },
+        { label: 'Nueva Consulta', href: '/dashboard/consultations/new', icon: FileText, color: 'from-emerald-500 to-teal-600' },
       ];
     }
 
     return [
-      { label: 'Agendar Cita', href: '/dashboard/appointments/new', icon: Calendar, color: 'bg-blue-500' },
-      { label: 'Buscar Médicos', href: '/dashboard/doctors', icon: Users, color: 'bg-purple-500' },
-      { label: 'Mis Consultas', href: '/dashboard/consultations', icon: FileText, color: 'bg-emerald-500' },
+      { label: 'Agendar Cita', href: '/dashboard/appointments/new', icon: Calendar, color: 'from-[#667eea] to-[#764ba2]' },
+      { label: 'Buscar Médicos', href: '/dashboard/doctors', icon: Users, color: 'from-purple-500 to-pink-600' },
+      { label: 'Mis Consultas', href: '/dashboard/consultations', icon: FileText, color: 'from-emerald-500 to-teal-600' },
     ];
   };
 
@@ -89,210 +150,350 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8 pb-8">
-      {/* Welcome Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 rounded-2xl p-8 text-white">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-purple-500/20 rounded-full translate-y-1/2 blur-2xl" />
-        
-        <div className="relative">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-sm mb-4">
-                <Sparkles className="w-4 h-4" />
-                <span>{getGreeting()}</span>
-              </div>
-              <h1 className="text-3xl font-bold mb-2">
-                ¡Hola, {user?.nombre}!
-              </h1>
-              <p className="text-blue-100 max-w-md">
-                {user?.rol === 'ADMIN' && 'Aquí tienes un resumen completo de la plataforma. Todo marcha excelente.'}
-                {user?.rol === 'MEDICO' && 'Tu agenda de hoy está lista. Tienes pacientes esperando.'}
-                {user?.rol === 'PACIENTE' && 'Gestiona tus citas y mantén tu salud al día.'}
-              </p>
-            </div>
-            <div className="hidden md:block">
-              <div className="w-24 h-24 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <Activity className="w-12 h-12" />
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Stats in Banner */}
-          <div className="flex items-center gap-6 mt-6 pt-6 border-t border-white/20">
-            <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-blue-200" />
-              <span className="text-sm">3 notificaciones nuevas</span>
-            </div>
-            <div className="hidden sm:flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-200" />
-              <span className="text-sm">Próxima cita: Hoy 10:00 AM</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={index}
-              className="group relative bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg hover:border-gray-200 transition-all duration-300"
-            >
-              <div className="flex items-start justify-between">
+    <div className="min-h-screen gradient-mesh p-4 md:p-8">
+      <motion.div
+        className="max-w-7xl mx-auto space-y-8"
+        variants={container}
+        initial="hidden"
+        animate="show"
+      >
+        {/* Welcome Banner */}
+        <motion.div variants={item}>
+          <div className="relative overflow-hidden glass-card gradient-primary p-8 text-white">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+            <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-purple-500/20 rounded-full translate-y-1/2 blur-2xl" />
+            
+            <div className="relative">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {stat.value}
-                  </p>
-                  {stat.change && (
-                    <div className="flex items-center gap-1 mt-2">
-                      <TrendingUp className="w-4 h-4 text-emerald-500" />
-                      <span className="text-sm font-medium text-emerald-600">{stat.change}</span>
-                    </div>
-                  )}
+                  <motion.div 
+                    className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm mb-4"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>{getGreeting()}</span>
+                  </motion.div>
+                  <motion.h1 
+                    className="text-4xl font-bold mb-2"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    ¡Hola, {user?.nombre || 'Usuario'}!
+                  </motion.h1>
+                  <motion.p 
+                    className="text-white/80 max-w-md text-lg"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    {user?.rol === 'ADMIN' && 'Aquí tienes un resumen completo de la plataforma.'}
+                    {user?.rol === 'MEDICO' && 'Tu agenda de hoy está lista. Tienes pacientes esperando.'}
+                    {(!user?.rol || user?.rol === 'PACIENTE') && 'Gestiona tus citas y mantén tu salud al día.'}
+                  </motion.p>
                 </div>
-                <div className={`p-3 rounded-xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              
-              {/* Hover effect */}
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-b-2xl" />
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Acciones Rápidas</h2>
-          <span className="text-sm text-gray-500">Accede rápidamente</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {quickActions.map((action, index) => {
-            const Icon = action.icon;
-            return (
-              <Link
-                key={index}
-                href={action.href}
-                className="group flex items-center justify-between p-5 bg-gray-50 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-2 border-transparent hover:border-blue-100 transition-all duration-300"
-              >
-                <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${action.color} shadow-lg group-hover:scale-110 transition-transform`}>
-                    <Icon className="w-5 h-5 text-white" />
+                <motion.div 
+                  className="hidden md:block"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <div className="w-28 h-28 bg-white/15 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/30 animate-float">
+                    <Activity className="w-14 h-14" />
                   </div>
-                  <span className="font-medium text-gray-900">{action.label}</span>
-                </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+                </motion.div>
+              </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Próximas citas */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {user?.rol === 'MEDICO' ? 'Próximas Citas' : 'Mis Próximas Citas'}
-              </h2>
-              <span className="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-600 rounded-full">
-                3 pendientes
-              </span>
+              {/* Quick Stats in Banner */}
+              <motion.div 
+                className="flex items-center gap-6 mt-8 pt-6 border-t border-white/20"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
+                  <Bell className="w-5 h-5" />
+                  <span className="text-sm">3 notificaciones</span>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
+                  <Calendar className="w-5 h-5" />
+                  <span className="text-sm">Próxima cita: Hoy 10:00 AM</span>
+                </div>
+              </motion.div>
             </div>
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {[
-                { name: user?.rol === 'MEDICO' ? 'María González' : 'Dr. Juan Pérez', time: 'Hoy, 10:00 AM', status: 'próxima', specialty: 'Cardiología' },
-                { name: user?.rol === 'MEDICO' ? 'Carlos Ruiz' : 'Dra. Ana López', time: 'Mañana, 2:00 PM', status: 'confirmada', specialty: 'Dermatología' },
-                { name: user?.rol === 'MEDICO' ? 'Laura Sánchez' : 'Dr. Miguel Torres', time: 'Vie, 9:00 AM', status: 'confirmada', specialty: 'Pediatría' },
-              ].map((appointment, index) => (
-                <div
-                  key={index}
-                  className="group flex items-center justify-between p-4 bg-gray-50 hover:bg-blue-50 rounded-xl transition-colors cursor-pointer"
+        </motion.div>
+
+        {/* Stats Grid */}
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          variants={container}
+        >
+          {stats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div key={index} variants={item}>
+                <GlassCard
+                  variant="light"
+                  className="group cursor-pointer"
+                  glow={index === 0}
+                  glowColor="blue"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold">
-                        {appointment.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      {index === 0 && (
-                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+                      <p className="text-3xl font-bold text-gray-900 mt-2">
+                        {stat.value}
+                      </p>
+                      {stat.change && (
+                        <div className="flex items-center gap-1 mt-2">
+                          <TrendingUp className="w-4 h-4 text-emerald-500" />
+                          <span className="text-sm font-medium text-emerald-600">{stat.change}</span>
+                        </div>
                       )}
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{appointment.name}</p>
-                      <p className="text-sm text-gray-500">{appointment.specialty} • {appointment.time}</p>
-                    </div>
+                    <motion.div 
+                      className={`p-4 rounded-2xl bg-gradient-to-br ${stat.color} shadow-lg`}
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                    >
+                      <Icon className="w-6 h-6 text-white" />
+                    </motion.div>
                   </div>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                    appointment.status === 'próxima' 
-                      ? 'bg-emerald-100 text-emerald-600' 
-                      : 'bg-blue-100 text-blue-600'
-                  }`}>
-                    {appointment.status === 'próxima' ? 'Próxima' : 'Confirmada'}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Link
-              href="/dashboard/appointments"
-              className="flex items-center justify-center gap-2 mt-6 py-3 text-blue-600 hover:text-blue-700 font-medium hover:bg-blue-50 rounded-xl transition-colors"
-            >
-              Ver todas las citas
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
+                </GlassCard>
+              </motion.div>
+            );
+          })}
+        </motion.div>
 
-        {/* Actividad reciente */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Actividad Reciente</h2>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                Ver todo
-              </button>
+        {/* Health Metrics for Patients */}
+        {(!user?.rol || user?.rol === 'PACIENTE') && (
+          <motion.div variants={item}>
+            <GlassCard variant="light" size="lg">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">
+                  Métricas de Salud
+                </h2>
+                <span className="text-sm text-gray-500">Última actualización: Hoy</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {healthMetrics.map((metric, index) => {
+                  const Icon = metric.icon;
+                  return (
+                    <motion.div
+                      key={index}
+                      className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 border border-white/50"
+                      whileHover={{ scale: 1.02, y: -4 }}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`p-2.5 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-600">{metric.label}</span>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-gray-900">{metric.value}</span>
+                        <span className="text-sm text-gray-500">{metric.unit}</span>
+                      </div>
+                      <span className="text-xs text-emerald-600 font-medium mt-1 block">{metric.status}</span>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Heart Rate Chart */}
+              <div className="bg-white/50 rounded-2xl p-6 border border-white/50">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Ritmo Cardíaco Semanal</h3>
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={healthData}>
+                    <defs>
+                      <linearGradient id="colorHeartRate" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#667eea" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#667eea" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="day" stroke="#9ca3af" fontSize={12} />
+                    <YAxis stroke="#9ca3af" fontSize={12} domain={[60, 90]} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        background: 'rgba(255,255,255,0.95)', 
+                        border: 'none', 
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+                      }} 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="heartRate" 
+                      stroke="#667eea" 
+                      strokeWidth={3}
+                      fill="url(#colorHeartRate)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+
+        {/* Quick Actions */}
+        <motion.div variants={item}>
+          <GlassCard variant="light">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-gray-900">Acciones Rápidas</h2>
+              <span className="text-sm text-gray-500">Accede rápidamente</span>
             </div>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {[
-                { action: 'Consulta completada', desc: 'Con Dr. Pérez', time: 'Hace 2 horas', icon: CheckCircle, gradient: 'from-emerald-500 to-teal-600' },
-                { action: 'Nueva cita agendada', desc: 'Dermatología', time: 'Hace 5 horas', icon: Calendar, gradient: 'from-blue-500 to-blue-600' },
-                { action: 'Pago procesado', desc: '$50.00 USD', time: 'Ayer', icon: CreditCard, gradient: 'from-purple-500 to-pink-600' },
-                { action: 'Receta generada', desc: 'Consulta #1234', time: 'Hace 2 días', icon: FileText, gradient: 'from-orange-500 to-amber-600' },
-              ].map((item, index) => {
-                const Icon = item.icon;
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {quickActions.map((action, index) => {
+                const Icon = action.icon;
                 return (
-                  <div
-                    key={index}
-                    className="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-xl transition-colors"
-                  >
-                    <div className={`p-2.5 rounded-xl bg-gradient-to-br ${item.gradient} shadow-lg`}>
-                      <Icon className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900">{item.action}</p>
-                      <p className="text-sm text-gray-500 truncate">{item.desc}</p>
-                    </div>
-                    <span className="text-xs text-gray-400 whitespace-nowrap">{item.time}</span>
-                  </div>
+                  <Link key={index} href={action.href}>
+                    <motion.div
+                      className="group flex items-center justify-between p-5 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/50 cursor-pointer"
+                      whileHover={{ scale: 1.02, y: -4 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-xl bg-gradient-to-br ${action.color} shadow-lg group-hover:shadow-xl transition-shadow`}>
+                          <Icon className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="font-semibold text-gray-900">{action.label}</span>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#667eea] group-hover:translate-x-1 transition-all" />
+                    </motion.div>
+                  </Link>
                 );
               })}
             </div>
-          </div>
+          </GlassCard>
+        </motion.div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Próximas citas */}
+          <motion.div variants={item}>
+            <GlassCard variant="light" className="h-full">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-gray-900">
+                  {user?.rol === 'MEDICO' ? 'Próximas Citas' : 'Mis Próximas Citas'}
+                </h2>
+                <span className="px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-full">
+                  3 pendientes
+                </span>
+              </div>
+              <div className="space-y-4">
+                {[
+                  { name: user?.rol === 'MEDICO' ? 'María González' : 'Dr. Juan Pérez', time: 'Hoy, 10:00 AM', status: 'próxima', specialty: 'Cardiología' },
+                  { name: user?.rol === 'MEDICO' ? 'Carlos Ruiz' : 'Dra. Ana López', time: 'Mañana, 2:00 PM', status: 'confirmada', specialty: 'Dermatología' },
+                  { name: user?.rol === 'MEDICO' ? 'Laura Sánchez' : 'Dr. Miguel Torres', time: 'Vie, 9:00 AM', status: 'confirmada', specialty: 'Pediatría' },
+                ].map((appointment, index) => (
+                  <motion.div
+                    key={index}
+                    className="group flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 transition-all cursor-pointer"
+                    whileHover={{ scale: 1.01, x: 4 }}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                          {appointment.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        {index === 0 && (
+                          <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900">{appointment.name}</p>
+                        <p className="text-sm text-gray-500">{appointment.specialty} • {appointment.time}</p>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1.5 text-xs font-semibold rounded-full ${
+                      appointment.status === 'próxima' 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {appointment.status === 'próxima' ? 'Próxima' : 'Confirmada'}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+              <Link href="/dashboard/appointments">
+                <motion.div
+                  className="flex items-center justify-center gap-2 mt-6 py-3 text-[#667eea] hover:text-[#764ba2] font-semibold hover:bg-white/50 rounded-xl transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  Ver todas las citas
+                  <ArrowRight className="w-4 h-4" />
+                </motion.div>
+              </Link>
+            </GlassCard>
+          </motion.div>
+
+          {/* Actividad reciente / Chart */}
+          <motion.div variants={item}>
+            <GlassCard variant="light" className="h-full">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold text-gray-900">Resumen de Citas</h2>
+                <button className="text-sm text-[#667eea] hover:text-[#764ba2] font-semibold transition-colors">
+                  Ver detalles
+                </button>
+              </div>
+              
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={appointmentData}>
+                  <defs>
+                    <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#667eea" stopOpacity={1}/>
+                      <stop offset="95%" stopColor="#764ba2" stopOpacity={1}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
+                  <YAxis stroke="#9ca3af" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      background: 'rgba(255,255,255,0.95)', 
+                      border: 'none', 
+                      borderRadius: '12px',
+                      boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+                    }} 
+                  />
+                  <Bar dataKey="citas" fill="url(#colorBar)" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+
+              {/* Activity List */}
+              <div className="mt-6 space-y-3">
+                {[
+                  { action: 'Consulta completada', desc: 'Con Dr. Pérez', time: 'Hace 2h', icon: CheckCircle, gradient: 'from-emerald-500 to-teal-600' },
+                  { action: 'Nueva cita agendada', desc: 'Dermatología', time: 'Hace 5h', icon: Calendar, gradient: 'from-[#667eea] to-[#764ba2]' },
+                ].map((activity, index) => {
+                  const Icon = activity.icon;
+                  return (
+                    <motion.div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-white/40 rounded-xl"
+                      whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.6)' }}
+                    >
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${activity.gradient}`}>
+                        <Icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                        <p className="text-xs text-gray-500">{activity.desc}</p>
+                      </div>
+                      <span className="text-xs text-gray-400">{activity.time}</span>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </GlassCard>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

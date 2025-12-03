@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Clock, Video, MapPin, User, Check } from 'lucide-react';
@@ -41,7 +41,7 @@ const timeSlots: TimeSlot[] = [
   { hora: '16:30', disponible: true },
 ];
 
-export default function NewAppointmentPage() {
+function NewAppointmentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const doctorIdParam = searchParams.get('doctorId');
@@ -393,5 +393,17 @@ export default function NewAppointmentPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function NewAppointmentPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <NewAppointmentContent />
+    </Suspense>
   );
 }

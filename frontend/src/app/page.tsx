@@ -39,25 +39,25 @@ export default function HomePage() {
       icon: Video,
       title: 'Consultas Online',
       description: 'Conecta con médicos en tiempo real desde cualquier lugar del mundo.',
-      gradient: 'from-[#667eea] to-[#764ba2]',
+      color: 'bg-blue-600',
     },
     {
       icon: Calendar,
       title: 'Agenda Inteligente',
       description: 'Sistema de citas con recordatorios automáticos y gestión sencilla.',
-      gradient: 'from-emerald-500 to-teal-600',
+      color: 'bg-emerald-600',
     },
     {
       icon: Shield,
       title: '100% Seguro',
       description: 'Tus datos médicos están protegidos con encriptación de última generación.',
-      gradient: 'from-orange-500 to-amber-600',
+      color: 'bg-orange-500',
     },
     {
       icon: Clock,
       title: 'Atención 24/7',
       description: 'Acceso a médicos las 24 horas, los 7 días de la semana.',
-      gradient: 'from-rose-500 to-pink-600',
+      color: 'bg-rose-500',
     },
   ];
 
@@ -114,7 +114,7 @@ export default function HomePage() {
                 <motion.a
                   key={item}
                   href={`#${item.toLowerCase().replace(' ', '-')}`}
-                  className="text-gray-600 hover:text-[#667eea] font-medium transition-colors"
+                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * i }}
@@ -131,7 +131,7 @@ export default function HomePage() {
             >
               <Link
                 href="/login"
-                className="hidden sm:inline-flex text-gray-700 hover:text-[#667eea] font-semibold px-4 py-2 rounded-xl transition-colors"
+                className="hidden sm:inline-flex text-gray-700 hover:text-blue-600 font-semibold px-4 py-2 rounded-xl transition-colors"
               >
                 Iniciar Sesión
               </Link>
@@ -147,7 +147,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="relative min-h-screen pt-32 lg:pt-40 pb-20 gradient-bg-animated">
+      <section className="relative min-h-screen pt-32 lg:pt-40 pb-20 bg-blue-600">
         {/* Floating blobs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
@@ -189,7 +189,7 @@ export default function HomePage() {
                 variants={item}
               >
                 Tu salud, <br className="hidden sm:block" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-purple-200">
+                <span className="text-blue-100">
                   sin complicaciones
                 </span>
               </motion.h1>
@@ -207,7 +207,7 @@ export default function HomePage() {
               >
                 <Link href="/register">
                   <motion.button
-                    className="group inline-flex items-center justify-center bg-white text-[#667eea] px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all"
+                    className="group inline-flex items-center justify-center bg-white text-blue-600 px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all"
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -281,7 +281,7 @@ export default function HomePage() {
                     <span className="text-4xl">👨‍⚕️</span>
                   </div>
                   <div>
-                    <p className="text-[#667eea] font-semibold">Cardiología</p>
+                    <p className="text-blue-600 font-semibold">Cardiología</p>
                     <div className="flex items-center gap-1 mt-1">
                       {[1, 2, 3, 4, 5].map((i) => (
                         <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -293,8 +293,8 @@ export default function HomePage() {
                 
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-white/50">
-                    <div className="w-10 h-10 bg-[#667eea]/10 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-[#667eea]" />
+                    <div className="w-10 h-10 bg-blue-600/10 rounded-lg flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Fecha</p>
@@ -302,8 +302,8 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-white/50">
-                    <div className="w-10 h-10 bg-[#764ba2]/10 rounded-lg flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-[#764ba2]" />
+                    <div className="w-10 h-10 bg-purple-600/10 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Hora</p>
@@ -345,8 +345,8 @@ export default function HomePage() {
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-[#667eea]/10 rounded-xl flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-[#667eea]" />
+                  <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center">
+                    <Activity className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Tiempo de espera</p>
@@ -360,7 +360,7 @@ export default function HomePage() {
       </section>
 
       {/* Stats */}
-      <section className="py-20 gradient-mesh">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="grid grid-cols-2 md:grid-cols-4 gap-8"
@@ -379,7 +379,7 @@ export default function HomePage() {
                   className="glass-card-light p-6"
                   whileHover={{ scale: 1.05, y: -5 }}
                 >
-                  <p className="text-4xl font-bold text-gradient">{stat.value}</p>
+                  <p className="text-4xl font-bold text-blue-600">{stat.value}</p>
                   <p className="text-gray-600 mt-2 font-medium">{stat.label}</p>
                 </motion.div>
               </motion.div>
@@ -397,13 +397,13 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-2 bg-[#667eea]/10 text-[#667eea] px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <span className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <Sparkles className="w-4 h-4" />
               Características
             </span>
             <h2 className="text-4xl font-bold text-gray-900">
               Todo lo que necesitas para tu{' '}
-              <span className="text-gradient">salud</span>
+              <span className="text-blue-600">salud</span>
             </h2>
             <p className="text-xl text-gray-600 mt-4 max-w-2xl mx-auto">
               Una plataforma completa diseñada para hacer tu experiencia médica más simple y efectiva.
@@ -429,7 +429,7 @@ export default function HomePage() {
                     className="glass-card-light p-8 h-full text-center"
                     whileHover={{ scale: 1.03, y: -8 }}
                   >
-                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} mx-auto flex items-center justify-center shadow-lg mb-6 group-hover:shadow-xl transition-shadow`}>
+                    <div className={`w-16 h-16 rounded-2xl ${feature.color} mx-auto flex items-center justify-center shadow-lg mb-6 group-hover:shadow-xl transition-shadow`}>
                       <Icon className="w-8 h-8 text-white" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
@@ -443,7 +443,7 @@ export default function HomePage() {
       </section>
 
       {/* How it works */}
-      <section id="como-funciona" className="py-24 gradient-bg-soft">
+      <section id="como-funciona" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div 
             className="text-center mb-16"
@@ -451,13 +451,13 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-2 bg-[#667eea]/10 text-[#667eea] px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <span className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <Zap className="w-4 h-4" />
               Cómo Funciona
             </span>
             <h2 className="text-4xl font-bold text-gray-900">
               Tres pasos para cuidar tu{' '}
-              <span className="text-gradient">salud</span>
+              <span className="text-blue-600">salud</span>
             </h2>
           </motion.div>
 
@@ -487,13 +487,13 @@ export default function HomePage() {
                     <div className="w-20 h-20 rounded-full gradient-primary mx-auto flex items-center justify-center shadow-glow mb-6">
                       <Icon className="w-10 h-10 text-white" />
                     </div>
-                    <span className="text-sm font-bold text-[#667eea]">Paso {stepItem.step}</span>
+                    <span className="text-sm font-bold text-blue-600">Paso {stepItem.step}</span>
                     <h3 className="text-xl font-bold text-gray-900 mt-2 mb-3">{stepItem.title}</h3>
                     <p className="text-gray-600">{stepItem.desc}</p>
                   </motion.div>
                   {index < 2 && (
                     <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
-                      <ArrowRight className="w-8 h-8 text-[#667eea]/30" />
+                      <ArrowRight className="w-8 h-8 text-blue-600/30" />
                     </div>
                   )}
                 </motion.div>
@@ -512,13 +512,13 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-2 bg-[#667eea]/10 text-[#667eea] px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <span className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <Award className="w-4 h-4" />
               Testimonios
             </span>
             <h2 className="text-4xl font-bold text-gray-900">
               Lo que dicen nuestros{' '}
-              <span className="text-gradient">usuarios</span>
+              <span className="text-blue-600">usuarios</span>
             </h2>
           </motion.div>
 
@@ -561,18 +561,10 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 gradient-primary relative overflow-hidden">
+      <section className="py-24 bg-blue-600 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl"
-            animate={{ x: [0, 50, 0], y: [0, 30, 0] }}
-            transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <motion.div
-            className="absolute bottom-0 right-0 w-96 h-96 bg-purple-300/20 rounded-full blur-3xl"
-            animate={{ x: [0, -50, 0], y: [0, -30, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          />
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl" />
         </div>
         
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
@@ -601,7 +593,7 @@ export default function HomePage() {
           >
             <Link href="/register">
               <motion.button
-                className="inline-flex items-center gap-2 bg-white text-[#667eea] px-10 py-5 rounded-2xl text-lg font-bold hover:shadow-2xl transition-all"
+                className="inline-flex items-center gap-2 bg-white text-blue-600 px-10 py-5 rounded-2xl text-lg font-bold hover:shadow-2xl transition-all"
                 whileHover={{ scale: 1.05, y: -3 }}
                 whileTap={{ scale: 0.98 }}
               >

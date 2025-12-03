@@ -61,47 +61,14 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Animated Gradient Background */}
-      <div className="absolute inset-0 gradient-bg-animated" />
+      {/* Solid Blue Background */}
+      <div className="absolute inset-0 bg-blue-600" />
       
       {/* Floating Blobs */}
       <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute top-20 -left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl"
-          animate={{
-            x: [0, 50, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute -bottom-32 right-0 w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, -30, 0],
-            y: [0, -50, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/3 w-72 h-72 bg-pink-500/10 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
+        <div className="absolute top-20 -left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 right-0 w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-blue-300/10 rounded-full blur-3xl" />
       </div>
 
       {/* Content */}
@@ -147,7 +114,7 @@ export default function LoginPage() {
             >
               Tu salud en las
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-purple-200">
+              <span className="text-blue-100">
                 mejores manos
               </span>
             </motion.h1>
@@ -286,7 +253,7 @@ export default function LoginPage() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="focus:outline-none hover:text-[#667eea] transition-colors"
+                        className="focus:outline-none hover:text-blue-600 transition-colors"
                       >
                         {showPassword ? (
                           <EyeOff className="w-5 h-5" />
@@ -309,7 +276,7 @@ export default function LoginPage() {
                   <label className="flex items-center cursor-pointer group">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-[#667eea] focus:ring-[#667eea]"
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
                     />
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
                       Recordarme
@@ -317,7 +284,7 @@ export default function LoginPage() {
                   </label>
                   <Link
                     href="/forgot-password"
-                    className="text-sm text-[#667eea] hover:text-[#764ba2] font-medium transition-colors"
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
                   >
                     ¿Olvidaste tu contraseña?
                   </Link>
@@ -397,7 +364,7 @@ export default function LoginPage() {
                 ¿No tienes una cuenta?{' '}
                 <Link
                   href="/register"
-                  className="text-[#667eea] hover:text-[#764ba2] font-semibold transition-colors"
+                  className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                 >
                   Regístrate gratis
                 </Link>

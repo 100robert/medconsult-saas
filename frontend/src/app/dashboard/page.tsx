@@ -80,28 +80,28 @@ export default function DashboardPage() {
   const getStats = () => {
     if (user?.rol === 'ADMIN') {
       return [
-        { label: 'Usuarios Totales', value: '1,234', icon: Users, change: '+12%', color: 'from-[#667eea] to-[#764ba2]' },
-        { label: 'Citas Hoy', value: '45', icon: Calendar, change: '+5%', color: 'from-emerald-500 to-teal-600' },
-        { label: 'Ingresos del Mes', value: '$12,450', icon: CreditCard, change: '+18%', color: 'from-purple-500 to-pink-600' },
-        { label: 'Consultas Activas', value: '23', icon: FileText, change: '+8%', color: 'from-orange-500 to-amber-600' },
+        { label: 'Usuarios Totales', value: '1,234', icon: Users, change: '+12%', color: 'bg-blue-600' },
+        { label: 'Citas Hoy', value: '45', icon: Calendar, change: '+5%', color: 'bg-emerald-600' },
+        { label: 'Ingresos del Mes', value: '$12,450', icon: CreditCard, change: '+18%', color: 'bg-purple-600' },
+        { label: 'Consultas Activas', value: '23', icon: FileText, change: '+8%', color: 'bg-orange-500' },
       ];
     }
 
     if (user?.rol === 'MEDICO') {
       return [
-        { label: 'Citas Hoy', value: '8', icon: Calendar, change: '', color: 'from-[#667eea] to-[#764ba2]' },
-        { label: 'Pacientes Totales', value: '156', icon: Users, change: '+3', color: 'from-emerald-500 to-teal-600' },
-        { label: 'Consultas Pendientes', value: '5', icon: Clock, change: '', color: 'from-orange-500 to-amber-600' },
-        { label: 'Calificación', value: '4.8', icon: Star, change: '', color: 'from-purple-500 to-pink-600' },
+        { label: 'Citas Hoy', value: '8', icon: Calendar, change: '', color: 'bg-blue-600' },
+        { label: 'Pacientes Totales', value: '156', icon: Users, change: '+3', color: 'bg-emerald-600' },
+        { label: 'Consultas Pendientes', value: '5', icon: Clock, change: '', color: 'bg-orange-500' },
+        { label: 'Calificación', value: '4.8', icon: Star, change: '', color: 'bg-purple-600' },
       ];
     }
 
     // PACIENTE
     return [
-      { label: 'Próximas Citas', value: '2', icon: Calendar, change: '', color: 'from-[#667eea] to-[#764ba2]' },
-      { label: 'Consultas Realizadas', value: '12', icon: CheckCircle, change: '', color: 'from-emerald-500 to-teal-600' },
-      { label: 'Médicos Favoritos', value: '3', icon: Users, change: '', color: 'from-purple-500 to-pink-600' },
-      { label: 'Pendientes de Pago', value: '1', icon: AlertCircle, change: '', color: 'from-orange-500 to-amber-600' },
+      { label: 'Próximas Citas', value: '2', icon: Calendar, change: '', color: 'bg-blue-600' },
+      { label: 'Consultas Realizadas', value: '12', icon: CheckCircle, change: '', color: 'bg-emerald-600' },
+      { label: 'Médicos Favoritos', value: '3', icon: Users, change: '', color: 'bg-purple-600' },
+      { label: 'Pendientes de Pago', value: '1', icon: AlertCircle, change: '', color: 'bg-orange-500' },
     ];
   };
 
@@ -109,34 +109,34 @@ export default function DashboardPage() {
 
   // Health Metrics for patient
   const healthMetrics = [
-    { label: 'Ritmo Cardíaco', value: '72', unit: 'bpm', icon: Heart, color: 'from-red-500 to-rose-600', status: 'Normal' },
-    { label: 'Presión Arterial', value: '120/80', unit: 'mmHg', icon: Activity, color: 'from-blue-500 to-cyan-600', status: 'Óptima' },
-    { label: 'Glucosa', value: '95', unit: 'mg/dL', icon: Droplets, color: 'from-purple-500 to-violet-600', status: 'Normal' },
-    { label: 'Peso', value: '70', unit: 'kg', icon: Scale, color: 'from-emerald-500 to-green-600', status: 'IMC: 22.5' },
+    { label: 'Ritmo Cardíaco', value: '72', unit: 'bpm', icon: Heart, color: 'bg-red-500', status: 'Normal' },
+    { label: 'Presión Arterial', value: '120/80', unit: 'mmHg', icon: Activity, color: 'bg-blue-500', status: 'Óptima' },
+    { label: 'Glucosa', value: '95', unit: 'mg/dL', icon: Droplets, color: 'bg-purple-500', status: 'Normal' },
+    { label: 'Peso', value: '70', unit: 'kg', icon: Scale, color: 'bg-emerald-500', status: 'IMC: 22.5' },
   ];
 
   // Quick actions según el rol
   const getQuickActions = () => {
     if (user?.rol === 'ADMIN') {
       return [
-        { label: 'Crear Usuario', href: '/dashboard/users/new', icon: Users, color: 'from-[#667eea] to-[#764ba2]' },
-        { label: 'Ver Reportes', href: '/dashboard/reports', icon: FileText, color: 'from-purple-500 to-pink-600' },
-        { label: 'Configuración', href: '/dashboard/settings', icon: TrendingUp, color: 'from-emerald-500 to-teal-600' },
+        { label: 'Crear Usuario', href: '/dashboard/users/new', icon: Users, color: 'bg-blue-600' },
+        { label: 'Ver Reportes', href: '/dashboard/reports', icon: FileText, color: 'bg-purple-600' },
+        { label: 'Configuración', href: '/dashboard/settings', icon: TrendingUp, color: 'bg-emerald-600' },
       ];
     }
 
     if (user?.rol === 'MEDICO') {
       return [
-        { label: 'Ver Agenda', href: '/dashboard/appointments', icon: Calendar, color: 'from-[#667eea] to-[#764ba2]' },
-        { label: 'Mis Pacientes', href: '/dashboard/patients', icon: Users, color: 'from-purple-500 to-pink-600' },
-        { label: 'Nueva Consulta', href: '/dashboard/consultations/new', icon: FileText, color: 'from-emerald-500 to-teal-600' },
+        { label: 'Ver Agenda', href: '/dashboard/appointments', icon: Calendar, color: 'bg-blue-600' },
+        { label: 'Mis Pacientes', href: '/dashboard/patients', icon: Users, color: 'bg-purple-600' },
+        { label: 'Nueva Consulta', href: '/dashboard/consultations/new', icon: FileText, color: 'bg-emerald-600' },
       ];
     }
 
     return [
-      { label: 'Agendar Cita', href: '/dashboard/appointments/new', icon: Calendar, color: 'from-[#667eea] to-[#764ba2]' },
-      { label: 'Buscar Médicos', href: '/dashboard/doctors', icon: Users, color: 'from-purple-500 to-pink-600' },
-      { label: 'Mis Consultas', href: '/dashboard/consultations', icon: FileText, color: 'from-emerald-500 to-teal-600' },
+      { label: 'Agendar Cita', href: '/dashboard/appointments/new', icon: Calendar, color: 'bg-blue-600' },
+      { label: 'Buscar Médicos', href: '/dashboard/doctors', icon: Users, color: 'bg-purple-600' },
+      { label: 'Mis Consultas', href: '/dashboard/consultations', icon: FileText, color: 'bg-emerald-600' },
     ];
   };
 
@@ -150,7 +150,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen gradient-mesh p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <motion.div
         className="max-w-7xl mx-auto space-y-8"
         variants={container}
@@ -159,7 +159,7 @@ export default function DashboardPage() {
       >
         {/* Welcome Banner */}
         <motion.div variants={item}>
-          <div className="relative overflow-hidden glass-card gradient-primary p-8 text-white">
+          <div className="relative overflow-hidden glass-card bg-blue-600 p-8 text-white">
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
             <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-purple-500/20 rounded-full translate-y-1/2 blur-2xl" />
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <motion.div 
-                      className={`p-4 rounded-2xl bg-gradient-to-br ${stat.color} shadow-lg`}
+                      className={`p-4 rounded-2xl ${stat.color} shadow-lg`}
                       whileHover={{ scale: 1.1, rotate: 5 }}
                     >
                       <Icon className="w-6 h-6 text-white" />
@@ -289,7 +289,7 @@ export default function DashboardPage() {
                       whileHover={{ scale: 1.02, y: -4 }}
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        <div className={`p-2.5 rounded-xl bg-gradient-to-br ${metric.color} shadow-lg`}>
+                        <div className={`p-2.5 rounded-xl ${metric.color} shadow-lg`}>
                           <Icon className="w-5 h-5 text-white" />
                         </div>
                         <span className="text-sm font-medium text-gray-600">{metric.label}</span>
@@ -358,12 +358,12 @@ export default function DashboardPage() {
                       whileTap={{ scale: 0.98 }}
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-xl bg-gradient-to-br ${action.color} shadow-lg group-hover:shadow-xl transition-shadow`}>
+                        <div className={`p-3 rounded-xl ${action.color} shadow-lg group-hover:shadow-xl transition-shadow`}>
                           <Icon className="w-5 h-5 text-white" />
                         </div>
                         <span className="font-semibold text-gray-900">{action.label}</span>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-[#667eea] group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                     </motion.div>
                   </Link>
                 );
@@ -381,7 +381,7 @@ export default function DashboardPage() {
                 <h2 className="text-lg font-bold text-gray-900">
                   {user?.rol === 'MEDICO' ? 'Próximas Citas' : 'Mis Próximas Citas'}
                 </h2>
-                <span className="px-3 py-1.5 text-xs font-semibold bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white rounded-full">
+                <span className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-full">
                   3 pendientes
                 </span>
               </div>
@@ -398,7 +398,7 @@ export default function DashboardPage() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <div className="w-12 h-12 bg-gradient-to-br from-[#667eea] to-[#764ba2] rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
                           {appointment.name.split(' ').map(n => n[0]).join('')}
                         </div>
                         {index === 0 && (
@@ -468,8 +468,8 @@ export default function DashboardPage() {
               {/* Activity List */}
               <div className="mt-6 space-y-3">
                 {[
-                  { action: 'Consulta completada', desc: 'Con Dr. Pérez', time: 'Hace 2h', icon: CheckCircle, gradient: 'from-emerald-500 to-teal-600' },
-                  { action: 'Nueva cita agendada', desc: 'Dermatología', time: 'Hace 5h', icon: Calendar, gradient: 'from-[#667eea] to-[#764ba2]' },
+                  { action: 'Consulta completada', desc: 'Con Dr. Pérez', time: 'Hace 2h', icon: CheckCircle, color: 'bg-emerald-500' },
+                  { action: 'Nueva cita agendada', desc: 'Dermatología', time: 'Hace 5h', icon: Calendar, color: 'bg-blue-600' },
                 ].map((activity, index) => {
                   const Icon = activity.icon;
                   return (
@@ -478,8 +478,9 @@ export default function DashboardPage() {
                       className="flex items-center gap-3 p-3 bg-white/40 rounded-xl"
                       whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.6)' }}
                     >
-                      <div className={`p-2 rounded-lg bg-gradient-to-br ${activity.gradient}`}>
+                      <div className={`p-2 rounded-lg ${activity.color}`}>
                         <Icon className="w-4 h-4 text-white" />
+                      </div>
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">{activity.action}</p>

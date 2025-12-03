@@ -86,48 +86,14 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Animated Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600" />
-      <div className="absolute inset-0 gradient-bg-animated opacity-50" />
+      {/* Solid Green Background */}
+      <div className="absolute inset-0 bg-emerald-600" />
       
       {/* Floating Blobs */}
       <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute top-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl"
-          animate={{
-            x: [0, -50, 0],
-            y: [0, 30, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute -bottom-32 left-0 w-[500px] h-[500px] bg-emerald-300/20 rounded-full blur-3xl"
-          animate={{
-            x: [0, 30, 0],
-            y: [0, -50, 0],
-          }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
-        <motion.div
-          className="absolute top-1/3 left-1/4 w-64 h-64 bg-cyan-400/10 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: 'easeInOut',
-          }}
-        />
+        <div className="absolute top-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 left-0 w-[500px] h-[500px] bg-emerald-400/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-teal-300/10 rounded-full blur-3xl" />
       </div>
 
       {/* Content */}
@@ -173,7 +139,7 @@ export default function RegisterPage() {
             >
               Únete a miles de
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-100 to-cyan-200">
+              <span className="text-emerald-100">
                 pacientes felices
               </span>
             </motion.h1>
@@ -220,7 +186,7 @@ export default function RegisterPage() {
                 "Registrarme fue super fácil y en minutos ya tenía mi primera cita agendada. ¡Excelente servicio!"
               </p>
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-white/30 to-white/10 flex items-center justify-center font-bold text-lg">
+                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center font-bold text-lg">
                   MR
                 </div>
                 <div>

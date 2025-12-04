@@ -103,7 +103,7 @@ export default function HomePage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
                 <Heart className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-gray-900">MedConsult</span>
@@ -277,7 +277,7 @@ export default function HomePage() {
                 </div>
                 
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center shadow-lg">
+                  <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
                     <span className="text-4xl">👨‍⚕️</span>
                   </div>
                   <div>
@@ -484,7 +484,7 @@ export default function HomePage() {
                     className="glass-card-light p-8 text-center h-full"
                     whileHover={{ scale: 1.02, y: -5 }}
                   >
-                    <div className="w-20 h-20 rounded-full gradient-primary mx-auto flex items-center justify-center shadow-glow mb-6">
+                    <div className="w-20 h-20 rounded-full bg-blue-600 mx-auto flex items-center justify-center shadow-lg mb-6">
                       <Icon className="w-10 h-10 text-white" />
                     </div>
                     <span className="text-sm font-bold text-blue-600">Paso {stepItem.step}</span>
@@ -545,7 +545,7 @@ export default function HomePage() {
                   </div>
                   <p className="text-gray-600 mb-6 italic">"{testimonial.text}"</p>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-white font-bold">
+                    <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
                       {testimonial.image}
                     </div>
                     <div>
@@ -611,7 +611,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
                   <Heart className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold">MedConsult</span>

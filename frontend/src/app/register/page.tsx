@@ -211,7 +211,7 @@ export default function RegisterPage() {
             <div className="glass-card-light p-8 max-w-md mx-auto max-h-[90vh] overflow-y-auto">
               {/* Mobile Logo */}
               <Link href="/" className="lg:hidden inline-flex items-center gap-2 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-glow-green">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg">
                   <Heart className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold text-gray-900">MedConsult</span>
@@ -438,7 +438,7 @@ export default function RegisterPage() {
                 >
                   <Button
                     type="submit"
-                    className="w-full !bg-gradient-to-r !from-emerald-500 !to-teal-600 hover:!shadow-[0_8px_30px_rgba(16,185,129,0.5)]"
+                    className="w-full !bg-emerald-600 hover:!bg-emerald-700"
                     size="lg"
                     isLoading={isLoading}
                     rightIcon={!isLoading && <ArrowRight className="w-5 h-5" />}

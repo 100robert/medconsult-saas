@@ -27,7 +27,7 @@ export default function GlassCard({
   glowColor = 'blue',
   blur = 'md',
   icon,
-  iconBg = 'gradient-primary',
+  iconBg = 'bg-blue-600',
   ...props
 }: GlassCardProps) {
   const variants = {
@@ -48,7 +48,7 @@ export default function GlassCard({
       text-white
     `,
     gradient: `
-      bg-gradient-to-br from-white/20 to-white/5
+      bg-white/15
       border border-white/30
       shadow-[0_8px_32px_0_rgba(0,0,0,0.1)]
     `,

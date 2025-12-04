@@ -38,8 +38,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-gradient-to-r from-blue-500 to-blue-600 text-white
-        hover:shadow-[0_8px_30px_rgba(46,108,253,0.35)]
+        bg-blue-600 text-white
+        hover:bg-blue-700 hover:shadow-lg
         hover:-translate-y-1
         focus:ring-blue-500
       `,
@@ -60,17 +60,16 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         focus:ring-gray-500
       `,
       danger: `
-        bg-gradient-to-r from-red-500 to-rose-600 text-white
-        hover:shadow-[0_8px_30px_rgba(239,68,68,0.5)]
+        bg-red-600 text-white
+        hover:bg-red-700 hover:shadow-lg
         hover:-translate-y-1
         focus:ring-red-500
       `,
       gradient: `
-        bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 text-white
-        hover:shadow-[0_8px_30px_rgba(46,108,253,0.35)]
+        bg-blue-600 text-white
+        hover:bg-blue-700 hover:shadow-lg
         hover:-translate-y-1
         focus:ring-blue-500
-        bg-[length:200%_200%] animate-[gradient-shift_3s_ease_infinite]
       `,
       glass: `
         bg-white/15 backdrop-blur-xl text-white

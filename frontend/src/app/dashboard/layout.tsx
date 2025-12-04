@@ -94,9 +94,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (!isAuthenticated && isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 mb-4">
             <Heart className="w-8 h-8 text-white animate-pulse" />
           </div>
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent mx-auto"></div>
@@ -125,10 +125,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-100">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
               <Heart className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="text-xl font-bold text-blue-600">
               MedConsult
             </span>
           </Link>
@@ -142,9 +142,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* User Card */}
         <div className="p-4">
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4">
+          <div className="bg-blue-50 rounded-xl p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
+              <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg">
                 {user?.nombre?.[0]}{user?.apellido?.[0]}
               </div>
               <div className="flex-1 min-w-0">
@@ -175,7 +175,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 onClick={() => setSidebarOpen(false)}
                 className={`group flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${
                   isActive
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25'
+                    ? 'bg-blue-600 text-white shadow-lg'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
@@ -191,7 +191,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Pro Card */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-4 text-white">
+          <div className="bg-blue-600 rounded-xl p-4 text-white">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-5 h-5" />
               <span className="font-semibold">MedConsult Pro</span>
@@ -246,7 +246,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded-xl transition-colors"
                 >
-                  <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-medium text-sm shadow-lg shadow-blue-500/25">
+                  <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-medium text-sm shadow-lg">
                     {user?.nombre?.[0]}{user?.apellido?.[0]}
                   </div>
                   <div className="hidden md:block text-left">

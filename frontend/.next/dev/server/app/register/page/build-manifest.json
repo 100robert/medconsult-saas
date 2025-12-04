@@ -1,0 +1,22 @@
+{
+  "devFiles": [],
+  "ampDevFiles": [],
+  "polyfillFiles": [
+    "static/chunks/c07e5_next_dist_build_polyfills_polyfill-nomodule.js"
+  ],
+  "lowPriorityFiles": [],
+  "rootMainFiles": [
+    "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_c1b4f6df._.js",
+    "static/chunks/c07e5_next_dist_compiled_react-dom_0e6d9e18._.js",
+    "static/chunks/c07e5_next_dist_compiled_react-server-dom-turbopack_8d0fcf2a._.js",
+    "static/chunks/c07e5_next_dist_compiled_next-devtools_index_37486988.js",
+    "static/chunks/c07e5_next_dist_compiled_64586959._.js",
+    "static/chunks/c07e5_next_dist_client_0dc2c777._.js",
+    "static/chunks/c07e5_next_dist_516642f7._.js",
+    "static/chunks/c07e5_@swc_helpers_cjs_1a272b75._.js",
+    "static/chunks/OneDrive_Escritorio_medconsult-saas_frontend_a0ff3932._.js",
+    "static/chunks/turbopack-OneDrive_Escritorio_medconsult-saas_frontend_a842694a._.js"
+  ],
+  "pages": {},
+  "ampFirstPages": []
+}

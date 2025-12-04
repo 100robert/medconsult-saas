@@ -309,12 +309,6 @@ export default function DashboardPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Ritmo Cardíaco Semanal</h3>
                 <ResponsiveContainer width="100%" height={200}>
                   <AreaChart data={healthData}>
-                    <defs>
-                      <linearGradient id="colorHeartRate" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#5FA3FF" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#5FA3FF" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="day" stroke="#9ca3af" fontSize={12} />
                     <YAxis stroke="#9ca3af" fontSize={12} domain={[60, 90]} />
@@ -331,7 +325,9 @@ export default function DashboardPage() {
                       dataKey="heartRate" 
                       stroke="#2E6CFD" 
                       strokeWidth={3}
-                      fill="url(#colorHeartRate)" 
+                      fill="#2E6CFD" 
+                      fillOpacity={0.2}
+                    /> 
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -444,12 +440,6 @@ export default function DashboardPage() {
               
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={appointmentData}>
-                  <defs>
-                    <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#5FA3FF" stopOpacity={1}/>
-                      <stop offset="95%" stopColor="#B9A2E8" stopOpacity={1}/>
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" stroke="#9ca3af" fontSize={12} />
                   <YAxis stroke="#9ca3af" fontSize={12} />
@@ -461,7 +451,7 @@ export default function DashboardPage() {
                       boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
                     }} 
                   />
-                  <Bar dataKey="citas" fill="url(#colorBar)" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="citas" fill="#2E6CFD" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
 

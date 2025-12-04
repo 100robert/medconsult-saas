@@ -179,7 +179,7 @@ export default function LoginPage() {
             <div className="glass-card-light p-8 md:p-10 max-w-md mx-auto">
               {/* Mobile Logo */}
               <Link href="/" className="lg:hidden inline-flex items-center gap-2 mb-8">
-                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
                   <Heart className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold text-gray-900">MedConsult</span>

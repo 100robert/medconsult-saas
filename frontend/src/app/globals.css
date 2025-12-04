@@ -154,45 +154,35 @@ body {
 }
 
 /* ===== SOLID COLORS ===== */
-.gradient-primary {
-  background: #2E6CFD;
+.bg-primary {
+  background-color: #2E6CFD;
 }
 
-.gradient-health {
-  background: #5FA3FF;
+.bg-primary-light {
+  background-color: #5FA3FF;
 }
 
-.gradient-success {
-  background: #16A34A;
+.bg-success {
+  background-color: #16A34A;
 }
 
-.gradient-bg {
-  background: #1F57D7;
+.bg-primary-dark {
+  background-color: #1F57D7;
 }
 
-.gradient-bg-soft {
-  background: #F1F5F9;
+.bg-soft {
+  background-color: #F1F5F9;
 }
 
-.gradient-bg-animated {
-  background: #2E6CFD;
-}
-
-.gradient-mesh {
+.bg-mesh {
   background-color: #F8FAFC;
 }
 
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.text-gradient {
+.text-primary {
   color: #2E6CFD;
 }
 
-.text-gradient-health {
+.text-success {
   color: #16A34A;
 }
 

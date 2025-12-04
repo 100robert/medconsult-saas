@@ -64,28 +64,28 @@ const estadoConfig = {
     text: 'text-amber-700', 
     border: 'border-amber-200',
     icon: AlertCircle,
-    gradient: 'from-amber-500 to-orange-500'
+    solidColor: 'bg-amber-500'
   },
   CONFIRMADA: { 
     bg: 'bg-emerald-50', 
     text: 'text-emerald-700', 
     border: 'border-emerald-200',
     icon: CheckCircle2,
-    gradient: 'from-emerald-500 to-teal-500'
+    solidColor: 'bg-emerald-500'
   },
   COMPLETADA: { 
     bg: 'bg-blue-50', 
     text: 'text-blue-700', 
     border: 'border-blue-200',
     icon: CheckCircle2,
-    gradient: 'from-blue-500 to-indigo-500'
+    solidColor: 'bg-blue-500'
   },
   CANCELADA: { 
     bg: 'bg-red-50', 
     text: 'text-red-700', 
     border: 'border-red-200',
     icon: XCircle,
-    gradient: 'from-red-500 to-rose-500'
+    solidColor: 'bg-red-500'
   },
 };
 
@@ -124,10 +124,10 @@ export default function AppointmentsPage() {
 
   // Stats
   const stats = [
-    { label: 'Total', value: appointments.length, gradient: 'from-blue-500 to-purple-500' },
-    { label: 'Confirmadas', value: appointments.filter(a => a.estado === 'CONFIRMADA').length, gradient: 'from-emerald-500 to-teal-500' },
-    { label: 'Pendientes', value: appointments.filter(a => a.estado === 'PENDIENTE').length, gradient: 'from-amber-500 to-orange-500' },
-    { label: 'Completadas', value: appointments.filter(a => a.estado === 'COMPLETADA').length, gradient: 'from-blue-500 to-indigo-500' },
+    { label: 'Total', value: appointments.length, solidColor: 'bg-blue-600' },
+    { label: 'Confirmadas', value: appointments.filter(a => a.estado === 'CONFIRMADA').length, solidColor: 'bg-emerald-500' },
+    { label: 'Pendientes', value: appointments.filter(a => a.estado === 'PENDIENTE').length, solidColor: 'bg-amber-500' },
+    { label: 'Completadas', value: appointments.filter(a => a.estado === 'COMPLETADA').length, solidColor: 'bg-blue-500' },
   ];
 
   return (
@@ -149,8 +149,8 @@ export default function AppointmentsPage() {
         {user?.rol === 'PACIENTE' && (
           <Link href="/dashboard/appointments/new">
             <Button 
-              variant="gradient" 
-              className="shadow-lg shadow-blue-500/25"
+              variant="primary" 
+              className="shadow-lg"
               leftIcon={<Plus className="w-4 h-4" />}
             >
               Nueva Cita
@@ -168,7 +168,7 @@ export default function AppointmentsPage() {
                 <p className="text-sm text-gray-500">{stat.label}</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
               </div>
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center`}>
+              <div className={`w-10 h-10 rounded-xl ${stat.solidColor} flex items-center justify-center`}>
                 <Calendar className="w-5 h-5 text-white" />
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function AppointmentsPage() {
                 onClick={() => setFilterStatus(status)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   filterStatus === status
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25'
+                    ? 'bg-blue-600 text-white shadow-lg'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -226,7 +226,7 @@ export default function AppointmentsPage() {
                   <div className="p-6">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div className="flex items-start gap-4">
-                        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${config.gradient} flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0`}>
+                        <div className={`w-14 h-14 rounded-2xl ${config.solidColor} flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0`}>
                           {user?.rol === 'MEDICO'
                             ? `${appointment.paciente?.nombre[0]}${appointment.paciente?.apellido[0]}`
                             : `${appointment.medico?.nombre[0]}${appointment.medico?.apellido[0]}`}
@@ -282,7 +282,7 @@ export default function AppointmentsPage() {
                           {estadoLabels[appointment.estado]}
                         </span>
                         {appointment.estado === 'CONFIRMADA' && appointment.tipo === 'VIDEOCONSULTA' && (
-                          <Button variant="gradient" size="sm" className="shadow-lg shadow-blue-500/25">
+                          <Button variant="primary" size="sm" className="shadow-lg">
                             Unirse
                           </Button>
                         )}
@@ -292,7 +292,7 @@ export default function AppointmentsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className={`h-1 bg-gradient-to-r ${config.gradient}`} />
+                  <div className={`h-1 ${config.solidColor}`} />
                 </div>
               );
             })}
@@ -362,7 +362,7 @@ export default function AppointmentsPage() {
           </p>
           {user?.rol === 'PACIENTE' && (
             <Link href="/dashboard/appointments/new">
-              <Button variant="gradient" className="mt-6 shadow-lg shadow-blue-500/25">
+              <Button variant="primary" className="mt-6 shadow-lg">
                 Agendar Primera Cita
               </Button>
             </Link>

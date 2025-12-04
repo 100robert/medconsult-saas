@@ -107,14 +107,14 @@ export default function DoctorsPage() {
     return matchesSearch && matchesEspecialidad;
   });
 
-  const getGradient = (index: number) => {
-    const gradients = [
-      'from-blue-500 to-blue-600',
-      'from-purple-500 to-pink-600',
-      'from-emerald-500 to-teal-600',
-      'from-orange-500 to-amber-600',
+  const getSolidColor = (index: number) => {
+    const colors = [
+      'bg-blue-600',
+      'bg-purple-600',
+      'bg-emerald-600',
+      'bg-orange-500',
     ];
-    return gradients[index % gradients.length];
+    return colors[index % colors.length];
   };
 
   return (
@@ -172,7 +172,7 @@ export default function DoctorsPage() {
               onClick={() => setSelectedEspecialidad(esp)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedEspecialidad === esp
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/25'
+                  ? 'bg-blue-600 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
               }`}
             >
@@ -211,7 +211,7 @@ export default function DoctorsPage() {
                 <div className="flex items-start gap-5">
                   {/* Avatar */}
                   <div className="relative">
-                    <div className={`w-20 h-20 bg-gradient-to-br ${getGradient(index)} rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg`}>
+                    <div className={`w-20 h-20 ${getSolidColor(index)} rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg`}>
                       {doctor.nombre[0]}{doctor.apellido[0]}
                     </div>
                     {doctor.verificado && (
@@ -266,7 +266,7 @@ export default function DoctorsPage() {
                 {/* Price & Action */}
                 <div className="flex flex-col items-end gap-3 lg:min-w-[180px]">
                   <div className="text-right">
-                    <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    <p className="text-3xl font-bold text-blue-600">
                       ${doctor.precio}
                     </p>
                     <p className="text-sm text-gray-500">por consulta</p>
@@ -277,8 +277,8 @@ export default function DoctorsPage() {
                     </button>
                     <Link href={`/dashboard/appointments/new?doctorId=${doctor.id}`}>
                       <Button 
-                        variant="gradient" 
-                        className="shadow-lg shadow-blue-500/25"
+                        variant="primary" 
+                        className="shadow-lg"
                         rightIcon={<ChevronRight className="w-4 h-4" />}
                       >
                         Agendar Cita
@@ -290,7 +290,7 @@ export default function DoctorsPage() {
             </div>
             
             {/* Hover accent */}
-            <div className="h-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+            <div className="h-1 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
           </div>
         ))}
       </div>

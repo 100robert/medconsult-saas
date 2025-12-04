@@ -188,7 +188,7 @@ export default function PaymentsAdminPage() {
               <DollarSign className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-xl font-bold text-gray-900">${stats.totalIngresos.toLocaleString()}</p>
+              <p className="text-xl font-bold text-gray-900">S/. {stats.totalIngresos.toLocaleString()}</p>
               <p className="text-sm text-gray-500">Ingresos totales</p>
             </div>
           </div>
@@ -293,7 +293,7 @@ export default function PaymentsAdminPage() {
                       <span className="text-sm text-gray-600">{payment.concepto}</span>
                     </td>
                     <td className="px-4 py-4">
-                      <span className="font-semibold text-gray-900">${payment.monto}</span>
+                      <span className="font-semibold text-gray-900">S/. {payment.monto}</span>
                     </td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>

@@ -226,7 +226,7 @@ export default function DoctorsPage() {
                 <div className="flex flex-col items-end gap-3 lg:min-w-[180px]">
                   <div className="text-right">
                     <p className="text-3xl font-bold text-teal-600">
-                      ${Number(doctor.precioPorConsulta).toFixed(0)}
+                      S/. {Number(doctor.precioPorConsulta).toFixed(0)}
                     </p>
                     <p className="text-sm text-gray-500">por consulta</p>
                   </div>

@@ -20,8 +20,23 @@ import {
   Heart,
   Search,
   Sparkles,
+  Check,
+  Clock,
+  AlertCircle,
+  UserPlus,
+  CalendarCheck,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+
+interface Notification {
+  id: string;
+  type: 'cita' | 'pago' | 'sistema' | 'usuario';
+  title: string;
+  message: string;
+  time: string;
+  read: boolean;
+  icon: 'calendar' | 'credit' | 'alert' | 'user' | 'check';
+}
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -33,6 +48,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, isAuthenticated, fetchProfile, logout, isLoading } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -44,9 +61,53 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [isAuthenticated, fetchProfile, router]);
 
+  // Cargar notificaciones según el rol
+  useEffect(() => {
+    if (user?.rol) {
+      const mockNotifications: Notification[] = user.rol === 'ADMIN' ? [
+        { id: '1', type: 'usuario', title: 'Nuevo usuario registrado', message: 'María García se ha registrado como paciente', time: 'Hace 5 min', read: false, icon: 'user' },
+        { id: '2', type: 'pago', title: 'Pago recibido', message: 'Pago de S/. 150 confirmado - Consulta #1234', time: 'Hace 30 min', read: false, icon: 'credit' },
+        { id: '3', type: 'sistema', title: 'Reporte generado', message: 'El reporte mensual está listo para descargar', time: 'Hace 1 hora', read: true, icon: 'check' },
+        { id: '4', type: 'usuario', title: 'Nuevo médico', message: 'Dr. Roberto López se ha unido a la plataforma', time: 'Hace 2 horas', read: true, icon: 'user' },
+      ] : user.rol === 'MEDICO' ? [
+        { id: '1', type: 'cita', title: 'Nueva cita programada', message: 'Juan Pérez - Mañana 10:00 AM', time: 'Hace 10 min', read: false, icon: 'calendar' },
+        { id: '2', type: 'cita', title: 'Cita confirmada', message: 'Ana Rodríguez confirmó su cita del viernes', time: 'Hace 1 hora', read: false, icon: 'check' },
+        { id: '3', type: 'sistema', title: 'Recordatorio', message: 'Tienes 3 citas pendientes para hoy', time: 'Hace 2 horas', read: true, icon: 'alert' },
+      ] : [
+        { id: '1', type: 'cita', title: 'Cita confirmada', message: 'Tu cita con Dr. Carlos Méndez ha sido confirmada', time: 'Hace 15 min', read: false, icon: 'check' },
+        { id: '2', type: 'sistema', title: 'Recordatorio de cita', message: 'Tienes una cita mañana a las 10:00 AM', time: 'Hace 3 horas', read: false, icon: 'calendar' },
+        { id: '3', type: 'pago', title: 'Pago procesado', message: 'Tu pago de S/. 100 ha sido confirmado', time: 'Ayer', read: true, icon: 'credit' },
+      ];
+      setNotifications(mockNotifications);
+    }
+  }, [user?.rol]);
+
   const handleLogout = async () => {
     await logout();
     router.push('/login');
+  };
+
+  const markAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+  };
+
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const getNotificationIcon = (icon: string) => {
+    switch (icon) {
+      case 'calendar': return <Calendar className="w-4 h-4 text-teal-600" />;
+      case 'credit': return <CreditCard className="w-4 h-4 text-emerald-600" />;
+      case 'alert': return <AlertCircle className="w-4 h-4 text-amber-600" />;
+      case 'user': return <UserPlus className="w-4 h-4 text-blue-600" />;
+      case 'check': return <CalendarCheck className="w-4 h-4 text-green-600" />;
+      default: return <Bell className="w-4 h-4 text-gray-600" />;
+    }
   };
 
   // Menú según el rol
@@ -57,10 +118,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     if (user?.rol === 'ADMIN') {
       return [
-        ...baseItems,
+        { href: '/dashboard/admin', label: 'Panel Admin', icon: LayoutDashboard },
         { href: '/dashboard/users', label: 'Usuarios', icon: Users },
         { href: '/dashboard/doctors', label: 'Médicos', icon: Stethoscope },
-        { href: '/dashboard/appointments', label: 'Citas', icon: Calendar },
+        { href: '/dashboard/appointments', label: 'Todas las Citas', icon: Calendar },
         { href: '/dashboard/payments', label: 'Pagos', icon: CreditCard },
         { href: '/dashboard/reports', label: 'Reportes', icon: FileText },
         { href: '/dashboard/settings', label: 'Configuración', icon: Settings },
@@ -69,7 +130,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
     if (user?.rol === 'MEDICO') {
       return [
-        ...baseItems,
+        { href: '/dashboard/medico', label: 'Mi Panel', icon: LayoutDashboard },
         { href: '/dashboard/appointments', label: 'Mis Citas', icon: Calendar },
         { href: '/dashboard/patients', label: 'Mis Pacientes', icon: Users },
         { href: '/dashboard/consultations', label: 'Consultas', icon: FileText },
@@ -189,21 +250,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           })}
         </nav>
 
-        {/* Pro Card */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <div className="bg-teal-600 rounded-xl p-4 text-white">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-5 h-5" />
-              <span className="font-semibold">MedConsult Pro</span>
+        {/* Pro Card - Solo para PACIENTE */}
+        {user?.rol === 'PACIENTE' && (
+          <div className="absolute bottom-0 left-0 right-0 p-4">
+            <div className="bg-teal-600 rounded-xl p-4 text-white">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5" />
+                <span className="font-semibold">MedConsult Pro</span>
+              </div>
+              <p className="text-sm text-teal-100 mb-3">
+                Accede a todas las funciones premium
+              </p>
+              <button className="w-full py-2 bg-white text-teal-600 rounded-lg font-medium text-sm hover:bg-teal-50 transition-colors">
+                Actualizar ahora
+              </button>
             </div>
-            <p className="text-sm text-teal-100 mb-3">
-              Accede a todas las funciones premium
-            </p>
-            <button className="w-full py-2 bg-white text-teal-600 rounded-lg font-medium text-sm hover:bg-teal-50 transition-colors">
-              Actualizar ahora
-            </button>
           </div>
-        </div>
+        )}
       </aside>
 
       {/* Main content */}
@@ -235,10 +298,110 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             <div className="flex items-center gap-2">
               {/* Notifications */}
-              <button className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] bg-red-500 rounded-full ring-2 ring-white flex items-center justify-center text-[10px] font-bold text-white">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications Dropdown */}
+                {notificationsOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setNotificationsOpen(false)}
+                    />
+                    <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden">
+                      {/* Header */}
+                      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                        <div className="flex items-center gap-2">
+                          <Bell className="w-4 h-4 text-teal-600" />
+                          <h3 className="font-semibold text-gray-900">Notificaciones</h3>
+                          {unreadCount > 0 && (
+                            <span className="px-2 py-0.5 bg-teal-100 text-teal-700 text-xs font-medium rounded-full">
+                              {unreadCount} nuevas
+                            </span>
+                          )}
+                        </div>
+                        {unreadCount > 0 && (
+                          <button 
+                            onClick={markAllAsRead}
+                            className="text-xs text-teal-600 hover:text-teal-700 font-medium"
+                          >
+                            Marcar todas como leídas
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Notifications List */}
+                      <div className="max-h-[400px] overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center">
+                            <Bell className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                            <p className="text-gray-500 text-sm">No tienes notificaciones</p>
+                          </div>
+                        ) : (
+                          notifications.map((notification) => (
+                            <div
+                              key={notification.id}
+                              onClick={() => markAsRead(notification.id)}
+                              className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
+                                !notification.read ? 'bg-teal-50/50' : ''
+                              }`}
+                            >
+                              <div className="flex gap-3">
+                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                  notification.icon === 'calendar' ? 'bg-teal-100' :
+                                  notification.icon === 'credit' ? 'bg-emerald-100' :
+                                  notification.icon === 'alert' ? 'bg-amber-100' :
+                                  notification.icon === 'user' ? 'bg-blue-100' :
+                                  'bg-green-100'
+                                }`}>
+                                  {getNotificationIcon(notification.icon)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                      {notification.title}
+                                    </p>
+                                    {!notification.read && (
+                                      <span className="w-2 h-2 bg-teal-500 rounded-full flex-shrink-0 mt-1.5"></span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-500 mt-0.5 truncate">{notification.message}</p>
+                                  <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {notification.time}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+                        <Link
+                          href="/dashboard/settings"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="text-sm text-teal-600 hover:text-teal-700 font-medium flex items-center justify-center gap-1"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Configurar notificaciones
+                        </Link>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* User menu */}
               <div className="relative">

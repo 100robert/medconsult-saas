@@ -727,7 +727,7 @@ async logout(refreshToken: string): Promise<MessageResponse> {
         where,
         skip,
         take: limit,
-        orderBy: { creadoEn: 'desc' },
+        orderBy: { fechaCreacion: 'desc' },
         select: {
           id: true,
           correo: true,
@@ -737,8 +737,8 @@ async logout(refreshToken: string): Promise<MessageResponse> {
           activo: true,
           correoVerificado: true,
           telefono: true,
-          creadoEn: true,
-          actualizadoEn: true,
+          fechaCreacion: true,
+          fechaActualizacion: true,
         },
       }),
       prisma.usuario.count({ where }),
@@ -747,15 +747,14 @@ async logout(refreshToken: string): Promise<MessageResponse> {
     return {
       usuarios: usuarios.map(u => ({
         id: u.id,
-        email: u.correo,
+        correo: u.correo,
         nombre: u.nombre,
         apellido: u.apellido,
         rol: u.rol,
         activo: u.activo,
         correoVerificado: u.correoVerificado,
         telefono: u.telefono || undefined,
-        createdAt: u.creadoEn.toISOString(),
-        updatedAt: u.actualizadoEn.toISOString(),
+        creadoEn: u.fechaCreacion.toISOString(),
       })),
       total,
       page,
@@ -780,22 +779,20 @@ async logout(refreshToken: string): Promise<MessageResponse> {
         activo: true,
         correoVerificado: true,
         telefono: true,
-        creadoEn: true,
-        actualizadoEn: true,
+        fechaCreacion: true,
+        fechaActualizacion: true,
       },
     });
 
     return {
       id: usuario.id,
-      email: usuario.correo,
+      correo: usuario.correo,
       nombre: usuario.nombre,
       apellido: usuario.apellido,
       rol: usuario.rol,
       activo: usuario.activo,
       correoVerificado: usuario.correoVerificado,
       telefono: usuario.telefono || undefined,
-      createdAt: usuario.creadoEn.toISOString(),
-      updatedAt: usuario.actualizadoEn.toISOString(),
     };
   }
 
@@ -822,7 +819,7 @@ async logout(refreshToken: string): Promise<MessageResponse> {
       prisma.usuario.count(),
       prisma.usuario.count({ where: { rol: 'MEDICO' } }),
       prisma.usuario.count({ where: { rol: 'PACIENTE' } }),
-      prisma.medico.count({ where: { verificado: false } }),
+      prisma.medico.count({ where: { estado: 'PENDIENTE' } }),
       prisma.usuario.count({ where: { activo: true } }),
       prisma.usuario.count({ where: { activo: false } }),
     ]);

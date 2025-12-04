@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Users, 
   Stethoscope, 
@@ -17,15 +18,23 @@ import {
   BarChart3,
   ArrowUpRight,
   ArrowDownRight,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Shield,
+  Settings,
+  FileText
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { getAdminStats, AdminStats, getAllUsers, User } from '@/lib/admin';
 
-interface DashboardStats extends AdminStats {
-  ingresosAyer: number;
-  consultasActivas: number;
+interface DashboardStats {
+  totalUsuarios: number;
+  totalMedicos: number;
+  totalPacientes: number;
+  medicosPendientes: number;
+  usuariosActivos: number;
+  usuariosInactivos: number;
 }
 
 export default function AdminDashboardPage() {
@@ -36,11 +45,8 @@ export default function AdminDashboardPage() {
     totalMedicos: 0,
     totalPacientes: 0,
     medicosPendientes: 0,
-    citasHoy: 0,
-    citasSemana: 0,
-    ingresosMes: 0,
-    ingresosAyer: 0,
-    consultasActivas: 0,
+    usuariosActivos: 0,
+    usuariosInactivos: 0,
   });
   const [loading, setLoading] = useState(true);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
@@ -65,9 +71,12 @@ export default function AdminDashboardPage() {
       ]);
       
       setStats({
-        ...statsData,
-        ingresosAyer: 0, // Este dato vendría de otro endpoint
-        consultasActivas: 0, // Este dato vendría de otro endpoint
+        totalUsuarios: statsData.totalUsuarios || 0,
+        totalMedicos: statsData.totalMedicos || 0,
+        totalPacientes: statsData.totalPacientes || 0,
+        medicosPendientes: statsData.medicosPendientes || 0,
+        usuariosActivos: statsData.usuariosActivos || 0,
+        usuariosInactivos: statsData.usuariosInactivos || 0,
       });
 
       setRecentUsers(usersResponse.usuarios);
@@ -89,15 +98,15 @@ export default function AdminDashboardPage() {
       value: stats.totalUsuarios.toLocaleString(),
       icon: Users,
       color: 'bg-blue-500',
-      trend: '+12%',
+      trend: '',
       trendUp: true,
     },
     {
-      title: 'Médicos Activos',
+      title: 'Médicos',
       value: stats.totalMedicos.toLocaleString(),
       icon: Stethoscope,
       color: 'bg-emerald-500',
-      trend: '+5%',
+      trend: '',
       trendUp: true,
     },
     {
@@ -105,7 +114,7 @@ export default function AdminDashboardPage() {
       value: stats.totalPacientes.toLocaleString(),
       icon: UserCheck,
       color: 'bg-violet-500',
-      trend: '+18%',
+      trend: '',
       trendUp: true,
     },
     {
@@ -118,22 +127,29 @@ export default function AdminDashboardPage() {
       alert: stats.medicosPendientes > 0,
     },
     {
-      title: 'Citas Hoy',
-      value: stats.citasHoy.toLocaleString(),
-      icon: Calendar,
+      title: 'Usuarios Activos',
+      value: stats.usuariosActivos.toLocaleString(),
+      icon: CheckCircle2,
       color: 'bg-cyan-500',
-      trend: '+8%',
+      trend: '',
       trendUp: true,
     },
     {
-      title: 'Ingresos del Mes',
-      value: `$${stats.ingresosMes.toLocaleString()}`,
-      icon: DollarSign,
-      color: 'bg-green-500',
-      trend: '+22%',
-      trendUp: true,
+      title: 'Usuarios Inactivos',
+      value: stats.usuariosInactivos.toLocaleString(),
+      icon: UserX,
+      color: 'bg-red-500',
+      trend: '',
+      trendUp: false,
     },
   ];
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 18) return 'Buenas tardes';
+    return 'Buenas noches';
+  };
 
   if (loading) {
     return (
@@ -145,21 +161,114 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Panel de Administración</h1>
-          <p className="text-gray-500 mt-1">Bienvenido, {user?.nombre}. Aquí está el resumen de hoy.</p>
+      {/* Welcome Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 rounded-3xl p-8 text-white shadow-xl">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+          <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-emerald-500/20 rounded-full translate-y-1/2 blur-2xl" />
+          <div className="absolute top-1/2 left-0 w-32 h-32 bg-blue-500/10 rounded-full -translate-x-1/2 blur-2xl" />
+          
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              <div>
+                <motion.div 
+                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm mb-4"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Shield className="w-4 h-4 text-teal-400" />
+                  <span>Panel de Administración</span>
+                </motion.div>
+                <motion.h1 
+                  className="text-4xl font-bold mb-2"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {getGreeting()}, {user?.nombre || 'Admin'}!
+                </motion.h1>
+                <motion.p 
+                  className="text-white/70 max-w-md text-lg"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  Aquí tienes el resumen completo de la plataforma MedConsult.
+                </motion.p>
+              </div>
+              <motion.div 
+                className="hidden md:block"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <div className="w-28 h-28 bg-gradient-to-br from-teal-500/30 to-emerald-500/30 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/20">
+                  <Activity className="w-14 h-14 text-teal-400" />
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Quick Stats in Banner */}
+            <motion.div 
+              className="flex flex-wrap items-center gap-4 mt-8 pt-6 border-t border-white/10"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
+                <Users className="w-5 h-5 text-blue-400" />
+                <span className="text-sm">{stats.totalUsuarios} usuarios registrados</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
+                <Stethoscope className="w-5 h-5 text-emerald-400" />
+                <span className="text-sm">{stats.totalMedicos} médicos activos</span>
+              </div>
+              {stats.medicosPendientes > 0 && (
+                <div className="flex items-center gap-2 bg-amber-500/20 backdrop-blur-sm px-4 py-2 rounded-xl border border-amber-500/30">
+                  <AlertCircle className="w-5 h-5 text-amber-400" />
+                  <span className="text-sm text-amber-200">{stats.medicosPendientes} pendiente(s) de verificar</span>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Quick Actions */}
+            <motion.div 
+              className="flex flex-wrap gap-3 mt-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <button 
+                onClick={() => router.push('/dashboard/users')}
+                className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white rounded-xl transition-colors text-sm font-medium"
+              >
+                <Users className="w-4 h-4" />
+                Gestionar Usuarios
+              </button>
+              <button 
+                onClick={() => router.push('/dashboard/reports')}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors text-sm font-medium backdrop-blur-sm"
+              >
+                <FileText className="w-4 h-4" />
+                Ver Reportes
+              </button>
+              <button 
+                onClick={() => router.push('/dashboard/settings')}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors text-sm font-medium backdrop-blur-sm"
+              >
+                <Settings className="w-4 h-4" />
+                Configuración
+              </button>
+            </motion.div>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => router.push('/dashboard/users')}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium"
-          >
-            Gestionar Usuarios
-          </button>
-        </div>
-      </div>
+      </motion.div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

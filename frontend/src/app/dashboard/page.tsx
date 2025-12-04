@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   Calendar,
@@ -78,6 +79,7 @@ const item = {
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     proximasCitas: 0,
@@ -87,10 +89,22 @@ export default function DashboardPage() {
     proximaCita: null as any,
   });
 
-  // Cargar datos reales
+  // Redirigir ADMIN y MEDICO a sus dashboards específicos
+  useEffect(() => {
+    if (user?.rol === 'ADMIN') {
+      router.replace('/dashboard/admin');
+      return;
+    }
+    if (user?.rol === 'MEDICO') {
+      router.replace('/dashboard/medico');
+      return;
+    }
+  }, [user?.rol, router]);
+
+  // Cargar datos reales (solo para PACIENTE)
   useEffect(() => {
     async function fetchDashboardData() {
-      if (!user?.id) return;
+      if (!user?.id || user?.rol !== 'PACIENTE') return;
       
       setLoading(true);
       try {
@@ -154,7 +168,7 @@ export default function DashboardPage() {
       return [
         { label: 'Usuarios Totales', value: '1,234', icon: Users, change: '+12%', color: 'bg-teal-600' },
         { label: 'Citas Hoy', value: String(dashboardData.citasHoy), icon: Calendar, change: '', color: 'bg-emerald-600' },
-        { label: 'Ingresos del Mes', value: '$12,450', icon: CreditCard, change: '+18%', color: 'bg-slate-600' },
+        { label: 'Ingresos del Mes', value: 'S/. 12,450', icon: CreditCard, change: '+18%', color: 'bg-slate-600' },
         { label: 'Consultas Activas', value: String(dashboardData.consultasRealizadas), icon: FileText, change: '', color: 'bg-amber-500' },
       ];
     }

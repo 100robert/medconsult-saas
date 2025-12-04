@@ -241,7 +241,7 @@ function NewAppointmentContent() {
                           <p className="text-sm text-blue-600">{doctor.especialidad}</p>
                         </div>
                       </div>
-                      <p className="text-lg font-bold text-gray-900">${doctor.precio}</p>
+                      <p className="text-lg font-bold text-gray-900">S/. {doctor.precio}</p>
                     </div>
                   </button>
                 ))}
@@ -435,7 +435,7 @@ function NewAppointmentContent() {
               {/* Price */}
               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
                 <p className="font-medium text-gray-900">Total a pagar</p>
-                <p className="text-2xl font-bold text-blue-600">${selectedDoctor?.precio}</p>
+                <p className="text-2xl font-bold text-blue-600">S/. {selectedDoctor?.precio}</p>
               </div>
 
               {/* Error message */}

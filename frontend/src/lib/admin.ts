@@ -32,9 +32,12 @@ export interface AdminStats {
   totalMedicos: number;
   totalPacientes: number;
   medicosPendientes: number;
-  citasHoy: number;
-  citasSemana: number;
-  ingresosMes: number;
+  usuariosActivos?: number;
+  usuariosInactivos?: number;
+  // Campos opcionales que vendrán de otros endpoints
+  citasHoy?: number;
+  citasSemana?: number;
+  ingresosMes?: number;
 }
 
 // ============ USUARIOS (ADMIN) ============

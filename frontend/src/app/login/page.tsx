@@ -45,7 +45,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data);
+      await login(data as { email: string; password: string });
       router.push('/dashboard');
     } catch (err) {
       // Error handled by store

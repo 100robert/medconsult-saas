@@ -311,8 +311,8 @@ export default function DashboardPage() {
                   <AreaChart data={healthData}>
                     <defs>
                       <linearGradient id="colorHeartRate" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#667eea" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#667eea" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#5FA3FF" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#5FA3FF" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -329,7 +329,7 @@ export default function DashboardPage() {
                     <Area 
                       type="monotone" 
                       dataKey="heartRate" 
-                      stroke="#667eea" 
+                      stroke="#2E6CFD" 
                       strokeWidth={3}
                       fill="url(#colorHeartRate)" 
                     />
@@ -422,7 +422,7 @@ export default function DashboardPage() {
               </div>
               <Link href="/dashboard/appointments">
                 <motion.div
-                  className="flex items-center justify-center gap-2 mt-6 py-3 text-[#667eea] hover:text-[#764ba2] font-semibold hover:bg-white/50 rounded-xl transition-colors"
+                  className="flex items-center justify-center gap-2 mt-6 py-3 text-blue-600 hover:text-purple-600 font-semibold hover:bg-white/50 rounded-xl transition-colors"
                   whileHover={{ scale: 1.02 }}
                 >
                   Ver todas las citas
@@ -437,7 +437,7 @@ export default function DashboardPage() {
             <GlassCard variant="light" className="h-full">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-gray-900">Resumen de Citas</h2>
-                <button className="text-sm text-[#667eea] hover:text-[#764ba2] font-semibold transition-colors">
+                <button className="text-sm text-blue-600 hover:text-purple-600 font-semibold transition-colors">
                   Ver detalles
                 </button>
               </div>
@@ -446,8 +446,8 @@ export default function DashboardPage() {
                 <BarChart data={appointmentData}>
                   <defs>
                     <linearGradient id="colorBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#667eea" stopOpacity={1}/>
-                      <stop offset="95%" stopColor="#764ba2" stopOpacity={1}/>
+                      <stop offset="5%" stopColor="#5FA3FF" stopOpacity={1}/>
+                      <stop offset="95%" stopColor="#B9A2E8" stopOpacity={1}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -480,7 +480,6 @@ export default function DashboardPage() {
                     >
                       <div className={`p-2 rounded-lg ${activity.color}`}>
                         <Icon className="w-4 h-4 text-white" />
-                      </div>
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">{activity.action}</p>

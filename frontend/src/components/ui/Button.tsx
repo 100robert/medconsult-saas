@@ -1,14 +1,14 @@
 'use client';
 
-import { forwardRef, ButtonHTMLAttributes } from 'react';
+import { forwardRef, ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'gradient' | 'glass';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   isLoading?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
   glow?: boolean;
 }
 
@@ -38,10 +38,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white
-        hover:shadow-[0_8px_30px_rgba(102,126,234,0.5)]
+        bg-gradient-to-r from-blue-500 to-blue-600 text-white
+        hover:shadow-[0_8px_30px_rgba(46,108,253,0.35)]
         hover:-translate-y-1
-        focus:ring-[#667eea]
+        focus:ring-blue-500
       `,
       secondary: `
         bg-white/10 backdrop-blur-md text-white
@@ -50,9 +50,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         focus:ring-white/50
       `,
       outline: `
-        border-2 border-[#667eea]/30 text-[#667eea] bg-white/80 backdrop-blur-sm
-        hover:border-[#667eea] hover:bg-[#667eea]/5 hover:-translate-y-1
-        focus:ring-[#667eea]
+        border-2 border-blue-500/30 text-blue-600 bg-white/80 backdrop-blur-sm
+        hover:border-blue-500 hover:bg-blue-500/5 hover:-translate-y-1
+        focus:ring-blue-500
       `,
       ghost: `
         text-gray-600 bg-transparent
@@ -66,10 +66,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         focus:ring-red-500
       `,
       gradient: `
-        bg-gradient-to-r from-[#667eea] via-[#764ba2] to-[#f093fb] text-white
-        hover:shadow-[0_8px_30px_rgba(118,75,162,0.5)]
+        bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 text-white
+        hover:shadow-[0_8px_30px_rgba(46,108,253,0.35)]
         hover:-translate-y-1
-        focus:ring-[#764ba2]
+        focus:ring-blue-500
         bg-[length:200%_200%] animate-[gradient-shift_3s_ease_infinite]
       `,
       glass: `

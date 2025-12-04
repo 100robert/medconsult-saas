@@ -1,0 +1,3 @@
+module.exports=[21290,a=>{a.v({className:"inter_5901b7c6-module__ec5Qua__className",variable:"inter_5901b7c6-module__ec5Qua__variable"})},79821,a=>{"use strict";var b=a.i(7394),c=a.i(21290);let d={className:c.default.className,style:{fontFamily:"'Inter', 'Inter Fallback'",fontStyle:"normal"}};function e({children:a}){return(0,b.jsx)("html",{lang:"es",children:(0,b.jsx)("body",{className:`${d.variable} font-sans antialiased`,children:a})})}null!=c.default.variable&&(d.variable=c.default.variable),a.s(["default",()=>e,"metadata",0,{title:"MedConsult - Consultas Médicas Online",description:"Plataforma de consultas médicas online. Conecta con médicos especialistas desde cualquier lugar."}],79821)}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__2605a9db._.js.map

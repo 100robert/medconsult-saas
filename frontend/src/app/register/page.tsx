@@ -68,7 +68,12 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, acceptTerms, ...registerData } = data;
       await registerUser({
-        ...registerData,
+        email: registerData.email!,
+        password: registerData.password!,
+        nombre: registerData.nombre!,
+        apellido: registerData.apellido!,
+        telefono: registerData.telefono,
+        fechaNacimiento: registerData.fechaNacimiento,
         genero: registerData.genero || undefined,
       });
       router.push('/dashboard');

@@ -68,9 +68,9 @@ export default function GlassCard({
   };
 
   const glowColors = {
-    blue: 'shadow-[0_0_30px_rgba(102,126,234,0.3)]',
+    blue: 'shadow-[0_0_30px_rgba(46,108,253,0.3)]',
     green: 'shadow-[0_0_30px_rgba(34,197,94,0.3)]',
-    purple: 'shadow-[0_0_30px_rgba(118,75,162,0.3)]',
+    purple: 'shadow-[0_0_30px_rgba(185,162,232,0.3)]',
   };
 
   const hoverClasses = hover 

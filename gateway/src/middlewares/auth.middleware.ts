@@ -6,7 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { isPublicRoute } from '../config/services';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tu_super_secreto_jwt_cambiar_en_produccion';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production-abc123xyz';
 
 export interface JWTPayload {
   userId: string;

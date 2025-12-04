@@ -13,8 +13,6 @@ import {
   Eye, 
   EyeOff, 
   User, 
-  Phone, 
-  Calendar, 
   Heart, 
   ArrowRight, 
   Shield, 
@@ -22,7 +20,9 @@ import {
   Sparkles,
   Stethoscope,
   Clock,
-  Award
+  Award,
+  Calendar,
+  Users
 } from 'lucide-react';
 import { Button, Input, Alert } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
@@ -31,15 +31,14 @@ const registerSchema = z.object({
   nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
   email: z.string().email('Email inválido'),
+  fechaNacimiento: z.string().optional(),
+  genero: z.enum(['MASCULINO', 'FEMENINO', 'OTRO', 'PREFIERO_NO_DECIR']).optional(),
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
     .regex(/[a-z]/, 'Debe contener al menos una minúscula')
     .regex(/[0-9]/, 'Debe contener al menos un número'),
   confirmPassword: z.string(),
-  telefono: z.string().optional(),
-  fechaNacimiento: z.string().optional(),
-  genero: z.enum(['MASCULINO', 'FEMENINO', 'OTRO', '']).optional(),
   acceptTerms: z.boolean().refine((val) => val === true, {
     message: 'Debes aceptar los términos y condiciones',
   }),
@@ -68,12 +67,11 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, acceptTerms, ...registerData } = data;
       await registerUser({
-        email: registerData.email!,
-        password: registerData.password!,
-        nombre: registerData.nombre!,
-        apellido: registerData.apellido!,
-        telefono: registerData.telefono,
-        fechaNacimiento: registerData.fechaNacimiento,
+        email: registerData.email,
+        password: registerData.password,
+        nombre: registerData.nombre,
+        apellido: registerData.apellido,
+        fechaNacimiento: registerData.fechaNacimiento || undefined,
         genero: registerData.genero || undefined,
       });
       router.push('/dashboard');
@@ -208,7 +206,7 @@ export default function RegisterPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
           >
-            <div className="glass-card-light p-8 max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+            <div className="glass-card-light p-6 max-w-md mx-auto">
               {/* Mobile Logo */}
               <Link href="/" className="lg:hidden inline-flex items-center gap-2 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg">
@@ -218,9 +216,9 @@ export default function RegisterPage() {
               </Link>
 
               {/* Header */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <motion.h2 
-                  className="text-2xl font-bold text-gray-900"
+                  className="text-xl font-bold text-gray-900"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -228,7 +226,7 @@ export default function RegisterPage() {
                   Crear tu cuenta 🎉
                 </motion.h2>
                 <motion.p 
-                  className="text-gray-600 mt-1"
+                  className="text-gray-600 text-sm mt-1"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
@@ -245,7 +243,7 @@ export default function RegisterPage() {
                     animate={{ opacity: 1, y: 0, height: 'auto' }}
                     exit={{ opacity: 0, y: -10, height: 0 }}
                   >
-                    <Alert variant="error" onClose={clearError} className="mb-4">
+                    <Alert variant="error" onClose={clearError} className="mb-3">
                       {error}
                     </Alert>
                   </motion.div>
@@ -253,7 +251,7 @@ export default function RegisterPage() {
               </AnimatePresence>
 
               {/* Form */}
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -301,27 +299,12 @@ export default function RegisterPage() {
                   />
                 </motion.div>
 
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  <Input
-                    label="Teléfono (opcional)"
-                    type="tel"
-                    placeholder="+1 234 567 8900"
-                    variant="glass-light"
-                    leftIcon={<Phone className="w-5 h-5" />}
-                    error={errors.telefono?.message}
-                    {...register('telefono')}
-                  />
-                </motion.div>
-
+                {/* Fecha de Nacimiento y Género */}
                 <div className="grid grid-cols-2 gap-3">
                   <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.65 }}
+                    transition={{ delay: 0.57 }}
                   >
                     <Input
                       label="Fecha de nacimiento"
@@ -336,27 +319,31 @@ export default function RegisterPage() {
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.65 }}
+                    transition={{ delay: 0.57 }}
                   >
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Género
                     </label>
-                    <select
-                      className="block w-full rounded-2xl bg-white/90 backdrop-blur-xl border-2 border-[#10b981]/10 px-4 py-3.5 focus:border-[#10b981]/50 focus:ring-4 focus:ring-[#10b981]/10 transition-all hover:border-[#10b981]/30"
-                      {...register('genero')}
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="MASCULINO">Masculino</option>
-                      <option value="FEMENINO">Femenino</option>
-                      <option value="OTRO">Otro</option>
-                    </select>
+                    <div className="relative">
+                      <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <select
+                        {...register('genero')}
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white/80 backdrop-blur-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="">Seleccionar</option>
+                        <option value="MASCULINO">Masculino</option>
+                        <option value="FEMENINO">Femenino</option>
+                        <option value="OTRO">Otro</option>
+                        <option value="PREFIERO_NO_DECIR">Prefiero no decir</option>
+                      </select>
+                    </div>
                   </motion.div>
                 </div>
 
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.7 }}
+                  transition={{ delay: 0.6 }}
                 >
                   <Input
                     label="Contraseña"
@@ -368,7 +355,7 @@ export default function RegisterPage() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="focus:outline-none hover:text-emerald-600 transition-colors"
+                        className="focus:outline-none hover:text-teal-600 transition-colors"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -382,7 +369,7 @@ export default function RegisterPage() {
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.75 }}
+                  transition={{ delay: 0.65 }}
                 >
                   <Input
                     label="Confirmar Contraseña"
@@ -394,7 +381,7 @@ export default function RegisterPage() {
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="focus:outline-none hover:text-emerald-600 transition-colors"
+                        className="focus:outline-none hover:text-teal-600 transition-colors"
                       >
                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -450,7 +437,7 @@ export default function RegisterPage() {
 
               {/* Divider */}
               <motion.div 
-                className="relative my-6"
+                className="relative my-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.9 }}
@@ -465,13 +452,12 @@ export default function RegisterPage() {
 
               {/* Social Registration */}
               <motion.div 
-                className="grid grid-cols-2 gap-4"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.95 }}
               >
                 <motion.button 
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl hover:bg-white hover:border-gray-200 hover:shadow-lg transition-all font-medium text-gray-700"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white/80 border-2 border-gray-100 rounded-2xl hover:bg-white hover:border-gray-200 hover:shadow-lg transition-all font-medium text-gray-700"
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -481,23 +467,13 @@ export default function RegisterPage() {
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
-                  Google
-                </motion.button>
-                <motion.button 
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 rounded-2xl hover:bg-gray-800 hover:shadow-lg transition-all font-medium text-white"
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                  </svg>
-                  GitHub
+                  Registrarse con Google
                 </motion.button>
               </motion.div>
 
               {/* Login link */}
               <motion.p 
-                className="mt-6 text-center text-gray-600"
+                className="mt-4 text-center text-gray-600 text-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}

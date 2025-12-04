@@ -5,6 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { citaService } from '../services/cita.service';
 import { EstadoCita } from '@prisma/client';
+import { prisma } from '../config/database';
 
 export class CitaController {
 
@@ -14,15 +15,91 @@ export class CitaController {
    */
   async crear(req: Request, res: Response, next: NextFunction) {
     try {
+      // Obtener el ID del paciente basado en el usuario autenticado
+      // El JWT puede tener 'userId' o 'id' dependiendo de cómo se generó
+      const idUsuario = req.user?.userId || req.user?.id;
+      
+      if (!idUsuario) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+      }
+
+      // Buscar el perfil de paciente del usuario
+      const paciente = await prisma.paciente.findUnique({
+        where: { idUsuario }
+      });
+
+      if (!paciente) {
+        return res.status(404).json({
+          success: false,
+          message: 'Perfil de paciente no encontrado. Contacte al administrador.'
+        });
+      }
+
+      // Construir fechaHoraCita desde fecha y horaInicio
+      let fechaHoraCita: Date;
+      if (req.body.fechaHoraCita) {
+        fechaHoraCita = new Date(req.body.fechaHoraCita);
+      } else if (req.body.fecha && req.body.horaInicio) {
+        // Formato: "2025-12-05" + "09:00" -> "2025-12-05T09:00:00"
+        fechaHoraCita = new Date(`${req.body.fecha}T${req.body.horaInicio}:00`);
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Se requiere fecha y hora de la cita'
+        });
+      }
+
       const cita = await citaService.crear({
         ...req.body,
-        fechaHoraCita: new Date(req.body.fechaHoraCita),
+        idPaciente: paciente.id,
+        fechaHoraCita,
       });
 
       res.status(201).json({
         success: true,
         message: 'Cita creada exitosamente',
         data: cita
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /citas/mis-citas
+   * Obtener citas del usuario autenticado
+   */
+  async obtenerMisCitas(req: Request, res: Response, next: NextFunction) {
+    try {
+      const idUsuario = req.user?.userId || req.user?.id;
+      const rol = req.user?.rol || 'PACIENTE'; // Default a PACIENTE si no viene
+
+      console.log('📋 obtenerMisCitas - Usuario:', { idUsuario, rol, user: req.user });
+
+      if (!idUsuario) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+      }
+
+      const filtros = {
+        estado: req.query.estado as EstadoCita | undefined,
+        fechaDesde: req.query.desde ? new Date(req.query.desde as string) : undefined,
+        fechaHasta: req.query.hasta ? new Date(req.query.hasta as string) : undefined,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 10,
+      };
+
+      const resultado = await citaService.obtenerPorUsuario(idUsuario, rol!, filtros);
+
+      res.json({
+        success: true,
+        citas: resultado.citas,
+        pagination: resultado.pagination
       });
     } catch (error) {
       next(error);

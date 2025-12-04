@@ -1,108 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Search, Star, Calendar, Clock, Video, MapPin, ChevronRight, Filter, Sparkles, Heart, Award, GraduationCap } from 'lucide-react';
+import { Search, Star, Calendar, Clock, Video, MapPin, ChevronRight, Filter, Sparkles, Heart, Award, GraduationCap, Loader2 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
-
-interface Doctor {
-  id: string;
-  nombre: string;
-  apellido: string;
-  especialidad: string;
-  calificacion: number;
-  numReviews: number;
-  precio: number;
-  proximaDisponibilidad: string;
-  avatar?: string;
-  verificado: boolean;
-  videoConsulta: boolean;
-  experiencia: number;
-}
-
-// Mock doctors
-const mockDoctors: Doctor[] = [
-  {
-    id: '1',
-    nombre: 'Carlos',
-    apellido: 'Mendoza',
-    especialidad: 'Cardiología',
-    calificacion: 4.9,
-    numReviews: 124,
-    precio: 50,
-    proximaDisponibilidad: 'Hoy, 3:00 PM',
-    verificado: true,
-    videoConsulta: true,
-    experiencia: 15,
-  },
-  {
-    id: '2',
-    nombre: 'María',
-    apellido: 'García',
-    especialidad: 'Dermatología',
-    calificacion: 4.8,
-    numReviews: 89,
-    precio: 45,
-    proximaDisponibilidad: 'Mañana, 10:00 AM',
-    verificado: true,
-    videoConsulta: true,
-    experiencia: 12,
-  },
-  {
-    id: '3',
-    nombre: 'Pedro',
-    apellido: 'Ramírez',
-    especialidad: 'Medicina General',
-    calificacion: 4.7,
-    numReviews: 156,
-    precio: 35,
-    proximaDisponibilidad: 'Hoy, 5:00 PM',
-    verificado: true,
-    videoConsulta: false,
-    experiencia: 8,
-  },
-  {
-    id: '4',
-    nombre: 'Ana',
-    apellido: 'López',
-    especialidad: 'Pediatría',
-    calificacion: 4.9,
-    numReviews: 203,
-    precio: 40,
-    proximaDisponibilidad: 'Mañana, 9:00 AM',
-    verificado: true,
-    videoConsulta: true,
-    experiencia: 10,
-  },
-];
-
-const especialidades = [
-  'Todas',
-  'Medicina General',
-  'Cardiología',
-  'Dermatología',
-  'Pediatría',
-  'Neurología',
-  'Traumatología',
-  'Ginecología',
-  'Oftalmología',
-];
+import { buscarMedicos, getEspecialidades, Doctor, Especialidad } from '@/lib/doctors';
 
 export default function DoctorsPage() {
   const router = useRouter();
-  const [doctors] = useState<Doctor[]>(mockDoctors);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEspecialidad, setSelectedEspecialidad] = useState('Todas');
 
+  // Cargar médicos y especialidades al inicio
+  useEffect(() => {
+    async function cargarDatos() {
+      setLoading(true);
+      try {
+        const [medicosData, especialidadesData] = await Promise.all([
+          buscarMedicos({ limit: 50 }),
+          getEspecialidades()
+        ]);
+        setDoctors(medicosData);
+        setEspecialidades(especialidadesData);
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    cargarDatos();
+  }, []);
+
+  // Filtrar médicos localmente
   const filteredDoctors = doctors.filter((doctor) => {
+    const nombreCompleto = `${doctor.usuario.nombre} ${doctor.usuario.apellido}`.toLowerCase();
+    const especialidadNombre = doctor.especialidad?.nombre?.toLowerCase() || '';
+    
     const matchesSearch =
-      doctor.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.especialidad.toLowerCase().includes(searchTerm.toLowerCase());
+      nombreCompleto.includes(searchTerm.toLowerCase()) ||
+      especialidadNombre.includes(searchTerm.toLowerCase());
 
     const matchesEspecialidad =
-      selectedEspecialidad === 'Todas' || doctor.especialidad === selectedEspecialidad;
+      selectedEspecialidad === 'Todas' || doctor.especialidad?.nombre === selectedEspecialidad;
 
     return matchesSearch && matchesEspecialidad;
   });
@@ -113,9 +56,25 @@ export default function DoctorsPage() {
       'bg-slate-600',
       'bg-emerald-600',
       'bg-amber-500',
+      'bg-purple-600',
+      'bg-rose-600',
     ];
     return colors[index % colors.length];
   };
+
+  // Lista de especialidades para el filtro
+  const especialidadesFiltro = ['Todas', ...especialidades.map(e => e.nombre)];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-teal-600 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando médicos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -155,7 +114,7 @@ export default function DoctorsPage() {
               value={selectedEspecialidad}
               onChange={(e) => setSelectedEspecialidad(e.target.value)}
             >
-              {especialidades.map((esp) => (
+              {especialidadesFiltro.map((esp) => (
                 <option key={esp} value={esp}>
                   {esp}
                 </option>
@@ -166,7 +125,7 @@ export default function DoctorsPage() {
 
         {/* Specialty Pills */}
         <div className="flex gap-2 flex-wrap mt-4">
-          {especialidades.slice(0, 6).map((esp) => (
+          {especialidadesFiltro.slice(0, 6).map((esp) => (
             <button
               key={esp}
               onClick={() => setSelectedEspecialidad(esp)}
@@ -212,9 +171,9 @@ export default function DoctorsPage() {
                   {/* Avatar */}
                   <div className="relative">
                     <div className={`w-20 h-20 ${getSolidColor(index)} rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-lg`}>
-                      {doctor.nombre[0]}{doctor.apellido[0]}
+                      {doctor.usuario.nombre[0]}{doctor.usuario.apellido[0]}
                     </div>
-                    {doctor.verificado && (
+                    {doctor.estado === 'VERIFICADO' && (
                       <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
                         <Award className="w-3 h-3 text-white" />
                       </div>
@@ -225,31 +184,31 @@ export default function DoctorsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-xl font-bold text-gray-900">
-                        Dr. {doctor.nombre} {doctor.apellido}
+                        Dr. {doctor.usuario.nombre} {doctor.usuario.apellido}
                       </h3>
-                      {doctor.verificado && (
+                      {doctor.estado === 'VERIFICADO' && (
                         <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
                           Verificado
                         </span>
                       )}
                     </div>
-                    <p className="text-teal-600 font-semibold mt-1">{doctor.especialidad}</p>
+                    <p className="text-teal-600 font-semibold mt-1">{doctor.especialidad?.nombre || 'Medicina General'}</p>
                     
                     {/* Badges */}
                     <div className="flex items-center gap-3 mt-3 flex-wrap">
                       <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
                         <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                        <span className="font-bold text-gray-900">{doctor.calificacion}</span>
-                        <span className="text-gray-500 text-sm">({doctor.numReviews})</span>
+                        <span className="font-bold text-gray-900">{Number(doctor.calificacionPromedio).toFixed(1)}</span>
+                        <span className="text-gray-500 text-sm">({doctor.totalResenas})</span>
                       </div>
                       <div className="flex items-center gap-1 text-gray-500 text-sm">
                         <GraduationCap className="w-4 h-4" />
-                        <span>{doctor.experiencia} años exp.</span>
+                        <span>{doctor.aniosExperiencia} años exp.</span>
                       </div>
-                      {doctor.videoConsulta && (
+                      {doctor.aceptaNuevosPacientes && (
                         <div className="flex items-center gap-1 bg-purple-50 text-purple-600 px-2 py-1 rounded-lg text-sm">
                           <Video className="w-4 h-4" />
-                          <span className="font-medium">Video consulta</span>
+                          <span className="font-medium">Disponible</span>
                         </div>
                       )}
                     </div>
@@ -258,7 +217,7 @@ export default function DoctorsPage() {
                     <div className="flex items-center gap-2 mt-3 text-sm">
                       <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                       <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-600">Próxima disponibilidad: <span className="font-medium text-emerald-600">{doctor.proximaDisponibilidad}</span></span>
+                      <span className="text-gray-600">Duración consulta: <span className="font-medium text-emerald-600">{doctor.duracionConsulta} min</span></span>
                     </div>
                   </div>
                 </div>
@@ -267,7 +226,7 @@ export default function DoctorsPage() {
                 <div className="flex flex-col items-end gap-3 lg:min-w-[180px]">
                   <div className="text-right">
                     <p className="text-3xl font-bold text-teal-600">
-                      ${doctor.precio}
+                      ${Number(doctor.precioPorConsulta).toFixed(0)}
                     </p>
                     <p className="text-sm text-gray-500">por consulta</p>
                   </div>

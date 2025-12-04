@@ -423,6 +423,43 @@ export class AuthController {
       next(error);
     }
   }
+
+  // ==========================================
+  // ENDPOINT: PUT /auth/profile
+  // ==========================================
+  // ¿Qué hace?
+  // 1. Obtiene el usuario autenticado desde el token
+  // 2. Actualiza los datos del perfil
+  // ==========================================
+
+  async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'No autenticado',
+        });
+        return;
+      }
+
+      const { nombre, apellido, telefono, fechaNacimiento, genero, imagenPerfil } = req.body;
+
+      const resultado = await authService.updateProfile(userId, {
+        nombre,
+        apellido,
+        telefono,
+        fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : undefined,
+        genero,
+        imagenPerfil,
+      });
+
+      res.status(200).json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 // ==========================================

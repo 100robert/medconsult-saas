@@ -2,61 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, Video, MapPin, User, Search, Filter, Plus, MoreVertical, ChevronRight, CalendarDays, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Video, MapPin, User, Search, Filter, Plus, MoreVertical, ChevronRight, CalendarDays, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui';
-
-interface Appointment {
-  id: string;
-  fecha: string;
-  hora: string;
-  tipo: 'VIDEOCONSULTA' | 'PRESENCIAL';
-  estado: 'PENDIENTE' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA';
-  medico?: {
-    nombre: string;
-    apellido: string;
-    especialidad: string;
-  };
-  paciente?: {
-    nombre: string;
-    apellido: string;
-  };
-  motivo: string;
-}
-
-// Mock data
-const mockAppointments: Appointment[] = [
-  {
-    id: '1',
-    fecha: '2024-01-15',
-    hora: '10:00',
-    tipo: 'VIDEOCONSULTA',
-    estado: 'CONFIRMADA',
-    medico: { nombre: 'Carlos', apellido: 'Mendoza', especialidad: 'Cardiología' },
-    paciente: { nombre: 'Juan', apellido: 'Pérez' },
-    motivo: 'Consulta general',
-  },
-  {
-    id: '2',
-    fecha: '2024-01-16',
-    hora: '14:30',
-    tipo: 'PRESENCIAL',
-    estado: 'PENDIENTE',
-    medico: { nombre: 'María', apellido: 'García', especialidad: 'Dermatología' },
-    paciente: { nombre: 'Ana', apellido: 'López' },
-    motivo: 'Revisión de piel',
-  },
-  {
-    id: '3',
-    fecha: '2024-01-10',
-    hora: '09:00',
-    tipo: 'VIDEOCONSULTA',
-    estado: 'COMPLETADA',
-    medico: { nombre: 'Pedro', apellido: 'Ramírez', especialidad: 'Medicina General' },
-    paciente: { nombre: 'Luis', apellido: 'Martínez' },
-    motivo: 'Control rutinario',
-  },
-];
+import { getMisCitas, cancelarCita, type Appointment } from '@/lib/appointments';
 
 const estadoConfig = {
   PENDIENTE: { 
@@ -98,17 +47,58 @@ const estadoLabels = {
 
 export default function AppointmentsPage() {
   const { user } = useAuthStore();
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
+  // Cargar citas del backend
+  useEffect(() => {
+    async function fetchAppointments() {
+      if (!user?.id) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const citas = await getMisCitas();
+        setAppointments(citas);
+      } catch (err: any) {
+        console.error('Error al cargar citas:', err);
+        setError(err.response?.data?.message || 'Error al cargar las citas');
+        setAppointments([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchAppointments();
+  }, [user?.id]);
+
+  // Función para cancelar cita
+  const handleCancelAppointment = async (id: string) => {
+    if (!confirm('¿Estás seguro de que deseas cancelar esta cita?')) return;
+    
+    try {
+      await cancelarCita(id);
+      // Actualizar la lista local
+      setAppointments(prev => 
+        prev.map(apt => apt.id === id ? { ...apt, estado: 'CANCELADA' } : apt)
+      );
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error al cancelar la cita');
+    }
+  };
+
   const filteredAppointments = appointments.filter((apt) => {
-    const matchesSearch =
-      apt.medico?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.medico?.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.paciente?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.paciente?.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      apt.motivo.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = searchTerm === '' ||
+      apt.medico?.nombre?.toLowerCase().includes(searchLower) ||
+      apt.medico?.apellido?.toLowerCase().includes(searchLower) ||
+      apt.paciente?.nombre?.toLowerCase().includes(searchLower) ||
+      apt.paciente?.apellido?.toLowerCase().includes(searchLower) ||
+      apt.motivo?.toLowerCase().includes(searchLower);
 
     const matchesFilter = filterStatus === 'all' || apt.estado === filterStatus;
 
@@ -159,28 +149,54 @@ export default function AppointmentsPage() {
         )}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-              </div>
-              <div className={`w-10 h-10 rounded-xl ${stat.solidColor} flex items-center justify-center`}>
-                <Calendar className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Loading State */}
+      {loading && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 py-16 text-center">
+          <Loader2 className="w-10 h-10 text-teal-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-500">Cargando citas...</p>
+        </div>
+      )}
 
-      {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      {/* Error State */}
+      {error && !loading && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+          <XCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
+          <p className="text-red-700">{error}</p>
+          <Button 
+            variant="secondary" 
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            Reintentar
+          </Button>
+        </div>
+      )}
+
+      {/* Content - only show when not loading and no error */}
+      {!loading && !error && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <div key={index} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">{stat.label}</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                  </div>
+                  <div className={`w-10 h-10 rounded-xl ${stat.solidColor} flex items-center justify-center`}>
+                    <Calendar className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Filters */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar citas..."
@@ -254,7 +270,7 @@ export default function AppointmentsPage() {
                             </div>
                             <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg text-sm text-gray-600">
                               <Clock className="w-4 h-4 text-gray-400" />
-                              {appointment.hora}
+                              {appointment.horaInicio}
                             </div>
                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm ${
                               appointment.tipo === 'VIDEOCONSULTA' 
@@ -331,7 +347,7 @@ export default function AppointmentsPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
-                            {appointment.hora}
+                            {appointment.horaInicio}
                           </div>
                         </div>
                       </div>
@@ -368,6 +384,8 @@ export default function AppointmentsPage() {
             </Link>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

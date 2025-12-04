@@ -9,7 +9,7 @@
 // ============================================
 
 import { z } from 'zod';
-import { RolUsuario } from '@prisma/client';
+import { RolUsuario, Genero } from '@prisma/client';
 
 // ============================================
 // VALIDADOR: REGISTRO PÚBLICO DE USUARIO
@@ -65,6 +65,22 @@ export const registerSchema = z.object({
     .regex(/^\+?[1-9]\d{1,14}$/, 'Formato de teléfono inválido (usar formato internacional)')
     .optional()
     .or(z.literal('')), // Permitir string vacío como opcional
+
+  fechaNacimiento: z
+    .string()
+    .refine((val) => {
+      if (!val) return true; // Opcional
+      const date = new Date(val);
+      const now = new Date();
+      const minDate = new Date('1900-01-01');
+      return date <= now && date >= minDate;
+    }, 'Fecha de nacimiento inválida')
+    .optional()
+    .or(z.literal('')),
+
+  genero: z
+    .enum([Genero.MASCULINO, Genero.FEMENINO, Genero.OTRO, Genero.PREFIERO_NO_DECIR])
+    .optional(),
 
   // RESTRICCIÓN DE SEGURIDAD: El registro público solo permite PACIENTE
   // Si alguien intenta pasar MEDICO o ADMIN, será rechazado

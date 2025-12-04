@@ -63,6 +63,8 @@ export interface UserData {
   activo: boolean;
   imagenPerfil?: string | null;
   telefono?: string | null;
+  fechaNacimiento?: Date | null;
+  genero?: string | null;
 }
 
 export interface MessageResponse {

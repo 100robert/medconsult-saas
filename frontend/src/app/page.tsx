@@ -257,100 +257,82 @@ export default function HomePage() {
               </motion.div>
             </motion.div>
             
-            {/* Hero Card */}
+            {/* Hero Image */}
             <motion.div 
               className="relative hidden lg:block"
               initial={{ opacity: 0, scale: 0.9, x: 50 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
             >
-              <div className="absolute inset-0 bg-white/20 rounded-3xl blur-2xl" />
-              <div className="glass-card-light p-8 relative">
-                <div className="flex items-center justify-between mb-8">
-                  <div>
-                    <p className="text-sm text-gray-500 font-medium">Próxima Consulta</p>
-                    <h3 className="text-xl font-bold text-gray-900 mt-1">Dr. Carlos Mendoza</h3>
-                  </div>
-                  <span className="px-4 py-1.5 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
-                    Confirmada
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-20 h-20 rounded-2xl bg-teal-600 flex items-center justify-center shadow-lg">
-                    <span className="text-4xl">👨‍⚕️</span>
-                  </div>
-                  <div>
-                    <p className="text-teal-600 font-semibold">Cardiología</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                      ))}
-                      <span className="text-sm text-gray-500 ml-1">(124)</span>
-                    </div>
+              {/* Imagen principal */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-emerald-600/20 rounded-3xl blur-2xl" />
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/50">
+                  <img 
+                    src="https://images.unsplash.com/photo-1666214280557-f1b5022eb634?q=80&w=600&auto=format&fit=crop"
+                    alt="Doctora profesional sonriendo"
+                    className="w-full h-[500px] object-cover"
+                  />
+                  {/* Overlay gradiente */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-teal-900/60 via-transparent to-transparent" />
+                  
+                  {/* Texto sobre la imagen */}
+                  <div className="absolute bottom-0 left-0 right-0 p-8">
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      Atención médica de calidad
+                    </h3>
+                    <p className="text-white/90">
+                      Más de 500 especialistas listos para atenderte
+                    </p>
                   </div>
                 </div>
-                
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-white/50">
-                    <div className="w-10 h-10 bg-teal-600/10 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-teal-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Fecha</p>
-                      <p className="font-semibold text-gray-900">Miércoles, 15 de Enero</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-white/50">
-                    <div className="w-10 h-10 bg-slate-600/10 rounded-lg flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-slate-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Hora</p>
-                      <p className="font-semibold text-gray-900">10:00 AM - 10:30 AM</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <motion.button 
-                  className="w-full btn-primary flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Video className="w-5 h-5" />
-                  Unirse a la Consulta
-                </motion.button>
               </div>
               
               {/* Floating elements */}
               <motion.div 
-                className="absolute -bottom-6 -left-6 glass-card-light p-4"
+                className="absolute -bottom-6 -left-6 glass-card-light p-4 shadow-xl"
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-emerald-600" />
+                    <Users className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Diagnóstico</p>
-                    <p className="font-semibold text-gray-900">Completado</p>
+                    <p className="text-sm text-gray-500">Pacientes activos</p>
+                    <p className="font-semibold text-gray-900">+50,000</p>
                   </div>
                 </div>
               </motion.div>
               
               <motion.div 
-                className="absolute -top-4 -right-4 glass-card-light p-4"
+                className="absolute -top-4 -right-4 glass-card-light p-4 shadow-xl"
                 animate={{ y: [0, -10, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-teal-600/10 rounded-xl flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-teal-600" />
+                    <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Tiempo de espera</p>
-                    <p className="font-semibold text-emerald-600">~2 min</p>
+                    <p className="text-sm text-gray-500">Calificación</p>
+                    <p className="font-semibold text-teal-600">4.9 / 5.0</p>
+                  </div>
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                className="absolute top-1/2 -left-8 glass-card-light p-4 shadow-xl"
+                animate={{ y: [0, -8, 0] }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Disponible</p>
+                    <p className="font-semibold text-gray-900">24/7</p>
                   </div>
                 </div>
               </motion.div>

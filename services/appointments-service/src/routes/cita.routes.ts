@@ -18,16 +18,26 @@ router.post('/',
   citaController.crear
 );
 
-// Obtener cita por ID
-router.get('/:id',
+// ========== RUTAS ESPECÍFICAS PRIMERO ==========
+// (deben ir antes de /:id para que Express las matchee correctamente)
+
+// Obtener mis citas (basado en el token del usuario autenticado)
+router.get('/mis-citas',
   authMiddleware.verifyToken,
-  citaController.obtenerPorId
+  citaController.obtenerMisCitas
 );
 
 // Obtener citas de un paciente
 router.get('/paciente/:idPaciente',
   authMiddleware.verifyToken,
   citaController.obtenerPorPaciente
+);
+
+// Obtener citas del día para un médico
+router.get('/medico/:idMedico/hoy',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['MEDICO', 'ADMIN']),
+  citaController.obtenerCitasHoy
 );
 
 // Obtener citas de un médico
@@ -37,11 +47,11 @@ router.get('/medico/:idMedico',
   citaController.obtenerPorMedico
 );
 
-// Obtener citas del día para un médico
-router.get('/medico/:idMedico/hoy',
+// ========== RUTA GENÉRICA AL FINAL ==========
+// Obtener cita por ID (debe ir después de las rutas específicas)
+router.get('/:id',
   authMiddleware.verifyToken,
-  authMiddleware.requireRoles(['MEDICO', 'ADMIN']),
-  citaController.obtenerCitasHoy
+  citaController.obtenerPorId
 );
 
 // Confirmar cita (médicos)

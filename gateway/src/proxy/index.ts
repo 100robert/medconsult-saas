@@ -40,9 +40,16 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
         
         // Pasar información del usuario si existe
         if (expressReq.user) {
-          proxyReq.setHeader('X-User-Id', expressReq.user.userId);
-          proxyReq.setHeader('X-User-Email', expressReq.user.email);
-          proxyReq.setHeader('X-User-Role', expressReq.user.rol);
+          if (expressReq.user.userId) {
+            proxyReq.setHeader('X-User-Id', expressReq.user.userId);
+          }
+          // El JWT usa 'correo' no 'email'
+          if (expressReq.user.correo || expressReq.user.email) {
+            proxyReq.setHeader('X-User-Email', expressReq.user.correo || expressReq.user.email);
+          }
+          if (expressReq.user.rol) {
+            proxyReq.setHeader('X-User-Role', expressReq.user.rol);
+          }
         }
 
         // Pasar request ID
@@ -52,7 +59,9 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
 
         // Pasar IP original
         const clientIp = req.headers['x-forwarded-for'] || expressReq.ip;
-        proxyReq.setHeader('X-Forwarded-For', clientIp as string);
+        if (clientIp) {
+          proxyReq.setHeader('X-Forwarded-For', clientIp as string);
+        }
 
         // Calcular la ruta final
         const finalPath = pathPrefix + req.url;

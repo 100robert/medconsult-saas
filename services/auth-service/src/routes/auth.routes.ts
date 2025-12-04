@@ -236,6 +236,31 @@ router.get(
   authController.getProfile.bind(authController)
 );
 
+/**
+ * @route   GET /auth/profile
+ * @desc    Obtener perfil del usuario autenticado (alias de /me)
+ * @access  Private
+ * @returns { success, data: { usuario } }
+ */
+router.get(
+  '/profile',
+  authMiddleware,
+  authController.getProfile.bind(authController)
+);
+
+/**
+ * @route   PUT /auth/profile
+ * @desc    Actualizar perfil del usuario autenticado
+ * @access  Private
+ * @body    { nombre?, apellido?, telefono?, fechaNacimiento?, genero?, imagenPerfil? }
+ * @returns { success, data: { usuario } }
+ */
+router.put(
+  '/profile',
+  authMiddleware,
+  authController.updateProfile.bind(authController)
+);
+
 // ============================================
 // EXPORTAR ROUTER
 // ============================================

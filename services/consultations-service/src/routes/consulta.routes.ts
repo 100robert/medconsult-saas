@@ -8,6 +8,12 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 
 const router = Router();
 
+// Obtener mis consultas (usuario autenticado)
+router.get('/mis-consultas',
+  authMiddleware.verifyToken,
+  consultaController.obtenerMisConsultas
+);
+
 // Crear consulta (médicos)
 router.post('/',
   authMiddleware.verifyToken,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -21,6 +21,7 @@ import {
   Droplets,
   Thermometer,
   Scale,
+  Loader2,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -37,6 +38,8 @@ import {
 } from 'recharts';
 import { useAuthStore } from '@/store/authStore';
 import { GlassCard } from '@/components/ui';
+import { getMisCitas } from '@/lib/appointments';
+import { getMisConsultas } from '@/lib/consultations';
 
 // Health data for charts
 const healthData = [
@@ -75,33 +78,102 @@ const item = {
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
+    proximasCitas: 0,
+    citasHoy: 0,
+    consultasRealizadas: 0,
+    citasPendientes: 0,
+    proximaCita: null as any,
+  });
+
+  // Cargar datos reales
+  useEffect(() => {
+    async function fetchDashboardData() {
+      if (!user?.id) return;
+      
+      setLoading(true);
+      try {
+        const [citas, consultas] = await Promise.all([
+          getMisCitas().catch(() => []),
+          getMisConsultas().catch(() => []),
+        ]);
+
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const manana = new Date(hoy);
+        manana.setDate(manana.getDate() + 1);
+
+        // Citas de hoy
+        const citasHoy = citas.filter((c: any) => {
+          const fechaCita = new Date(c.fechaHoraCita || c.fecha);
+          return fechaCita >= hoy && fechaCita < manana && c.estado !== 'CANCELADA';
+        });
+
+        // Próximas citas (futuras, no canceladas)
+        const proximasCitas = citas.filter((c: any) => {
+          const fechaCita = new Date(c.fechaHoraCita || c.fecha);
+          return fechaCita >= hoy && c.estado !== 'CANCELADA' && c.estado !== 'COMPLETADA';
+        });
+
+        // Citas pendientes de confirmación
+        const citasPendientes = citas.filter((c: any) => 
+          c.estado === 'PROGRAMADA' || c.estado === 'PENDIENTE'
+        );
+
+        // Consultas completadas
+        const consultasCompletadas = consultas.filter((c: any) => 
+          c.estado === 'COMPLETADA'
+        );
+
+        // Próxima cita
+        const proximaCita = proximasCitas.sort((a: any, b: any) => 
+          new Date(a.fechaHoraCita || a.fecha).getTime() - new Date(b.fechaHoraCita || b.fecha).getTime()
+        )[0];
+
+        setDashboardData({
+          proximasCitas: proximasCitas.length,
+          citasHoy: citasHoy.length,
+          consultasRealizadas: consultasCompletadas.length,
+          citasPendientes: citasPendientes.length,
+          proximaCita,
+        });
+      } catch (error) {
+        console.error('Error al cargar datos del dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDashboardData();
+  }, [user?.id]);
 
   // Stats según el rol
   const getStats = () => {
     if (user?.rol === 'ADMIN') {
       return [
         { label: 'Usuarios Totales', value: '1,234', icon: Users, change: '+12%', color: 'bg-teal-600' },
-        { label: 'Citas Hoy', value: '45', icon: Calendar, change: '+5%', color: 'bg-emerald-600' },
+        { label: 'Citas Hoy', value: String(dashboardData.citasHoy), icon: Calendar, change: '', color: 'bg-emerald-600' },
         { label: 'Ingresos del Mes', value: '$12,450', icon: CreditCard, change: '+18%', color: 'bg-slate-600' },
-        { label: 'Consultas Activas', value: '23', icon: FileText, change: '+8%', color: 'bg-amber-500' },
+        { label: 'Consultas Activas', value: String(dashboardData.consultasRealizadas), icon: FileText, change: '', color: 'bg-amber-500' },
       ];
     }
 
     if (user?.rol === 'MEDICO') {
       return [
-        { label: 'Citas Hoy', value: '8', icon: Calendar, change: '', color: 'bg-teal-600' },
+        { label: 'Citas Hoy', value: String(dashboardData.citasHoy), icon: Calendar, change: '', color: 'bg-teal-600' },
         { label: 'Pacientes Totales', value: '156', icon: Users, change: '+3', color: 'bg-emerald-600' },
-        { label: 'Consultas Pendientes', value: '5', icon: Clock, change: '', color: 'bg-amber-500' },
+        { label: 'Consultas Pendientes', value: String(dashboardData.citasPendientes), icon: Clock, change: '', color: 'bg-amber-500' },
         { label: 'Calificación', value: '4.8', icon: Star, change: '', color: 'bg-slate-600' },
       ];
     }
 
     // PACIENTE
     return [
-      { label: 'Próximas Citas', value: '2', icon: Calendar, change: '', color: 'bg-teal-600' },
-      { label: 'Consultas Realizadas', value: '12', icon: CheckCircle, change: '', color: 'bg-emerald-600' },
-      { label: 'Médicos Favoritos', value: '3', icon: Users, change: '', color: 'bg-slate-600' },
-      { label: 'Pendientes de Pago', value: '1', icon: AlertCircle, change: '', color: 'bg-amber-500' },
+      { label: 'Próximas Citas', value: String(dashboardData.proximasCitas), icon: Calendar, change: '', color: 'bg-teal-600' },
+      { label: 'Consultas Realizadas', value: String(dashboardData.consultasRealizadas), icon: CheckCircle, change: '', color: 'bg-emerald-600' },
+      { label: 'Citas Pendientes', value: String(dashboardData.citasPendientes), icon: Clock, change: '', color: 'bg-slate-600' },
+      { label: 'Citas Hoy', value: String(dashboardData.citasHoy), icon: AlertCircle, change: '', color: 'bg-amber-500' },
     ];
   };
 
@@ -159,7 +231,7 @@ export default function DashboardPage() {
       >
         {/* Welcome Banner */}
         <motion.div variants={item}>
-          <div className="relative overflow-hidden glass-card bg-teal-600 p-8 text-white">
+          <div className="relative overflow-hidden bg-gradient-to-br from-teal-600 to-emerald-600 rounded-3xl p-8 text-white shadow-xl">
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
             <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-emerald-500/20 rounded-full translate-y-1/2 blur-2xl" />
@@ -192,7 +264,8 @@ export default function DashboardPage() {
                   >
                     {user?.rol === 'ADMIN' && 'Aquí tienes un resumen completo de la plataforma.'}
                     {user?.rol === 'MEDICO' && 'Tu agenda de hoy está lista. Tienes pacientes esperando.'}
-                    {(!user?.rol || user?.rol === 'PACIENTE') && 'Gestiona tus citas y mantén tu salud al día.'}
+                    {user?.rol === 'PACIENTE' && 'Gestiona tus citas y mantén tu salud al día.'}
+                    {!user?.rol && 'Bienvenido a tu panel de control.'}
                   </motion.p>
                 </div>
                 <motion.div 
@@ -216,11 +289,16 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
                   <Bell className="w-5 h-5" />
-                  <span className="text-sm">3 notificaciones</span>
+                  <span className="text-sm">{dashboardData.citasPendientes} cita(s) pendiente(s)</span>
                 </div>
                 <div className="hidden sm:flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl">
                   <Calendar className="w-5 h-5" />
-                  <span className="text-sm">Próxima cita: Hoy 10:00 AM</span>
+                  <span className="text-sm">
+                    {dashboardData.proximaCita 
+                      ? `Próxima: ${new Date(dashboardData.proximaCita.fechaHoraCita || dashboardData.proximaCita.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} ${new Date(dashboardData.proximaCita.fechaHoraCita || dashboardData.proximaCita.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
+                      : 'Sin citas próximas'
+                    }
+                  </span>
                 </div>
               </motion.div>
             </div>
@@ -269,7 +347,7 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Health Metrics for Patients */}
-        {(!user?.rol || user?.rol === 'PACIENTE') && (
+        {user?.rol === 'PACIENTE' && (
           <motion.div variants={item}>
             <GlassCard variant="light" size="lg">
               <div className="flex items-center justify-between mb-6">

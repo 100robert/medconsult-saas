@@ -325,3 +325,73 @@ export class ConsultaService {
 }
 
 export const consultaService = new ConsultaService();
+
+// Agregar método para obtener consultas por usuario
+consultaService.obtenerPorUsuario = async function(idUsuario: string, rol: string, filtros: ConsultaFilters = {}) {
+  const { estado, fechaDesde, fechaHasta, page = 1, limit = 10 } = filtros;
+
+  let where: any = {};
+
+  // Buscar según el rol del usuario
+  if (rol === 'MEDICO') {
+    const medico = await prisma.medico.findUnique({
+      where: { idUsuario },
+      select: { id: true }
+    });
+    
+    if (!medico) {
+      return { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
+    }
+    
+    where.cita = { idMedico: medico.id };
+  } else {
+    const paciente = await prisma.paciente.findUnique({
+      where: { idUsuario },
+      select: { id: true }
+    });
+    
+    if (!paciente) {
+      return { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
+    }
+    
+    where.cita = { idPaciente: paciente.id };
+  }
+
+  if (estado) where.estado = estado;
+  if (fechaDesde || fechaHasta) {
+    where.fechaInicio = {};
+    if (fechaDesde) where.fechaInicio.gte = new Date(fechaDesde);
+    if (fechaHasta) where.fechaInicio.lte = new Date(fechaHasta);
+  }
+
+  const [consultas, total] = await Promise.all([
+    prisma.consulta.findMany({
+      where,
+      include: {
+        cita: {
+          include: {
+            paciente: { 
+              include: { usuario: { select: { correo: true, nombre: true, apellido: true, imagenPerfil: true } } } 
+            },
+            medico: { 
+              include: { 
+                usuario: { select: { correo: true, nombre: true, apellido: true, imagenPerfil: true } },
+                especialidad: true
+              }
+            }
+          }
+        },
+        recetas: true
+      },
+      orderBy: { fechaInicio: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit
+    }),
+    prisma.consulta.count({ where })
+  ]);
+
+  return {
+    data: consultas,
+    pagination: { total, page, limit, totalPages: Math.ceil(total / limit) }
+  };
+};

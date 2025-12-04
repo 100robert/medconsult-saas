@@ -129,6 +129,8 @@ model Usuario {
   nombre                      String    @db.VarChar(100)
   apellido                    String    @db.VarChar(100)
   telefono                    String?   @db.VarChar(20)
+  fechaNacimiento             DateTime? @db.Date
+  genero                      Genero?
   imagenPerfil                String?   @db.Text
   rol                         RolUsuario
   correoVerificado            Boolean   @default(false)
@@ -324,8 +326,8 @@ model Cita {
   paciente          Paciente    @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
   idMedico          String      @db.Uuid
   medico            Medico      @relation(fields: [idMedico], references: [id], onDelete: Cascade)
-  idDisponibilidad  String      @db.Uuid
-  disponibilidad    Disponibilidad @relation(fields: [idDisponibilidad], references: [id])
+  idDisponibilidad  String?     @db.Uuid
+  disponibilidad    Disponibilidad? @relation(fields: [idDisponibilidad], references: [id])
   fechaHoraCita     DateTime
   estado            EstadoCita  @default(PROGRAMADA)
   motivo            String?     @db.Text
@@ -341,7 +343,7 @@ model Cita {
   pago              Pago?
   resena            Resena?
 
-  @@unique([idDisponibilidad, fechaHoraCita])
+  @@unique([idMedico, fechaHoraCita])
   @@index([idPaciente])
   @@index([idMedico])
   @@index([fechaHoraCita])

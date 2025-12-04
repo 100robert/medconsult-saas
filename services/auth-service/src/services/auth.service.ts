@@ -606,9 +606,71 @@ async logout(refreshToken: string): Promise<MessageResponse> {
           correo: usuario.correo,
           nombre: usuario.nombre,
           apellido: usuario.apellido,
+          telefono: usuario.telefono,
           rol: usuario.rol,
           correoVerificado: usuario.correoVerificado,
           activo: usuario.activo,
+          fechaNacimiento: usuario.fechaNacimiento,
+          genero: usuario.genero,
+          imagenPerfil: usuario.imagenPerfil,
+        },
+      },
+    };
+  }
+
+  // ==========================================
+  // MÉTODO: ACTUALIZAR PERFIL
+  // ==========================================
+  // Actualiza los datos del usuario autenticado
+  // ==========================================
+
+  async updateProfile(
+    userId: string,
+    data: {
+      nombre?: string;
+      apellido?: string;
+      telefono?: string;
+      fechaNacimiento?: Date;
+      genero?: string;
+      imagenPerfil?: string;
+    }
+  ): Promise<{ success: boolean; data: { usuario: UserData } }> {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+
+    if (!usuario) {
+      throw new NotFoundError('Usuario no encontrado');
+    }
+
+    // Actualizar solo los campos proporcionados
+    const usuarioActualizado = await prisma.usuario.update({
+      where: { id: userId },
+      data: {
+        ...(data.nombre && { nombre: data.nombre }),
+        ...(data.apellido && { apellido: data.apellido }),
+        ...(data.telefono !== undefined && { telefono: data.telefono }),
+        ...(data.fechaNacimiento && { fechaNacimiento: data.fechaNacimiento }),
+        ...(data.genero && { genero: data.genero as any }),
+        ...(data.imagenPerfil !== undefined && { imagenPerfil: data.imagenPerfil }),
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        usuario: {
+          id: usuarioActualizado.id,
+          correo: usuarioActualizado.correo,
+          nombre: usuarioActualizado.nombre,
+          apellido: usuarioActualizado.apellido,
+          telefono: usuarioActualizado.telefono,
+          rol: usuarioActualizado.rol,
+          correoVerificado: usuarioActualizado.correoVerificado,
+          activo: usuarioActualizado.activo,
+          fechaNacimiento: usuarioActualizado.fechaNacimiento,
+          genero: usuarioActualizado.genero,
+          imagenPerfil: usuarioActualizado.imagenPerfil,
         },
       },
     };

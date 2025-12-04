@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Mail, Phone, Calendar, MapPin, Camera } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Camera } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button, Input, Alert, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { updateProfile } from '@/lib/auth';
@@ -14,8 +14,7 @@ const profileSchema = z.object({
   apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres'),
   telefono: z.string().optional(),
   fechaNacimiento: z.string().optional(),
-  genero: z.enum(['MASCULINO', 'FEMENINO', 'OTRO', '']).optional(),
-  direccion: z.string().optional(),
+  genero: z.enum(['MASCULINO', 'FEMENINO', 'OTRO', 'PREFIERO_NO_DECIR', '']).optional(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -37,8 +36,7 @@ export default function ProfilePage() {
       apellido: user?.apellido || '',
       telefono: user?.telefono || '',
       fechaNacimiento: user?.fechaNacimiento?.split('T')[0] || '',
-      genero: (user?.genero as 'MASCULINO' | 'FEMENINO' | 'OTRO' | '') || '',
-      direccion: user?.direccion || '',
+      genero: (user?.genero as 'MASCULINO' | 'FEMENINO' | 'OTRO' | 'PREFIERO_NO_DECIR' | '') || '',
     },
   });
 
@@ -74,9 +72,9 @@ export default function ProfilePage() {
           <div className="flex items-center">
             <div className="relative">
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
-                {user?.avatar ? (
+                {user?.imagenPerfil ? (
                   <img
-                    src={user.avatar}
+                    src={user.imagenPerfil}
                     alt="Avatar"
                     className="w-20 h-20 rounded-full object-cover"
                   />
@@ -182,14 +180,6 @@ export default function ProfilePage() {
                 </select>
               </div>
             </div>
-
-            <Input
-              label="Dirección"
-              placeholder="Calle 123, Ciudad"
-              leftIcon={<MapPin className="w-5 h-5" />}
-              error={errors.direccion?.message}
-              {...register('direccion')}
-            />
 
             <div className="flex justify-end">
               <Button type="submit" isLoading={isLoading}>

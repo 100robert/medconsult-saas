@@ -6,6 +6,37 @@ import { Request, Response, NextFunction } from 'express';
 import { consultaService } from '../services/consulta.service';
 
 class ConsultaController {
+  /**
+   * GET /consultas/mis-consultas
+   * Obtener consultas del usuario autenticado
+   */
+  async obtenerMisConsultas(req: Request, res: Response, next: NextFunction) {
+    try {
+      const idUsuario = req.user?.userId || req.user?.id;
+      const rol = req.user?.rol || 'PACIENTE';
+
+      if (!idUsuario) {
+        return res.status(401).json({
+          success: false,
+          message: 'Usuario no autenticado'
+        });
+      }
+
+      const filtros = {
+        estado: req.query.estado as any,
+        fechaDesde: req.query.fechaDesde as any,
+        fechaHasta: req.query.fechaHasta as any,
+        page: req.query.page ? parseInt(req.query.page as string) : 1,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 10
+      };
+
+      const resultado = await consultaService.obtenerPorUsuario(idUsuario, rol, filtros);
+      res.json({ success: true, ...resultado });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async crear(req: Request, res: Response, next: NextFunction) {
     try {
       const consulta = await consultaService.crear(req.body);

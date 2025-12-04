@@ -3,8 +3,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Clock, Video, MapPin, User, Check } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Video, MapPin, User, Check, Loader2 } from 'lucide-react';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Alert } from '@/components/ui';
+import { buscarMedicos, Doctor as DoctorAPI } from '@/lib/doctors';
+import { createCita } from '@/lib/appointments';
 
 interface Doctor {
   id: string;
@@ -19,24 +21,17 @@ interface TimeSlot {
   disponible: boolean;
 }
 
-// Mock data
-const mockDoctors: Doctor[] = [
-  { id: '1', nombre: 'Carlos', apellido: 'Mendoza', especialidad: 'Cardiología', precio: 50 },
-  { id: '2', nombre: 'María', apellido: 'García', especialidad: 'Dermatología', precio: 45 },
-  { id: '3', nombre: 'Pedro', apellido: 'Ramírez', especialidad: 'Medicina General', precio: 35 },
-];
-
 const timeSlots: TimeSlot[] = [
   { hora: '09:00', disponible: true },
   { hora: '09:30', disponible: true },
-  { hora: '10:00', disponible: false },
+  { hora: '10:00', disponible: true },
   { hora: '10:30', disponible: true },
   { hora: '11:00', disponible: true },
-  { hora: '11:30', disponible: false },
+  { hora: '11:30', disponible: true },
   { hora: '14:00', disponible: true },
   { hora: '14:30', disponible: true },
   { hora: '15:00', disponible: true },
-  { hora: '15:30', disponible: false },
+  { hora: '15:30', disponible: true },
   { hora: '16:00', disponible: true },
   { hora: '16:30', disponible: true },
 ];
@@ -46,23 +41,50 @@ function NewAppointmentContent() {
   const searchParams = useSearchParams();
   const doctorIdParam = searchParams.get('doctorId');
 
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [step, setStep] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [appointmentType, setAppointmentType] = useState<'VIDEOCONSULTA' | 'PRESENCIAL'>('VIDEOCONSULTA');
   const [motivo, setMotivo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Cargar médicos desde la API
   useEffect(() => {
-    if (doctorIdParam) {
-      const doctor = mockDoctors.find((d) => d.id === doctorIdParam);
-      if (doctor) {
-        setSelectedDoctor(doctor);
-        setStep(2);
+    async function cargarMedicos() {
+      setLoadingDoctors(true);
+      try {
+        const medicosAPI = await buscarMedicos({ limit: 50 });
+        const medicosFormateados: Doctor[] = medicosAPI.map((m: DoctorAPI) => ({
+          id: m.id,
+          nombre: m.usuario.nombre,
+          apellido: m.usuario.apellido,
+          especialidad: m.especialidad?.nombre || 'Medicina General',
+          precio: Number(m.precioPorConsulta),
+        }));
+        setDoctors(medicosFormateados);
+        
+        // Si hay un doctorId en la URL, seleccionarlo
+        if (doctorIdParam) {
+          const doctor = medicosFormateados.find((d) => d.id === doctorIdParam);
+          if (doctor) {
+            setSelectedDoctor(doctor);
+            setSelectedDoctorId(doctor.id);
+            setStep(2);
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar médicos:', error);
+      } finally {
+        setLoadingDoctors(false);
       }
     }
+    cargarMedicos();
   }, [doctorIdParam]);
 
   // Generate next 14 days for date selection
@@ -83,15 +105,40 @@ function NewAppointmentContent() {
   const availableDates = getAvailableDates();
 
   const handleSubmit = async () => {
+    if (!selectedDoctorId || !selectedDate || !selectedTime) {
+      setError('Faltan datos para crear la cita');
+      return;
+    }
+
     setIsLoading(true);
-    // Simular API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setSuccess(true);
-    // Redirect after success
-    setTimeout(() => {
-      router.push('/dashboard/appointments');
-    }, 2000);
+    setError(null);
+    
+    try {
+      // Calcular hora de fin (30 min después)
+      const [hours, minutes] = selectedTime.split(':').map(Number);
+      const endHours = minutes + 30 >= 60 ? hours + 1 : hours;
+      const endMinutes = (minutes + 30) % 60;
+      const horaFin = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+
+      await createCita({
+        idMedico: selectedDoctorId,
+        fecha: selectedDate,
+        horaInicio: selectedTime,
+        horaFin: horaFin,
+        tipo: appointmentType,
+        motivo: motivo || 'Consulta general',
+      });
+      
+      setSuccess(true);
+      setTimeout(() => {
+        router.push('/dashboard/appointments');
+      }, 2000);
+    } catch (err: any) {
+      console.error('Error al crear cita:', err);
+      setError(err.response?.data?.message || 'Error al agendar la cita. Intenta de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (success) {
@@ -157,37 +204,49 @@ function NewAppointmentContent() {
             <CardDescription>Elige el especialista para tu consulta</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {mockDoctors.map((doctor) => (
-                <button
-                  key={doctor.id}
-                  onClick={() => {
-                    setSelectedDoctor(doctor);
-                    setStep(2);
-                  }}
-                  className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
-                    selectedDoctor?.id === doctor.id
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="w-6 h-6 text-blue-600" />
+            {loadingDoctors ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Cargando médicos...</span>
+              </div>
+            ) : doctors.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500">No hay médicos disponibles en este momento.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {doctors.map((doctor) => (
+                  <button
+                    key={doctor.id}
+                    onClick={() => {
+                      setSelectedDoctor(doctor);
+                      setSelectedDoctorId(doctor.id);
+                      setStep(2);
+                    }}
+                    className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
+                      selectedDoctor?.id === doctor.id
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <User className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            Dr. {doctor.nombre} {doctor.apellido}
+                          </p>
+                          <p className="text-sm text-blue-600">{doctor.especialidad}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          Dr. {doctor.nombre} {doctor.apellido}
-                        </p>
-                        <p className="text-sm text-blue-600">{doctor.especialidad}</p>
-                      </div>
+                      <p className="text-lg font-bold text-gray-900">${doctor.precio}</p>
                     </div>
-                    <p className="text-lg font-bold text-gray-900">${doctor.precio}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -378,6 +437,13 @@ function NewAppointmentContent() {
                 <p className="font-medium text-gray-900">Total a pagar</p>
                 <p className="text-2xl font-bold text-blue-600">${selectedDoctor?.precio}</p>
               </div>
+
+              {/* Error message */}
+              {error && (
+                <Alert variant="error">
+                  {error}
+                </Alert>
+              )}
 
               {/* Actions */}
               <div className="flex justify-between">

@@ -33,7 +33,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const variants = {
       default: `
         bg-white border-2 border-gray-200
-        focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10
+        focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10
         hover:border-gray-300
       `,
       glass: `
@@ -43,9 +43,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         focus:shadow-[0_0_20px_rgba(46,108,253,0.3)]
       `,
       'glass-light': `
-        bg-white/90 backdrop-blur-xl border-2 border-blue-500/10
-        focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/10
-        hover:border-blue-500/30
+        bg-white/90 backdrop-blur-xl border-2 border-teal-500/10
+        focus:border-teal-500/50 focus:ring-4 focus:ring-teal-500/10
+        hover:border-teal-500/30
       `,
     };
 
@@ -67,7 +67,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors ${
               variant === 'glass' 
                 ? 'text-white/60 group-focus-within:text-white' 
-                : 'text-gray-400 group-focus-within:text-blue-500'
+                : 'text-gray-400 group-focus-within:text-teal-500'
             }`}>
               {leftIcon}
             </div>

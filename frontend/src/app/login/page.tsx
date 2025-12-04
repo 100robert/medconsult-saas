@@ -61,14 +61,14 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Solid Blue Background */}
-      <div className="absolute inset-0 bg-blue-600" />
+      {/* Solid Teal Background */}
+      <div className="absolute inset-0 bg-teal-600" />
       
       {/* Floating Blobs */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 -left-20 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 right-0 w-[500px] h-[500px] bg-blue-400/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-blue-300/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 right-0 w-[500px] h-[500px] bg-teal-400/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-teal-300/10 rounded-full blur-3xl" />
       </div>
 
       {/* Content */}
@@ -114,7 +114,7 @@ export default function LoginPage() {
             >
               Tu salud en las
               <br />
-              <span className="text-blue-100">
+              <span className="text-teal-100">
                 mejores manos
               </span>
             </motion.h1>
@@ -179,7 +179,7 @@ export default function LoginPage() {
             <div className="glass-card-light p-8 md:p-10 max-w-md mx-auto">
               {/* Mobile Logo */}
               <Link href="/" className="lg:hidden inline-flex items-center gap-2 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg">
                   <Heart className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold text-gray-900">MedConsult</span>
@@ -253,7 +253,7 @@ export default function LoginPage() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="focus:outline-none hover:text-blue-600 transition-colors"
+                        className="focus:outline-none hover:text-teal-600 transition-colors"
                       >
                         {showPassword ? (
                           <EyeOff className="w-5 h-5" />
@@ -276,7 +276,7 @@ export default function LoginPage() {
                   <label className="flex items-center cursor-pointer group">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                      className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-600"
                     />
                     <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
                       Recordarme
@@ -284,7 +284,7 @@ export default function LoginPage() {
                   </label>
                   <Link
                     href="/forgot-password"
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                    className="text-sm text-teal-600 hover:text-teal-700 font-medium transition-colors"
                   >
                     ¿Olvidaste tu contraseña?
                   </Link>
@@ -364,7 +364,7 @@ export default function LoginPage() {
                 ¿No tienes una cuenta?{' '}
                 <Link
                   href="/register"
-                  className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                  className="text-teal-600 hover:text-teal-700 font-semibold transition-colors"
                 >
                   Regístrate gratis
                 </Link>

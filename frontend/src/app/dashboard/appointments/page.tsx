@@ -74,11 +74,11 @@ const estadoConfig = {
     solidColor: 'bg-emerald-500'
   },
   COMPLETADA: { 
-    bg: 'bg-blue-50', 
-    text: 'text-blue-700', 
-    border: 'border-blue-200',
+    bg: 'bg-slate-50', 
+    text: 'text-slate-700', 
+    border: 'border-slate-200',
     icon: CheckCircle2,
-    solidColor: 'bg-blue-500'
+    solidColor: 'bg-slate-500'
   },
   CANCELADA: { 
     bg: 'bg-red-50', 
@@ -124,10 +124,10 @@ export default function AppointmentsPage() {
 
   // Stats
   const stats = [
-    { label: 'Total', value: appointments.length, solidColor: 'bg-blue-600' },
+    { label: 'Total', value: appointments.length, solidColor: 'bg-teal-600' },
     { label: 'Confirmadas', value: appointments.filter(a => a.estado === 'CONFIRMADA').length, solidColor: 'bg-emerald-500' },
     { label: 'Pendientes', value: appointments.filter(a => a.estado === 'PENDIENTE').length, solidColor: 'bg-amber-500' },
-    { label: 'Completadas', value: appointments.filter(a => a.estado === 'COMPLETADA').length, solidColor: 'bg-blue-500' },
+    { label: 'Completadas', value: appointments.filter(a => a.estado === 'COMPLETADA').length, solidColor: 'bg-slate-500' },
   ];
 
   return (
@@ -135,7 +135,7 @@ export default function AppointmentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm font-medium mb-2">
+          <div className="inline-flex items-center gap-2 bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-sm font-medium mb-2">
             <CalendarDays className="w-4 h-4" />
             Gestión de citas
           </div>
@@ -186,7 +186,7 @@ export default function AppointmentsPage() {
               placeholder="Buscar citas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-transparent rounded-xl focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all text-gray-900 placeholder-gray-400"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-transparent rounded-xl focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 transition-all text-gray-900 placeholder-gray-400"
             />
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -196,7 +196,7 @@ export default function AppointmentsPage() {
                 onClick={() => setFilterStatus(status)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                   filterStatus === status
-                    ? 'bg-blue-600 text-white shadow-lg'
+                    ? 'bg-teal-600 text-white shadow-lg'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >

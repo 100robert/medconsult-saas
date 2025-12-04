@@ -38,10 +38,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: `
-        bg-blue-600 text-white
-        hover:bg-blue-700 hover:shadow-lg
+        bg-teal-600 text-white
+        hover:bg-teal-700 hover:shadow-lg
         hover:-translate-y-1
-        focus:ring-blue-500
+        focus:ring-teal-500
       `,
       secondary: `
         bg-white/10 backdrop-blur-md text-white
@@ -50,9 +50,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         focus:ring-white/50
       `,
       outline: `
-        border-2 border-blue-500/30 text-blue-600 bg-white/80 backdrop-blur-sm
-        hover:border-blue-500 hover:bg-blue-500/5 hover:-translate-y-1
-        focus:ring-blue-500
+        border-2 border-teal-500/30 text-teal-600 bg-white/80 backdrop-blur-sm
+        hover:border-teal-500 hover:bg-teal-500/5 hover:-translate-y-1
+        focus:ring-teal-500
       `,
       ghost: `
         text-gray-600 bg-transparent
@@ -66,10 +66,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         focus:ring-red-500
       `,
       gradient: `
-        bg-blue-600 text-white
-        hover:bg-blue-700 hover:shadow-lg
+        bg-teal-600 text-white
+        hover:bg-teal-700 hover:shadow-lg
         hover:-translate-y-1
-        focus:ring-blue-500
+        focus:ring-teal-500
       `,
       glass: `
         bg-white/15 backdrop-blur-xl text-white

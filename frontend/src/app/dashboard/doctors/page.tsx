@@ -109,10 +109,10 @@ export default function DoctorsPage() {
 
   const getSolidColor = (index: number) => {
     const colors = [
-      'bg-blue-600',
-      'bg-purple-600',
+      'bg-teal-600',
+      'bg-slate-600',
       'bg-emerald-600',
-      'bg-orange-500',
+      'bg-amber-500',
     ];
     return colors[index % colors.length];
   };
@@ -122,7 +122,7 @@ export default function DoctorsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm font-medium mb-2">
+          <div className="inline-flex items-center gap-2 bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-sm font-medium mb-2">
             <Sparkles className="w-4 h-4" />
             500+ especialistas
           </div>
@@ -143,7 +143,7 @@ export default function DoctorsPage() {
               placeholder="Buscar por nombre o especialidad..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-transparent rounded-xl focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all text-gray-900 placeholder-gray-400"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-transparent rounded-xl focus:border-teal-500 focus:bg-white focus:ring-4 focus:ring-teal-500/10 transition-all text-gray-900 placeholder-gray-400"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export default function DoctorsPage() {
               <Filter className="w-5 h-5 text-gray-600" />
             </button>
             <select
-              className="px-4 py-3 bg-gray-50 rounded-xl border-2 border-transparent focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-gray-700 font-medium cursor-pointer"
+              className="px-4 py-3 bg-gray-50 rounded-xl border-2 border-transparent focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all text-gray-700 font-medium cursor-pointer"
               value={selectedEspecialidad}
               onChange={(e) => setSelectedEspecialidad(e.target.value)}
             >
@@ -172,7 +172,7 @@ export default function DoctorsPage() {
               onClick={() => setSelectedEspecialidad(esp)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedEspecialidad === esp
-                  ? 'bg-blue-600 text-white shadow-lg'
+                  ? 'bg-teal-600 text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
               }`}
             >
@@ -233,7 +233,7 @@ export default function DoctorsPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-blue-600 font-semibold mt-1">{doctor.especialidad}</p>
+                    <p className="text-teal-600 font-semibold mt-1">{doctor.especialidad}</p>
                     
                     {/* Badges */}
                     <div className="flex items-center gap-3 mt-3 flex-wrap">
@@ -266,7 +266,7 @@ export default function DoctorsPage() {
                 {/* Price & Action */}
                 <div className="flex flex-col items-end gap-3 lg:min-w-[180px]">
                   <div className="text-right">
-                    <p className="text-3xl font-bold text-blue-600">
+                    <p className="text-3xl font-bold text-teal-600">
                       ${doctor.precio}
                     </p>
                     <p className="text-sm text-gray-500">por consulta</p>
@@ -290,7 +290,7 @@ export default function DoctorsPage() {
             </div>
             
             {/* Hover accent */}
-            <div className="h-1 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+            <div className="h-1 bg-teal-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
           </div>
         ))}
       </div>

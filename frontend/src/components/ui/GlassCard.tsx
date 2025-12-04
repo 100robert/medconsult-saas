@@ -27,7 +27,7 @@ export default function GlassCard({
   glowColor = 'blue',
   blur = 'md',
   icon,
-  iconBg = 'bg-blue-600',
+  iconBg = 'bg-teal-600',
   ...props
 }: GlassCardProps) {
   const variants = {

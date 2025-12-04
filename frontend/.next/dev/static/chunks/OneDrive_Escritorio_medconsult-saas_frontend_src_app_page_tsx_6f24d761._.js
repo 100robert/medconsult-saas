@@ -56,7 +56,7 @@ function HomePage() {
             icon: __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$video$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Video$3e$__["Video"],
             title: 'Consultas Online',
             description: 'Conecta con médicos en tiempo real desde cualquier lugar del mundo.',
-            color: 'bg-blue-600'
+            color: 'bg-teal-600'
         },
         {
             icon: __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$calendar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Calendar$3e$__["Calendar"],
@@ -68,13 +68,13 @@ function HomePage() {
             icon: __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$shield$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Shield$3e$__["Shield"],
             title: '100% Seguro',
             description: 'Tus datos médicos están protegidos con encriptación de última generación.',
-            color: 'bg-orange-500'
+            color: 'bg-amber-500'
         },
         {
             icon: __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__["Clock"],
             title: 'Atención 24/7',
             description: 'Acceso a médicos las 24 horas, los 7 días de la semana.',
-            color: 'bg-rose-500'
+            color: 'bg-slate-600'
         }
     ];
     const stats = [
@@ -140,7 +140,7 @@ function HomePage() {
                                 },
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                        className: "w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg",
+                                        className: "w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg",
                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$heart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Heart$3e$__["Heart"], {
                                             className: "w-5 h-5 text-white"
                                         }, void 0, false, {
@@ -175,7 +175,7 @@ function HomePage() {
                                     'Testimonios'
                                 ].map((item, i)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].a, {
                                         href: `#${item.toLowerCase().replace(' ', '-')}`,
-                                        className: "text-gray-600 hover:text-blue-600 font-medium transition-colors",
+                                        className: "text-gray-600 hover:text-teal-600 font-medium transition-colors",
                                         initial: {
                                             opacity: 0,
                                             y: -10
@@ -211,7 +211,7 @@ function HomePage() {
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                                         href: "/login",
-                                        className: "hidden sm:inline-flex text-gray-700 hover:text-blue-600 font-semibold px-4 py-2 rounded-xl transition-colors",
+                                        className: "hidden sm:inline-flex text-gray-700 hover:text-teal-600 font-semibold px-4 py-2 rounded-xl transition-colors",
                                         children: "Iniciar Sesión"
                                     }, void 0, false, {
                                         fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
@@ -250,7 +250,7 @@ function HomePage() {
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
-                className: "relative min-h-screen pt-32 lg:pt-40 pb-20 bg-blue-600",
+                className: "relative min-h-screen pt-32 lg:pt-40 pb-20 bg-teal-600",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "absolute inset-0 overflow-hidden pointer-events-none",
@@ -280,7 +280,7 @@ function HomePage() {
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
-                                className: "absolute top-1/2 -left-40 w-96 h-96 bg-purple-300/30 rounded-full blur-3xl",
+                                className: "absolute top-1/2 -left-40 w-96 h-96 bg-teal-300/30 rounded-full blur-3xl",
                                 animate: {
                                     x: [
                                         0,
@@ -304,7 +304,7 @@ function HomePage() {
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].div, {
-                                className: "absolute bottom-20 right-1/4 w-64 h-64 bg-pink-300/20 rounded-full blur-3xl",
+                                className: "absolute bottom-20 right-1/4 w-64 h-64 bg-emerald-300/20 rounded-full blur-3xl",
                                 animate: {
                                     scale: [
                                         1,
@@ -377,7 +377,7 @@ function HomePage() {
                                                     columnNumber: 27
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                    className: "text-blue-100",
+                                                    className: "text-teal-100",
                                                     children: "sin complicaciones"
                                                 }, void 0, false, {
                                                     fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
@@ -406,7 +406,7 @@ function HomePage() {
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                                                     href: "/register",
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].button, {
-                                                        className: "group inline-flex items-center justify-center bg-white text-blue-600 px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all",
+                                                        className: "group inline-flex items-center justify-center bg-white text-teal-700 px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all",
                                                         whileHover: {
                                                             scale: 1.02,
                                                             y: -2
@@ -632,7 +632,7 @@ function HomePage() {
                                                     className: "flex items-center gap-4 mb-6",
                                                     children: [
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                            className: "w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg",
+                                                            className: "w-20 h-20 rounded-2xl bg-teal-600 flex items-center justify-center shadow-lg",
                                                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
                                                                 className: "text-4xl",
                                                                 children: "👨‍⚕️"
@@ -649,7 +649,7 @@ function HomePage() {
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                                                    className: "text-blue-600 font-semibold",
+                                                                    className: "text-teal-600 font-semibold",
                                                                     children: "Cardiología"
                                                                 }, void 0, false, {
                                                                     fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
@@ -705,9 +705,9 @@ function HomePage() {
                                                             className: "flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-white/50",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    className: "w-10 h-10 bg-blue-600/10 rounded-lg flex items-center justify-center",
+                                                                    className: "w-10 h-10 bg-teal-600/10 rounded-lg flex items-center justify-center",
                                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$calendar$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Calendar$3e$__["Calendar"], {
-                                                                        className: "w-5 h-5 text-blue-600"
+                                                                        className: "w-5 h-5 text-teal-600"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
                                                                         lineNumber: 297,
@@ -752,9 +752,9 @@ function HomePage() {
                                                             className: "flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-white/50",
                                                             children: [
                                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                                    className: "w-10 h-10 bg-purple-600/10 rounded-lg flex items-center justify-center",
+                                                                    className: "w-10 h-10 bg-slate-600/10 rounded-lg flex items-center justify-center",
                                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$clock$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Clock$3e$__["Clock"], {
-                                                                        className: "w-5 h-5 text-purple-600"
+                                                                        className: "w-5 h-5 text-slate-600"
                                                                     }, void 0, false, {
                                                                         fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
                                                                         lineNumber: 306,
@@ -915,9 +915,9 @@ function HomePage() {
                                                 className: "flex items-center gap-3",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center",
+                                                        className: "w-12 h-12 bg-teal-600/10 rounded-xl flex items-center justify-center",
                                                         children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$activity$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Activity$3e$__["Activity"], {
-                                                            className: "w-6 h-6 text-blue-600"
+                                                            className: "w-6 h-6 text-teal-600"
                                                         }, void 0, false, {
                                                             fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
                                                             lineNumber: 349,
@@ -1009,7 +1009,7 @@ function HomePage() {
                                     },
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                                            className: "text-4xl font-bold text-blue-600",
+                                            className: "text-4xl font-bold text-teal-600",
                                             children: stat.value
                                         }, void 0, false, {
                                             fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
@@ -1071,7 +1071,7 @@ function HomePage() {
                             },
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                    className: "inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4",
+                                    className: "inline-flex items-center gap-2 bg-teal-600/10 text-teal-600 px-4 py-2 rounded-full text-sm font-semibold mb-4",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$sparkles$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Sparkles$3e$__["Sparkles"], {
                                             className: "w-4 h-4"
@@ -1093,7 +1093,7 @@ function HomePage() {
                                         "Todo lo que necesitas para tu",
                                         ' ',
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                            className: "text-blue-600",
+                                            className: "text-teal-600",
                                             children: "salud"
                                         }, void 0, false, {
                                             fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
@@ -1219,7 +1219,7 @@ function HomePage() {
                             },
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                    className: "inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4",
+                                    className: "inline-flex items-center gap-2 bg-teal-600/10 text-teal-600 px-4 py-2 rounded-full text-sm font-semibold mb-4",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$zap$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Zap$3e$__["Zap"], {
                                             className: "w-4 h-4"
@@ -1241,7 +1241,7 @@ function HomePage() {
                                         "Tres pasos para cuidar tu",
                                         ' ',
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                            className: "text-blue-600",
+                                            className: "text-teal-600",
                                             children: "salud"
                                         }, void 0, false, {
                                             fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
@@ -1301,7 +1301,7 @@ function HomePage() {
                                             },
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    className: "w-20 h-20 rounded-full bg-blue-600 mx-auto flex items-center justify-center shadow-lg mb-6",
+                                                    className: "w-20 h-20 rounded-full bg-teal-600 mx-auto flex items-center justify-center shadow-lg mb-6",
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Icon, {
                                                         className: "w-10 h-10 text-white"
                                                     }, void 0, false, {
@@ -1315,7 +1315,7 @@ function HomePage() {
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                                    className: "text-sm font-bold text-blue-600",
+                                                    className: "text-sm font-bold text-teal-600",
                                                     children: [
                                                         "Paso ",
                                                         stepItem.step
@@ -1350,7 +1350,7 @@ function HomePage() {
                                         index < 2 && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10",
                                             children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$arrow$2d$right$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ArrowRight$3e$__["ArrowRight"], {
-                                                className: "w-8 h-8 text-blue-600/30"
+                                                className: "w-8 h-8 text-teal-600/30"
                                             }, void 0, false, {
                                                 fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
                                                 lineNumber: 496,
@@ -1405,7 +1405,7 @@ function HomePage() {
                             },
                             children: [
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                    className: "inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4",
+                                    className: "inline-flex items-center gap-2 bg-teal-600/10 text-teal-600 px-4 py-2 rounded-full text-sm font-semibold mb-4",
                                     children: [
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$award$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Award$3e$__["Award"], {
                                             className: "w-4 h-4"
@@ -1427,7 +1427,7 @@ function HomePage() {
                                         "Lo que dicen nuestros",
                                         ' ',
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
-                                            className: "text-blue-600",
+                                            className: "text-teal-600",
                                             children: "usuarios"
                                         }, void 0, false, {
                                             fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
@@ -1495,7 +1495,7 @@ function HomePage() {
                                                 className: "flex items-center gap-4",
                                                 children: [
                                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                        className: "w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold",
+                                                        className: "w-12 h-12 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold",
                                                         children: testimonial.image
                                                     }, void 0, false, {
                                                         fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
@@ -1560,7 +1560,7 @@ function HomePage() {
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("section", {
-                className: "py-24 bg-blue-600 relative overflow-hidden",
+                className: "py-24 bg-teal-600 relative overflow-hidden",
                 children: [
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "absolute inset-0 overflow-hidden",
@@ -1573,7 +1573,7 @@ function HomePage() {
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: "absolute bottom-0 right-0 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl"
+                                className: "absolute bottom-0 right-0 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl"
                             }, void 0, false, {
                                 fileName: "[project]/OneDrive/Escritorio/medconsult-saas/frontend/src/app/page.tsx",
                                 lineNumber: 567,
@@ -1647,7 +1647,7 @@ function HomePage() {
                                 children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
                                     href: "/register",
                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$framer$2d$motion$2f$dist$2f$es$2f$render$2f$components$2f$motion$2f$proxy$2e$mjs__$5b$app$2d$client$5d$__$28$ecmascript$29$__["motion"].button, {
-                                        className: "inline-flex items-center gap-2 bg-white text-blue-600 px-10 py-5 rounded-2xl text-lg font-bold hover:shadow-2xl transition-all",
+                                        className: "inline-flex items-center gap-2 bg-white text-teal-700 px-10 py-5 rounded-2xl text-lg font-bold hover:shadow-2xl transition-all",
                                         whileHover: {
                                             scale: 1.05,
                                             y: -3
@@ -1707,7 +1707,7 @@ function HomePage() {
                                             className: "flex items-center gap-2 mb-4",
                                             children: [
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                                    className: "w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center",
+                                                    className: "w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center",
                                                     children: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$OneDrive$2f$Escritorio$2f$medconsult$2d$saas$2f$frontend$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$heart$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Heart$3e$__["Heart"], {
                                                         className: "w-5 h-5 text-white"
                                                     }, void 0, false, {

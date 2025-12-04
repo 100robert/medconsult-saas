@@ -91,13 +91,13 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Solid Green Background */}
-      <div className="absolute inset-0 bg-emerald-600" />
+      {/* Solid Teal Background */}
+      <div className="absolute inset-0 bg-teal-600" />
       
       {/* Floating Blobs */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 right-10 w-96 h-96 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 left-0 w-[500px] h-[500px] bg-emerald-400/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 left-0 w-[500px] h-[500px] bg-teal-400/20 rounded-full blur-3xl" />
         <div className="absolute top-1/3 left-1/4 w-64 h-64 bg-teal-300/10 rounded-full blur-3xl" />
       </div>
 
@@ -144,7 +144,7 @@ export default function RegisterPage() {
             >
               Únete a miles de
               <br />
-              <span className="text-emerald-100">
+              <span className="text-teal-100">
                 pacientes felices
               </span>
             </motion.h1>
@@ -174,7 +174,7 @@ export default function RegisterPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.7 + index * 0.1 }}
                 >
-                  <benefit.icon className="w-5 h-5 text-emerald-200" />
+                  <benefit.icon className="w-5 h-5 text-teal-200" />
                   <span className="text-sm font-medium">{benefit.text}</span>
                 </motion.div>
               ))}
@@ -211,7 +211,7 @@ export default function RegisterPage() {
             <div className="glass-card-light p-8 max-w-md mx-auto max-h-[90vh] overflow-y-auto">
               {/* Mobile Logo */}
               <Link href="/" className="lg:hidden inline-flex items-center gap-2 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg">
                   <Heart className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold text-gray-900">MedConsult</span>
@@ -412,16 +412,16 @@ export default function RegisterPage() {
                   <label className="flex items-start cursor-pointer group">
                     <input
                       type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 mt-1"
+                      className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 mt-1"
                       {...register('acceptTerms')}
                     />
                     <span className="ml-3 text-sm text-gray-600">
                       Acepto los{' '}
-                      <Link href="/terms" className="text-emerald-600 hover:text-emerald-700 font-semibold">
+                      <Link href="/terms" className="text-teal-600 hover:text-teal-700 font-semibold">
                         términos y condiciones
                       </Link>{' '}
                       y la{' '}
-                      <Link href="/privacy" className="text-emerald-600 hover:text-emerald-700 font-semibold">
+                      <Link href="/privacy" className="text-teal-600 hover:text-teal-700 font-semibold">
                         política de privacidad
                       </Link>
                     </span>
@@ -438,7 +438,7 @@ export default function RegisterPage() {
                 >
                   <Button
                     type="submit"
-                    className="w-full !bg-emerald-600 hover:!bg-emerald-700"
+                    className="w-full !bg-teal-600 hover:!bg-teal-700"
                     size="lg"
                     isLoading={isLoading}
                     rightIcon={!isLoading && <ArrowRight className="w-5 h-5" />}
@@ -505,7 +505,7 @@ export default function RegisterPage() {
                 ¿Ya tienes una cuenta?{' '}
                 <Link
                   href="/login"
-                  className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
+                  className="text-teal-600 hover:text-teal-700 font-semibold transition-colors"
                 >
                   Inicia sesión
                 </Link>

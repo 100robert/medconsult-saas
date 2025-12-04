@@ -39,7 +39,7 @@ export default function HomePage() {
       icon: Video,
       title: 'Consultas Online',
       description: 'Conecta con médicos en tiempo real desde cualquier lugar del mundo.',
-      color: 'bg-blue-600',
+      color: 'bg-teal-600',
     },
     {
       icon: Calendar,
@@ -51,13 +51,13 @@ export default function HomePage() {
       icon: Shield,
       title: '100% Seguro',
       description: 'Tus datos médicos están protegidos con encriptación de última generación.',
-      color: 'bg-orange-500',
+      color: 'bg-amber-500',
     },
     {
       icon: Clock,
       title: 'Atención 24/7',
       description: 'Acceso a médicos las 24 horas, los 7 días de la semana.',
-      color: 'bg-rose-500',
+      color: 'bg-slate-600',
     },
   ];
 
@@ -103,7 +103,7 @@ export default function HomePage() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center shadow-lg">
                 <Heart className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-gray-900">MedConsult</span>
@@ -114,7 +114,7 @@ export default function HomePage() {
                 <motion.a
                   key={item}
                   href={`#${item.toLowerCase().replace(' ', '-')}`}
-                  className="text-gray-600 hover:text-blue-600 font-medium transition-colors"
+                  className="text-gray-600 hover:text-teal-600 font-medium transition-colors"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 * i }}
@@ -131,7 +131,7 @@ export default function HomePage() {
             >
               <Link
                 href="/login"
-                className="hidden sm:inline-flex text-gray-700 hover:text-blue-600 font-semibold px-4 py-2 rounded-xl transition-colors"
+                className="hidden sm:inline-flex text-gray-700 hover:text-teal-600 font-semibold px-4 py-2 rounded-xl transition-colors"
               >
                 Iniciar Sesión
               </Link>
@@ -147,7 +147,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="relative min-h-screen pt-32 lg:pt-40 pb-20 bg-blue-600">
+      <section className="relative min-h-screen pt-32 lg:pt-40 pb-20 bg-teal-600">
         {/* Floating blobs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <motion.div
@@ -156,12 +156,12 @@ export default function HomePage() {
             transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute top-1/2 -left-40 w-96 h-96 bg-purple-300/30 rounded-full blur-3xl"
+            className="absolute top-1/2 -left-40 w-96 h-96 bg-teal-300/30 rounded-full blur-3xl"
             animate={{ x: [0, -30, 0], y: [0, 30, 0] }}
             transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute bottom-20 right-1/4 w-64 h-64 bg-pink-300/20 rounded-full blur-3xl"
+            className="absolute bottom-20 right-1/4 w-64 h-64 bg-emerald-300/20 rounded-full blur-3xl"
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
           />
@@ -189,7 +189,7 @@ export default function HomePage() {
                 variants={item}
               >
                 Tu salud, <br className="hidden sm:block" />
-                <span className="text-blue-100">
+                <span className="text-teal-100">
                   sin complicaciones
                 </span>
               </motion.h1>
@@ -207,7 +207,7 @@ export default function HomePage() {
               >
                 <Link href="/register">
                   <motion.button
-                    className="group inline-flex items-center justify-center bg-white text-blue-600 px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all"
+                    className="group inline-flex items-center justify-center bg-white text-teal-700 px-8 py-4 rounded-2xl text-lg font-semibold hover:shadow-2xl transition-all"
                     whileHover={{ scale: 1.02, y: -2 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -277,11 +277,11 @@ export default function HomePage() {
                 </div>
                 
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
+                  <div className="w-20 h-20 rounded-2xl bg-teal-600 flex items-center justify-center shadow-lg">
                     <span className="text-4xl">👨‍⚕️</span>
                   </div>
                   <div>
-                    <p className="text-blue-600 font-semibold">Cardiología</p>
+                    <p className="text-teal-600 font-semibold">Cardiología</p>
                     <div className="flex items-center gap-1 mt-1">
                       {[1, 2, 3, 4, 5].map((i) => (
                         <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -293,8 +293,8 @@ export default function HomePage() {
                 
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-white/50">
-                    <div className="w-10 h-10 bg-blue-600/10 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-blue-600" />
+                    <div className="w-10 h-10 bg-teal-600/10 rounded-lg flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-teal-600" />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Fecha</p>
@@ -302,8 +302,8 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4 p-4 bg-white/60 rounded-xl border border-white/50">
-                    <div className="w-10 h-10 bg-purple-600/10 rounded-lg flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-purple-600" />
+                    <div className="w-10 h-10 bg-slate-600/10 rounded-lg flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-slate-600" />
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Hora</p>
@@ -345,8 +345,8 @@ export default function HomePage() {
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-600/10 rounded-xl flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-teal-600/10 rounded-xl flex items-center justify-center">
+                    <Activity className="w-6 h-6 text-teal-600" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Tiempo de espera</p>
@@ -379,7 +379,7 @@ export default function HomePage() {
                   className="glass-card-light p-6"
                   whileHover={{ scale: 1.05, y: -5 }}
                 >
-                  <p className="text-4xl font-bold text-blue-600">{stat.value}</p>
+                  <p className="text-4xl font-bold text-teal-600">{stat.value}</p>
                   <p className="text-gray-600 mt-2 font-medium">{stat.label}</p>
                 </motion.div>
               </motion.div>
@@ -397,13 +397,13 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <span className="inline-flex items-center gap-2 bg-teal-600/10 text-teal-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <Sparkles className="w-4 h-4" />
               Características
             </span>
             <h2 className="text-4xl font-bold text-gray-900">
               Todo lo que necesitas para tu{' '}
-              <span className="text-blue-600">salud</span>
+              <span className="text-teal-600">salud</span>
             </h2>
             <p className="text-xl text-gray-600 mt-4 max-w-2xl mx-auto">
               Una plataforma completa diseñada para hacer tu experiencia médica más simple y efectiva.
@@ -451,13 +451,13 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <span className="inline-flex items-center gap-2 bg-teal-600/10 text-teal-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <Zap className="w-4 h-4" />
               Cómo Funciona
             </span>
             <h2 className="text-4xl font-bold text-gray-900">
               Tres pasos para cuidar tu{' '}
-              <span className="text-blue-600">salud</span>
+              <span className="text-teal-600">salud</span>
             </h2>
           </motion.div>
 
@@ -484,16 +484,16 @@ export default function HomePage() {
                     className="glass-card-light p-8 text-center h-full"
                     whileHover={{ scale: 1.02, y: -5 }}
                   >
-                    <div className="w-20 h-20 rounded-full bg-blue-600 mx-auto flex items-center justify-center shadow-lg mb-6">
+                    <div className="w-20 h-20 rounded-full bg-teal-600 mx-auto flex items-center justify-center shadow-lg mb-6">
                       <Icon className="w-10 h-10 text-white" />
                     </div>
-                    <span className="text-sm font-bold text-blue-600">Paso {stepItem.step}</span>
+                    <span className="text-sm font-bold text-teal-600">Paso {stepItem.step}</span>
                     <h3 className="text-xl font-bold text-gray-900 mt-2 mb-3">{stepItem.title}</h3>
                     <p className="text-gray-600">{stepItem.desc}</p>
                   </motion.div>
                   {index < 2 && (
                     <div className="hidden md:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
-                      <ArrowRight className="w-8 h-8 text-blue-600/30" />
+                      <ArrowRight className="w-8 h-8 text-teal-600/30" />
                     </div>
                   )}
                 </motion.div>
@@ -512,13 +512,13 @@ export default function HomePage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-2 bg-blue-600/10 text-blue-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+            <span className="inline-flex items-center gap-2 bg-teal-600/10 text-teal-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
               <Award className="w-4 h-4" />
               Testimonios
             </span>
             <h2 className="text-4xl font-bold text-gray-900">
               Lo que dicen nuestros{' '}
-              <span className="text-blue-600">usuarios</span>
+              <span className="text-teal-600">usuarios</span>
             </h2>
           </motion.div>
 
@@ -545,7 +545,7 @@ export default function HomePage() {
                   </div>
                   <p className="text-gray-600 mb-6 italic">"{testimonial.text}"</p>
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+                    <div className="w-12 h-12 rounded-full bg-teal-600 flex items-center justify-center text-white font-bold">
                       {testimonial.image}
                     </div>
                     <div>
@@ -561,10 +561,10 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 bg-blue-600 relative overflow-hidden">
+      <section className="py-24 bg-teal-600 relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl" />
         </div>
         
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
@@ -593,7 +593,7 @@ export default function HomePage() {
           >
             <Link href="/register">
               <motion.button
-                className="inline-flex items-center gap-2 bg-white text-blue-600 px-10 py-5 rounded-2xl text-lg font-bold hover:shadow-2xl transition-all"
+                className="inline-flex items-center gap-2 bg-white text-teal-700 px-10 py-5 rounded-2xl text-lg font-bold hover:shadow-2xl transition-all"
                 whileHover={{ scale: 1.05, y: -3 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -611,7 +611,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center">
                   <Heart className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-xl font-bold">MedConsult</span>

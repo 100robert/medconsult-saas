@@ -80,28 +80,28 @@ export default function DashboardPage() {
   const getStats = () => {
     if (user?.rol === 'ADMIN') {
       return [
-        { label: 'Usuarios Totales', value: '1,234', icon: Users, change: '+12%', color: 'bg-blue-600' },
+        { label: 'Usuarios Totales', value: '1,234', icon: Users, change: '+12%', color: 'bg-teal-600' },
         { label: 'Citas Hoy', value: '45', icon: Calendar, change: '+5%', color: 'bg-emerald-600' },
-        { label: 'Ingresos del Mes', value: '$12,450', icon: CreditCard, change: '+18%', color: 'bg-purple-600' },
-        { label: 'Consultas Activas', value: '23', icon: FileText, change: '+8%', color: 'bg-orange-500' },
+        { label: 'Ingresos del Mes', value: '$12,450', icon: CreditCard, change: '+18%', color: 'bg-slate-600' },
+        { label: 'Consultas Activas', value: '23', icon: FileText, change: '+8%', color: 'bg-amber-500' },
       ];
     }
 
     if (user?.rol === 'MEDICO') {
       return [
-        { label: 'Citas Hoy', value: '8', icon: Calendar, change: '', color: 'bg-blue-600' },
+        { label: 'Citas Hoy', value: '8', icon: Calendar, change: '', color: 'bg-teal-600' },
         { label: 'Pacientes Totales', value: '156', icon: Users, change: '+3', color: 'bg-emerald-600' },
-        { label: 'Consultas Pendientes', value: '5', icon: Clock, change: '', color: 'bg-orange-500' },
-        { label: 'Calificación', value: '4.8', icon: Star, change: '', color: 'bg-purple-600' },
+        { label: 'Consultas Pendientes', value: '5', icon: Clock, change: '', color: 'bg-amber-500' },
+        { label: 'Calificación', value: '4.8', icon: Star, change: '', color: 'bg-slate-600' },
       ];
     }
 
     // PACIENTE
     return [
-      { label: 'Próximas Citas', value: '2', icon: Calendar, change: '', color: 'bg-blue-600' },
+      { label: 'Próximas Citas', value: '2', icon: Calendar, change: '', color: 'bg-teal-600' },
       { label: 'Consultas Realizadas', value: '12', icon: CheckCircle, change: '', color: 'bg-emerald-600' },
-      { label: 'Médicos Favoritos', value: '3', icon: Users, change: '', color: 'bg-purple-600' },
-      { label: 'Pendientes de Pago', value: '1', icon: AlertCircle, change: '', color: 'bg-orange-500' },
+      { label: 'Médicos Favoritos', value: '3', icon: Users, change: '', color: 'bg-slate-600' },
+      { label: 'Pendientes de Pago', value: '1', icon: AlertCircle, change: '', color: 'bg-amber-500' },
     ];
   };
 
@@ -109,9 +109,9 @@ export default function DashboardPage() {
 
   // Health Metrics for patient
   const healthMetrics = [
-    { label: 'Ritmo Cardíaco', value: '72', unit: 'bpm', icon: Heart, color: 'bg-red-500', status: 'Normal' },
-    { label: 'Presión Arterial', value: '120/80', unit: 'mmHg', icon: Activity, color: 'bg-blue-500', status: 'Óptima' },
-    { label: 'Glucosa', value: '95', unit: 'mg/dL', icon: Droplets, color: 'bg-purple-500', status: 'Normal' },
+    { label: 'Ritmo Cardíaco', value: '72', unit: 'bpm', icon: Heart, color: 'bg-rose-500', status: 'Normal' },
+    { label: 'Presión Arterial', value: '120/80', unit: 'mmHg', icon: Activity, color: 'bg-teal-500', status: 'Óptima' },
+    { label: 'Glucosa', value: '95', unit: 'mg/dL', icon: Droplets, color: 'bg-slate-500', status: 'Normal' },
     { label: 'Peso', value: '70', unit: 'kg', icon: Scale, color: 'bg-emerald-500', status: 'IMC: 22.5' },
   ];
 
@@ -119,23 +119,23 @@ export default function DashboardPage() {
   const getQuickActions = () => {
     if (user?.rol === 'ADMIN') {
       return [
-        { label: 'Crear Usuario', href: '/dashboard/users/new', icon: Users, color: 'bg-blue-600' },
-        { label: 'Ver Reportes', href: '/dashboard/reports', icon: FileText, color: 'bg-purple-600' },
+        { label: 'Crear Usuario', href: '/dashboard/users/new', icon: Users, color: 'bg-teal-600' },
+        { label: 'Ver Reportes', href: '/dashboard/reports', icon: FileText, color: 'bg-slate-600' },
         { label: 'Configuración', href: '/dashboard/settings', icon: TrendingUp, color: 'bg-emerald-600' },
       ];
     }
 
     if (user?.rol === 'MEDICO') {
       return [
-        { label: 'Ver Agenda', href: '/dashboard/appointments', icon: Calendar, color: 'bg-blue-600' },
-        { label: 'Mis Pacientes', href: '/dashboard/patients', icon: Users, color: 'bg-purple-600' },
+        { label: 'Ver Agenda', href: '/dashboard/appointments', icon: Calendar, color: 'bg-teal-600' },
+        { label: 'Mis Pacientes', href: '/dashboard/patients', icon: Users, color: 'bg-slate-600' },
         { label: 'Nueva Consulta', href: '/dashboard/consultations/new', icon: FileText, color: 'bg-emerald-600' },
       ];
     }
 
     return [
-      { label: 'Agendar Cita', href: '/dashboard/appointments/new', icon: Calendar, color: 'bg-blue-600' },
-      { label: 'Buscar Médicos', href: '/dashboard/doctors', icon: Users, color: 'bg-purple-600' },
+      { label: 'Agendar Cita', href: '/dashboard/appointments/new', icon: Calendar, color: 'bg-teal-600' },
+      { label: 'Buscar Médicos', href: '/dashboard/doctors', icon: Users, color: 'bg-slate-600' },
       { label: 'Mis Consultas', href: '/dashboard/consultations', icon: FileText, color: 'bg-emerald-600' },
     ];
   };
@@ -159,10 +159,10 @@ export default function DashboardPage() {
       >
         {/* Welcome Banner */}
         <motion.div variants={item}>
-          <div className="relative overflow-hidden glass-card bg-blue-600 p-8 text-white">
+          <div className="relative overflow-hidden glass-card bg-teal-600 p-8 text-white">
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-            <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-purple-500/20 rounded-full translate-y-1/2 blur-2xl" />
+            <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-emerald-500/20 rounded-full translate-y-1/2 blur-2xl" />
             
             <div className="relative">
               <div className="flex items-center justify-between">
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                       fill="#2E6CFD" 
                       fillOpacity={0.2}
                     /> 
-                    />
+                    
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -359,7 +359,7 @@ export default function DashboardPage() {
                         </div>
                         <span className="font-semibold text-gray-900">{action.label}</span>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-teal-600 group-hover:translate-x-1 transition-all" />
                     </motion.div>
                   </Link>
                 );
@@ -377,7 +377,7 @@ export default function DashboardPage() {
                 <h2 className="text-lg font-bold text-gray-900">
                   {user?.rol === 'MEDICO' ? 'Próximas Citas' : 'Mis Próximas Citas'}
                 </h2>
-                <span className="px-3 py-1.5 text-xs font-semibold bg-blue-600 text-white rounded-full">
+                <span className="px-3 py-1.5 text-xs font-semibold bg-teal-600 text-white rounded-full">
                   3 pendientes
                 </span>
               </div>
@@ -394,7 +394,7 @@ export default function DashboardPage() {
                   >
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
+                        <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
                           {appointment.name.split(' ').map(n => n[0]).join('')}
                         </div>
                         {index === 0 && (
@@ -409,7 +409,7 @@ export default function DashboardPage() {
                     <span className={`px-3 py-1.5 text-xs font-semibold rounded-full ${
                       appointment.status === 'próxima' 
                         ? 'bg-emerald-100 text-emerald-700' 
-                        : 'bg-blue-100 text-blue-700'
+                        : 'bg-slate-100 text-slate-700'
                     }`}>
                       {appointment.status === 'próxima' ? 'Próxima' : 'Confirmada'}
                     </span>
@@ -418,7 +418,7 @@ export default function DashboardPage() {
               </div>
               <Link href="/dashboard/appointments">
                 <motion.div
-                  className="flex items-center justify-center gap-2 mt-6 py-3 text-blue-600 hover:text-purple-600 font-semibold hover:bg-white/50 rounded-xl transition-colors"
+                  className="flex items-center justify-center gap-2 mt-6 py-3 text-teal-600 hover:text-emerald-600 font-semibold hover:bg-white/50 rounded-xl transition-colors"
                   whileHover={{ scale: 1.02 }}
                 >
                   Ver todas las citas
@@ -433,7 +433,7 @@ export default function DashboardPage() {
             <GlassCard variant="light" className="h-full">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-bold text-gray-900">Resumen de Citas</h2>
-                <button className="text-sm text-blue-600 hover:text-purple-600 font-semibold transition-colors">
+                <button className="text-sm text-teal-600 hover:text-emerald-600 font-semibold transition-colors">
                   Ver detalles
                 </button>
               </div>
@@ -451,7 +451,7 @@ export default function DashboardPage() {
                       boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
                     }} 
                   />
-                  <Bar dataKey="citas" fill="#2E6CFD" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="citas" fill="#0D9488" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
 
@@ -459,7 +459,7 @@ export default function DashboardPage() {
               <div className="mt-6 space-y-3">
                 {[
                   { action: 'Consulta completada', desc: 'Con Dr. Pérez', time: 'Hace 2h', icon: CheckCircle, color: 'bg-emerald-500' },
-                  { action: 'Nueva cita agendada', desc: 'Dermatología', time: 'Hace 5h', icon: Calendar, color: 'bg-blue-600' },
+                  { action: 'Nueva cita agendada', desc: 'Dermatología', time: 'Hace 5h', icon: Calendar, color: 'bg-teal-600' },
                 ].map((activity, index) => {
                   const Icon = activity.icon;
                   return (

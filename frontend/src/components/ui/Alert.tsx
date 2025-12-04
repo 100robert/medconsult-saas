@@ -20,10 +20,10 @@ export default function Alert({
 }: AlertProps) {
   const variants = {
     info: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-200',
-      text: 'text-blue-800',
-      icon: <Info className="w-5 h-5 text-blue-500" />,
+      bg: 'bg-teal-50',
+      border: 'border-teal-200',
+      text: 'text-teal-800',
+      icon: <Info className="w-5 h-5 text-teal-500" />,
     },
     success: {
       bg: 'bg-green-50',

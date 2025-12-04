@@ -53,13 +53,10 @@ interface BackendResponse<T> {
 export async function getMisCitas(): Promise<Appointment[]> {
   try {
     const response = await api.get<any>('/citas/mis-citas');
-    return response.data.citas || [];
+    return response.data.citas || response.data.data || [];
   } catch (error: any) {
-    console.error('Error al obtener mis citas:', error);
-    if (error.response?.status === 404) {
-      return [];
-    }
-    throw error;
+    console.error('Error al obtener mis citas:', error?.response?.status, error?.message);
+    return [];
   }
 }
 

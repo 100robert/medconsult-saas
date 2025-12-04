@@ -10,16 +10,17 @@ class ConsultaController {
    * GET /consultas/mis-consultas
    * Obtener consultas del usuario autenticado
    */
-  async obtenerMisConsultas(req: Request, res: Response, next: NextFunction) {
+  async obtenerMisConsultas(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const idUsuario = req.user?.userId || req.user?.id;
+      const idUsuario = req.user?.userId;
       const rol = req.user?.rol || 'PACIENTE';
 
       if (!idUsuario) {
-        return res.status(401).json({
+        res.status(401).json({
           success: false,
           message: 'Usuario no autenticado'
         });
+        return;
       }
 
       const filtros = {

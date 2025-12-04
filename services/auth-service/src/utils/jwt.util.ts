@@ -5,7 +5,7 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { JWTPayload, RefreshTokenPayload } from '../types';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production-abc123xyz';
 const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '7d';
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';

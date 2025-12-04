@@ -17,7 +17,7 @@ export const services: Record<string, ServiceConfig> = {
     url: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
     healthCheck: '/health',
     routes: ['/auth'],
-    requiresAuth: false, // Login y registro no requieren auth
+    requiresAuth: false, // Login y registro no requieren auth, pero rutas de admin sí (manejado internamente)
   },
   users: {
     name: 'Users Service',

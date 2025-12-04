@@ -7,7 +7,8 @@ import jwt from 'jsonwebtoken';
 import { JWTPayload, UnauthorizedError, ForbiddenError } from '../types';
 import { RolUsuario } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+// Usar el mismo secreto que auth-service
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production-abc123xyz';
 
 export class AuthMiddleware {
   /**

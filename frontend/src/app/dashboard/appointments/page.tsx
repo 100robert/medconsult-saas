@@ -56,8 +56,6 @@ export default function AppointmentsPage() {
   // Cargar citas del backend
   useEffect(() => {
     async function fetchAppointments() {
-      if (!user?.id) return;
-      
       setLoading(true);
       setError(null);
       
@@ -74,7 +72,7 @@ export default function AppointmentsPage() {
     }
     
     fetchAppointments();
-  }, [user?.id]);
+  }, []);
 
   // Función para cancelar cita
   const handleCancelAppointment = async (id: string) => {

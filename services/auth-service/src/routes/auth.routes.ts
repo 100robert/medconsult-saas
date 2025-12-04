@@ -261,6 +261,47 @@ router.put(
   authController.updateProfile.bind(authController)
 );
 
+/**
+ * @route   GET /auth/admin/users
+ * @desc    Listar todos los usuarios (solo admin)
+ * @access  Private (ADMIN)
+ * @query   { rol?, activo?, page?, limit? }
+ * @returns { success, usuarios, total, page, totalPages }
+ */
+router.get(
+  '/admin/users',
+  authMiddleware,
+  requireRole(['ADMIN']),
+  authController.getAllUsers.bind(authController)
+);
+
+/**
+ * @route   PATCH /auth/admin/users/:id/status
+ * @desc    Activar/desactivar un usuario (solo admin)
+ * @access  Private (ADMIN)
+ * @body    { activo: boolean }
+ * @returns { success, message, data }
+ */
+router.patch(
+  '/admin/users/:id/status',
+  authMiddleware,
+  requireRole(['ADMIN']),
+  authController.updateUserStatus.bind(authController)
+);
+
+/**
+ * @route   GET /auth/admin/stats
+ * @desc    Obtener estadísticas del sistema (solo admin)
+ * @access  Private (ADMIN)
+ * @returns { success, data: { totalUsuarios, totalMedicos, ... } }
+ */
+router.get(
+  '/admin/stats',
+  authMiddleware,
+  requireRole(['ADMIN']),
+  authController.getAdminStats.bind(authController)
+);
+
 // ============================================
 // EXPORTAR ROUTER
 // ============================================

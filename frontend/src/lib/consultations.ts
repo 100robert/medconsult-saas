@@ -73,11 +73,9 @@ export async function getMisConsultas(): Promise<Consulta[]> {
     const response = await api.get<ConsultasResponse>('/consultas/mis-consultas');
     return response.data.data || [];
   } catch (error: any) {
-    console.error('Error al obtener mis consultas:', error);
-    if (error.response?.status === 404) {
-      return [];
-    }
-    throw error;
+    console.error('Error al obtener mis consultas:', error?.message || error);
+    // Devolver array vacío en cualquier error para no romper la UI
+    return [];
   }
 }
 

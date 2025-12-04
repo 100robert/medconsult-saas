@@ -704,6 +704,138 @@ async logout(refreshToken: string): Promise<MessageResponse> {
       },
     });
   }
+
+  // ==========================================
+  // MÉTODO: OBTENER TODOS LOS USUARIOS (ADMIN)
+  // ==========================================
+
+  async getAllUsers(filtros: {
+    rol?: string;
+    activo?: boolean;
+    page: number;
+    limit: number;
+  }): Promise<{ usuarios: UserData[]; total: number; page: number; totalPages: number }> {
+    const { rol, activo, page, limit } = filtros;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (rol) where.rol = rol;
+    if (activo !== undefined) where.activo = activo;
+
+    const [usuarios, total] = await Promise.all([
+      prisma.usuario.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { creadoEn: 'desc' },
+        select: {
+          id: true,
+          correo: true,
+          nombre: true,
+          apellido: true,
+          rol: true,
+          activo: true,
+          correoVerificado: true,
+          telefono: true,
+          creadoEn: true,
+          actualizadoEn: true,
+        },
+      }),
+      prisma.usuario.count({ where }),
+    ]);
+
+    return {
+      usuarios: usuarios.map(u => ({
+        id: u.id,
+        email: u.correo,
+        nombre: u.nombre,
+        apellido: u.apellido,
+        rol: u.rol,
+        activo: u.activo,
+        correoVerificado: u.correoVerificado,
+        telefono: u.telefono || undefined,
+        createdAt: u.creadoEn.toISOString(),
+        updatedAt: u.actualizadoEn.toISOString(),
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  // ==========================================
+  // MÉTODO: ACTUALIZAR ESTADO DE USUARIO (ADMIN)
+  // ==========================================
+
+  async updateUserStatus(userId: string, activo: boolean): Promise<UserData> {
+    const usuario = await prisma.usuario.update({
+      where: { id: userId },
+      data: { activo },
+      select: {
+        id: true,
+        correo: true,
+        nombre: true,
+        apellido: true,
+        rol: true,
+        activo: true,
+        correoVerificado: true,
+        telefono: true,
+        creadoEn: true,
+        actualizadoEn: true,
+      },
+    });
+
+    return {
+      id: usuario.id,
+      email: usuario.correo,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      rol: usuario.rol,
+      activo: usuario.activo,
+      correoVerificado: usuario.correoVerificado,
+      telefono: usuario.telefono || undefined,
+      createdAt: usuario.creadoEn.toISOString(),
+      updatedAt: usuario.actualizadoEn.toISOString(),
+    };
+  }
+
+  // ==========================================
+  // MÉTODO: OBTENER ESTADÍSTICAS (ADMIN)
+  // ==========================================
+
+  async getAdminStats(): Promise<{
+    totalUsuarios: number;
+    totalMedicos: number;
+    totalPacientes: number;
+    medicosPendientes: number;
+    usuariosActivos: number;
+    usuariosInactivos: number;
+  }> {
+    const [
+      totalUsuarios,
+      totalMedicos,
+      totalPacientes,
+      medicosPendientes,
+      usuariosActivos,
+      usuariosInactivos,
+    ] = await Promise.all([
+      prisma.usuario.count(),
+      prisma.usuario.count({ where: { rol: 'MEDICO' } }),
+      prisma.usuario.count({ where: { rol: 'PACIENTE' } }),
+      prisma.medico.count({ where: { verificado: false } }),
+      prisma.usuario.count({ where: { activo: true } }),
+      prisma.usuario.count({ where: { activo: false } }),
+    ]);
+
+    return {
+      totalUsuarios,
+      totalMedicos,
+      totalPacientes,
+      medicosPendientes,
+      usuariosActivos,
+      usuariosInactivos,
+    };
+  }
 }
 
 // ==========================================

@@ -460,6 +460,82 @@ export class AuthController {
       next(error);
     }
   }
+
+  // ==========================================
+  // ENDPOINT: GET /auth/admin/users
+  // ==========================================
+  // Lista todos los usuarios (solo admin)
+  // ==========================================
+
+  async getAllUsers(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { rol, activo, page = '1', limit = '50' } = req.query;
+
+      const resultado = await authService.getAllUsers({
+        rol: rol as string | undefined,
+        activo: activo === 'true' ? true : activo === 'false' ? false : undefined,
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+      });
+
+      res.status(200).json({
+        success: true,
+        ...resultado,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: PATCH /auth/admin/users/:id/status
+  // ==========================================
+  // Activar/desactivar un usuario (solo admin)
+  // ==========================================
+
+  async updateUserStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { activo } = req.body;
+
+      if (typeof activo !== 'boolean') {
+        res.status(400).json({
+          success: false,
+          message: 'El campo activo debe ser un booleano',
+        });
+        return;
+      }
+
+      const resultado = await authService.updateUserStatus(id, activo);
+
+      res.status(200).json({
+        success: true,
+        message: activo ? 'Usuario activado' : 'Usuario desactivado',
+        data: resultado,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: GET /auth/admin/stats
+  // ==========================================
+  // Obtener estadísticas del sistema (solo admin)
+  // ==========================================
+
+  async getAdminStats(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const stats = await authService.getAdminStats();
+
+      res.status(200).json({
+        success: true,
+        data: stats,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 // ==========================================

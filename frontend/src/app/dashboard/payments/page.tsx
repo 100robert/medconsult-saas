@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Search, 
+import {
+  Search,
   Filter,
   DollarSign,
   Calendar,
@@ -15,30 +15,14 @@ import {
   ChevronRight,
   CreditCard,
   Banknote,
-  TrendingUp
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
+import { getMisPagos, type Payment } from '@/lib/payments';
 
-interface Payment {
-  id: string;
-  paciente: {
-    nombre: string;
-    apellido: string;
-    email: string;
-  };
-  medico: {
-    nombre: string;
-    apellido: string;
-  };
-  monto: number;
-  estado: 'COMPLETADO' | 'PENDIENTE' | 'FALLIDO' | 'REEMBOLSADO';
-  metodoPago: string;
-  fecha: string;
-  concepto: string;
-}
-
-export default function PaymentsAdminPage() {
+export default function PaymentsPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -49,84 +33,102 @@ export default function PaymentsAdminPage() {
   const itemsPerPage = 10;
 
   const [stats, setStats] = useState({
-    totalIngresos: 45680,
-    pagosCompletados: 298,
-    pagosPendientes: 12,
-    reembolsos: 5
+    totalIngresos: 0,
+    pagosCompletados: 0,
+    pagosPendientes: 0,
+    reembolsos: 0
   });
 
   useEffect(() => {
-    if (user?.rol !== 'ADMIN') {
-      router.push('/dashboard');
-      return;
+    if (user) {
+      fetchPayments();
     }
-    fetchPayments();
-  }, [user, router]);
+  }, [user]);
 
   const fetchPayments = async () => {
+    if (!user) return;
+
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockPayments: Payment[] = [
-        {
-          id: 'PAY-001',
-          paciente: { nombre: 'María', apellido: 'González', email: 'maria@email.com' },
-          medico: { nombre: 'Dr. Carlos', apellido: 'Méndez' },
-          monto: 150,
-          estado: 'COMPLETADO',
-          metodoPago: 'Tarjeta de Crédito',
-          fecha: '2025-12-04',
-          concepto: 'Consulta de Cardiología'
-        },
-        {
-          id: 'PAY-002',
-          paciente: { nombre: 'Juan', apellido: 'Pérez', email: 'juan@email.com' },
-          medico: { nombre: 'Dra. María', apellido: 'García' },
-          monto: 100,
-          estado: 'COMPLETADO',
-          metodoPago: 'Mercado Pago',
-          fecha: '2025-12-04',
-          concepto: 'Consulta General'
-        },
-        {
-          id: 'PAY-003',
-          paciente: { nombre: 'Ana', apellido: 'Rodríguez', email: 'ana@email.com' },
-          medico: { nombre: 'Dr. Roberto', apellido: 'López' },
-          monto: 200,
-          estado: 'PENDIENTE',
-          metodoPago: 'Transferencia',
-          fecha: '2025-12-03',
-          concepto: 'Consulta de Dermatología'
-        },
-        {
-          id: 'PAY-004',
-          paciente: { nombre: 'Carlos', apellido: 'López', email: 'carlos@email.com' },
-          medico: { nombre: 'Dr. Carlos', apellido: 'Méndez' },
-          monto: 150,
-          estado: 'FALLIDO',
-          metodoPago: 'Tarjeta de Débito',
-          fecha: '2025-12-02',
-          concepto: 'Consulta de Cardiología'
-        },
-        {
-          id: 'PAY-005',
-          paciente: { nombre: 'Laura', apellido: 'Fernández', email: 'laura@email.com' },
-          medico: { nombre: 'Dra. María', apellido: 'García' },
-          monto: 100,
-          estado: 'REEMBOLSADO',
-          metodoPago: 'Tarjeta de Crédito',
-          fecha: '2025-12-01',
-          concepto: 'Consulta General - Cancelada'
-        },
-      ];
-      
-      setPayments(mockPayments);
+
+      let data: Payment[] = [];
+
+      if (user.rol === 'ADMIN') {
+        // Simular datos para Admin ya que no tenemos endpoint de "listar todo" aún
+        data = [
+          {
+            id: 'PAY-001',
+            idPaciente: 'p1', idMedico: 'm1',
+            paciente: { nombre: 'María', apellido: 'González', email: 'maria@email.com' },
+            medico: { nombre: 'Dr. Carlos', apellido: 'Méndez' },
+            monto: 150,
+            estado: 'COMPLETADO',
+            metodoPago: 'Tarjeta de Crédito',
+            fecha: '2025-12-04',
+            concepto: 'Consulta de Cardiología',
+            creadoEn: '', actualizadoEn: ''
+          },
+          {
+            id: 'PAY-002',
+            idPaciente: 'p2', idMedico: 'm2',
+            paciente: { nombre: 'Juan', apellido: 'Pérez', email: 'juan@email.com' },
+            medico: { nombre: 'Dra. María', apellido: 'García' },
+            monto: 100,
+            estado: 'COMPLETADO',
+            metodoPago: 'Mercado Pago',
+            fecha: '2025-12-04',
+            concepto: 'Consulta General',
+            creadoEn: '', actualizadoEn: ''
+          },
+          // ... más datos simulados si se desea
+        ];
+      } else {
+        // Cargar datos reales de la API
+        data = await getMisPagos(user);
+      }
+
+      setPayments(data);
+
+      // Calcular estadísticas
+      setStats({
+        totalIngresos: data.reduce((acc, curr) => curr.estado === 'COMPLETADO' ? acc + Number(curr.monto) : acc, 0),
+        pagosCompletados: data.filter(p => p.estado === 'COMPLETADO').length,
+        pagosPendientes: data.filter(p => p.estado === 'PENDIENTE').length,
+        reembolsos: data.filter(p => p.estado === 'REEMBOLSADO').length,
+      });
+
     } catch (error) {
       console.error('Error al cargar pagos:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExport = () => {
+    // Generar CSV
+    const headers = ['ID', 'Paciente', 'Médico', 'Concepto', 'Monto', 'Estado', 'Fecha'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredPayments.map(p => [
+        p.id,
+        `"${p.paciente?.nombre || ''} ${p.paciente?.apellido || ''}"`,
+        `"${p.medico?.nombre || ''} ${p.medico?.apellido || ''}"`,
+        `"${p.concepto}"`,
+        p.monto,
+        p.estado,
+        new Date(p.fecha).toLocaleDateString()
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `pagos_medconsult_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  const handleViewDetail = (payment: Payment) => {
+    alert(`Detalle del Pago\n\nID: ${payment.id}\nConcepto: ${payment.concepto}\nMonto: S/. ${payment.monto}\nEstado: ${payment.estado}\nFecha: ${new Date(payment.fecha).toLocaleString()}`);
   };
 
   const getStatusConfig = (estado: string) => {
@@ -141,13 +143,21 @@ export default function PaymentsAdminPage() {
 
   const filteredPayments = payments.filter(p => {
     const searchLower = searchTerm.toLowerCase();
+
+    const pacienteNombre = p.paciente?.nombre || '';
+    const pacienteApellido = p.paciente?.apellido || '';
+    const medicoNombre = p.medico?.nombre || '';
+    const medicoApellido = p.medico?.apellido || '';
+
     const matchesSearch = searchTerm === '' ||
-      p.paciente.nombre.toLowerCase().includes(searchLower) ||
-      p.paciente.apellido.toLowerCase().includes(searchLower) ||
+      pacienteNombre.toLowerCase().includes(searchLower) ||
+      pacienteApellido.toLowerCase().includes(searchLower) ||
+      medicoNombre.toLowerCase().includes(searchLower) ||
+      medicoApellido.toLowerCase().includes(searchLower) ||
       p.id.toLowerCase().includes(searchLower);
-    
+
     const matchesStatus = filterStatus === 'all' || p.estado === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -157,6 +167,25 @@ export default function PaymentsAdminPage() {
   );
 
   const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+
+  // Títulos según rol
+  const getPageTitle = () => {
+    switch (user?.rol) {
+      case 'ADMIN': return 'Gestión de Pagos';
+      case 'MEDICO': return 'Mis Ingresos';
+      case 'PACIENTE': return 'Mis Pagos';
+      default: return 'Pagos';
+    }
+  };
+
+  const getPageSubtitle = () => {
+    switch (user?.rol) {
+      case 'ADMIN': return 'Administra todos los pagos de la plataforma';
+      case 'MEDICO': return 'Consulta el historial de tus ingresos y pagos pendientes';
+      case 'PACIENTE': return 'Historial de pagos de tus consultas médicas';
+      default: return 'Detalle de pagos';
+    }
+  };
 
   if (loading) {
     return (
@@ -171,12 +200,15 @@ export default function PaymentsAdminPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Pagos</h1>
-          <p className="text-gray-500 mt-1">Administra todos los pagos de la plataforma</p>
+          <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
+          <p className="text-gray-500 mt-1">{getPageSubtitle()}</p>
         </div>
-        <button className="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center gap-2">
+        <button
+          onClick={handleExport}
+          className="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center gap-2"
+        >
           <Download className="w-4 h-4" />
-          Exportar
+          Exportar Historial
         </button>
       </div>
 
@@ -189,7 +221,7 @@ export default function PaymentsAdminPage() {
             </div>
             <div>
               <p className="text-xl font-bold text-gray-900">S/. {stats.totalIngresos.toLocaleString()}</p>
-              <p className="text-sm text-gray-500">Ingresos totales</p>
+              <p className="text-sm text-gray-500">Total {user?.rol === 'PACIENTE' ? 'Pagado' : 'Ingresos'}</p>
             </div>
           </div>
         </div>
@@ -200,7 +232,7 @@ export default function PaymentsAdminPage() {
             </div>
             <div>
               <p className="text-xl font-bold text-gray-900">{stats.pagosCompletados}</p>
-              <p className="text-sm text-gray-500">Completados</p>
+              <p className="text-sm text-gray-500">Pagos Exitosos</p>
             </div>
           </div>
         </div>
@@ -235,7 +267,7 @@ export default function PaymentsAdminPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por paciente o ID..."
+              placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
@@ -261,85 +293,115 @@ export default function PaymentsAdminPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-100">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Médico</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID Pago</th>
+                {user?.rol !== 'MEDICO' && (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Médico</th>
+                )}
+                {user?.rol !== 'PACIENTE' && (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paciente</th>
+                )}
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Concepto</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paginatedPayments.map((payment) => {
-                const statusConfig = getStatusConfig(payment.estado);
-                const StatusIcon = statusConfig.icon;
-                return (
-                  <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-4">
-                      <span className="font-mono text-sm text-gray-900">{payment.id}</span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div>
-                        <p className="font-medium text-gray-900">{payment.paciente.nombre} {payment.paciente.apellido}</p>
-                        <p className="text-sm text-gray-500">{payment.paciente.email}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="text-gray-700">{payment.medico.nombre} {payment.medico.apellido}</span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="text-sm text-gray-600">{payment.concepto}</span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="font-semibold text-gray-900">S/. {payment.monto}</span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
-                        <StatusIcon className="w-3 h-3" />
-                        {statusConfig.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="text-sm text-gray-600">
-                        {new Date(payment.fecha).toLocaleDateString('es-ES')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <button className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors">
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              {paginatedPayments.length > 0 ? (
+                paginatedPayments.map((payment) => {
+                  const statusConfig = getStatusConfig(payment.estado);
+                  const StatusIcon = statusConfig.icon;
+                  return (
+                    <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-4">
+                        <span className="font-mono text-sm text-gray-900">{payment.id}</span>
+                      </td>
+                      {user?.rol !== 'MEDICO' && (
+                        <td className="px-4 py-4">
+                          <span className="text-gray-900 font-medium">{payment.medico?.nombre} {payment.medico?.apellido}</span>
+                        </td>
+                      )}
+                      {user?.rol !== 'PACIENTE' && (
+                        <td className="px-4 py-4">
+                          <div>
+                            <p className="font-medium text-gray-900">{payment.paciente?.nombre} {payment.paciente?.apellido}</p>
+                            <p className="text-xs text-gray-500">{payment.paciente?.email}</p>
+                          </div>
+                        </td>
+                      )}
+
+                      <td className="px-4 py-4">
+                        <span className="text-sm text-gray-600">{payment.concepto}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="font-bold text-gray-900">S/. {payment.monto}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                          <CreditCard className="w-4 h-4 text-gray-400" />
+                          {payment.metodoPago}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-sm text-gray-600">
+                          {new Date(payment.fecha).toLocaleDateString('es-ES')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {statusConfig.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <button
+                          onClick={() => handleViewDetail(payment)}
+                          className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                          title="Ver detalle"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    No se encontraron pagos
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Pagination */}
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredPayments.length)} de {filteredPayments.length} pagos
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        {filteredPayments.length > 0 && (
+          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, filteredPayments.length)} de {filteredPayments.length} pagos
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

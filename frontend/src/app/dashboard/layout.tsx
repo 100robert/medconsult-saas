@@ -88,7 +88,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const markAsRead = (id: string) => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
   };
@@ -179,9 +179,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-100 transform transition-transform duration-300 lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-100 transform transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-100">
@@ -234,11 +233,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`group flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${
-                  isActive
+                className={`group flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${isActive
                     ? 'bg-teal-600 text-white shadow-lg'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                }`}
+                  }`}
               >
                 <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`} />
                 <span className="font-medium">{item.label}</span>
@@ -261,9 +259,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <p className="text-sm text-teal-100 mb-3">
                 Accede a todas las funciones premium
               </p>
-              <button className="w-full py-2 bg-white text-teal-600 rounded-lg font-medium text-sm hover:bg-teal-50 transition-colors">
+              <Link
+                href="/dashboard/subscription"
+                onClick={() => setSidebarOpen(false)}
+                className="block w-full text-center py-2 bg-white text-teal-600 rounded-lg font-medium text-sm hover:bg-teal-50 transition-colors"
+              >
                 Actualizar ahora
-              </button>
+              </Link>
             </div>
           </div>
         )}
@@ -299,7 +301,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="flex items-center gap-2">
               {/* Notifications */}
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setNotificationsOpen(!notificationsOpen)}
                   className="relative p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
                 >
@@ -314,8 +316,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 {/* Notifications Dropdown */}
                 {notificationsOpen && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-10" 
+                    <div
+                      className="fixed inset-0 z-10"
                       onClick={() => setNotificationsOpen(false)}
                     />
                     <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl border border-gray-100 z-20 overflow-hidden">
@@ -331,7 +333,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                           )}
                         </div>
                         {unreadCount > 0 && (
-                          <button 
+                          <button
                             onClick={markAllAsRead}
                             className="text-xs text-teal-600 hover:text-teal-700 font-medium"
                           >
@@ -352,18 +354,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             <div
                               key={notification.id}
                               onClick={() => markAsRead(notification.id)}
-                              className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
-                                !notification.read ? 'bg-teal-50/50' : ''
-                              }`}
+                              className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.read ? 'bg-teal-50/50' : ''
+                                }`}
                             >
                               <div className="flex gap-3">
-                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                  notification.icon === 'calendar' ? 'bg-teal-100' :
-                                  notification.icon === 'credit' ? 'bg-emerald-100' :
-                                  notification.icon === 'alert' ? 'bg-amber-100' :
-                                  notification.icon === 'user' ? 'bg-blue-100' :
-                                  'bg-green-100'
-                                }`}>
+                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${notification.icon === 'calendar' ? 'bg-teal-100' :
+                                    notification.icon === 'credit' ? 'bg-emerald-100' :
+                                      notification.icon === 'alert' ? 'bg-amber-100' :
+                                        notification.icon === 'user' ? 'bg-blue-100' :
+                                          'bg-green-100'
+                                  }`}>
                                   {getNotificationIcon(notification.icon)}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -423,8 +423,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
                 {userMenuOpen && (
                   <>
-                    <div 
-                      className="fixed inset-0 z-10" 
+                    <div
+                      className="fixed inset-0 z-10"
                       onClick={() => setUserMenuOpen(false)}
                     />
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-20">

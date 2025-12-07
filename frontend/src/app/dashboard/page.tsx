@@ -42,7 +42,7 @@ import { useAuthStore } from '@/store/authStore';
 import { GlassCard } from '@/components/ui';
 import { getMisCitas } from '@/lib/appointments';
 import { getMisConsultas } from '@/lib/consultations';
-import { obtenerUltimaMetrica, MetricaSalud } from '@/lib/health-metrics';
+import { obtenerUltimaMetrica, obtenerMisMetricas, MetricaSalud } from '@/lib/health-metrics';
 import HealthMetricsForm from '@/components/health-metrics/HealthMetricsForm';
 
 // Health data for charts
@@ -113,6 +113,7 @@ export default function DashboardPage() {
     icon: any;
     color: string;
   }>>([]);
+  const [graphicData, setGraphicData] = useState<Array<any>>([]);
 
   // Redirigir ADMIN y MEDICO a sus dashboards específicos
   useEffect(() => {
@@ -279,12 +280,25 @@ export default function DashboardPage() {
     // Cargar otros datos en paralelo (no bloquea las citas)
     const cargarOtrosDatos = async () => {
       try {
-        const [consultas, metrica] = await Promise.all([
+        const [consultas, metrica, metricasHistorial] = await Promise.all([
           getMisConsultas().catch(() => []),
           obtenerUltimaMetrica().catch(() => null),
+          obtenerMisMetricas(7).catch(() => []),
         ]);
 
         const consultasCompletadas = consultas.filter((c: any) => c.estado === 'COMPLETADA');
+
+        // Procesar datos para el gráfico
+        if (metricasHistorial && metricasHistorial.length > 0) {
+          const data = metricasHistorial
+            .sort((a: any, b: any) => new Date(a.fechaRegistro).getTime() - new Date(b.fechaRegistro).getTime())
+            .map((m: any) => ({
+              day: new Date(m.fechaRegistro).toLocaleDateString('es-ES', { weekday: 'short' }),
+              heartRate: m.ritmoCardiaco || 0,
+              pressure: m.presionSistolica || 0,
+            }));
+          setGraphicData(data);
+        }
 
         setDashboardData(prev => ({
           ...prev,
@@ -612,30 +626,37 @@ export default function DashboardPage() {
               {/* Heart Rate Chart */}
               <div className="bg-white/50 rounded-2xl p-6 border border-white/50">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Ritmo Cardíaco Semanal</h3>
-                <ResponsiveContainer width="100%" height={200}>
-                  <AreaChart data={healthData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="day" stroke="#9ca3af" fontSize={12} />
-                    <YAxis stroke="#9ca3af" fontSize={12} domain={[60, 90]} />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'rgba(255,255,255,0.95)',
-                        border: 'none',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="heartRate"
-                      stroke="#2E6CFD"
-                      strokeWidth={3}
-                      fill="#2E6CFD"
-                      fillOpacity={0.2}
-                    />
+                {graphicData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <AreaChart data={graphicData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="day" stroke="#9ca3af" fontSize={12} />
+                      <YAxis stroke="#9ca3af" fontSize={12} domain={[60, 90]} />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'rgba(255,255,255,0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 40px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="heartRate"
+                        stroke="#2E6CFD"
+                        strokeWidth={3}
+                        fill="#2E6CFD"
+                        fillOpacity={0.2}
+                      />
 
-                  </AreaChart>
-                </ResponsiveContainer>
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[200px] text-gray-500">
+                    <Activity className="w-12 h-12 mb-2 text-gray-300" />
+                    <p>No hay datos históricos suficientes</p>
+                  </div>
+                )}
               </div>
             </GlassCard>
           </motion.div>

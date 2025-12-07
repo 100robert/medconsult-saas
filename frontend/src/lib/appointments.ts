@@ -1,13 +1,17 @@
 import api from './api';
 
 export type TipoCita = 'VIDEOCONSULTA' | 'PRESENCIAL';
-export type EstadoCita = 'PENDIENTE' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA';
+export type EstadoCita = 'PROGRAMADA' | 'PENDIENTE' | 'CONFIRMADA' | 'COMPLETADA' | 'CANCELADA';
 
 export interface Medico {
   id: string;
   nombre: string;
   apellido: string;
-  especialidad?: string;
+  especialidad?: string | { nombre: string };
+  usuario?: {
+    nombre: string;
+    apellido: string;
+  };
 }
 
 export interface Paciente {

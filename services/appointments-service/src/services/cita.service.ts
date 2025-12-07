@@ -4,8 +4,8 @@
 
 import { prisma } from '../config/database';
 import { EstadoCita, CanceladaPor, Prisma } from '@prisma/client';
-import { 
-  CreateCitaDTO, 
+import {
+  CreateCitaDTO,
   UpdateCitaDTO,
   CancelarCitaDTO,
   FiltrarCitasQuery,
@@ -16,7 +16,7 @@ import {
 } from '../types';
 
 export class CitaService {
-  
+
   /**
    * Crear una nueva cita
    */
@@ -24,8 +24,8 @@ export class CitaService {
     // Verificar que el médico existe y acepta pacientes
     const medico = await prisma.medico.findUnique({
       where: { id: data.idMedico },
-      select: { 
-        estado: true, 
+      select: {
+        estado: true,
         aceptaNuevosPacientes: true,
         duracionConsulta: true,
         precioPorConsulta: true,
@@ -52,6 +52,28 @@ export class CitaService {
 
     if (!paciente) {
       throw new NotFoundError('Paciente no encontrado');
+    }
+
+    // POLITICA DE NEGOCIO: Límite de 5 citas para cuentas gratuitas
+    // TODO: Implementar campo 'plan' en modelo Paciente
+    // Por ahora, simulamos que todos son GRATIS y aplicamos el límite
+    // Para desbloquear, el usuario debe actualizar a PRO (simulado en frontend)
+
+    const totalCitasPaciente = await prisma.cita.count({
+      where: {
+        idPaciente: data.idPaciente,
+        estado: { not: 'CANCELADA' } // Contamos todas las citas activas o pasadas no canceladas
+      }
+    });
+
+    const LIMITE_CITAS_GRATIS = 5;
+    // Asumimos que si tiene más de 5 citas, es PRO o debe ser bloqueado
+    // En un caso real, verificaríamos: if (paciente.plan === 'GRATIS' && totalCitasPaciente >= 5)
+
+    if (totalCitasPaciente >= LIMITE_CITAS_GRATIS) {
+      // Aquí podríamos verificar un flag de "esPro" si existiera.
+      // Por ahora, lanzamos el error para incitar la suscripción.
+      throw new ValidationError('Has alcanzado el límite de 5 citas del plan gratuito. Actualiza a MedConsult Pro para citas ilimitadas.');
     }
 
     // Verificar que la disponibilidad existe (solo si se proporciona)
@@ -188,11 +210,11 @@ export class CitaService {
         where: { idUsuario },
         select: { id: true }
       });
-      
+
       if (!medico) {
         return { citas: [], pagination: { page, limit, total: 0, totalPages: 0 } };
       }
-      
+
       where.idMedico = medico.id;
     } else {
       // Buscar el perfil del paciente
@@ -200,11 +222,11 @@ export class CitaService {
         where: { idUsuario },
         select: { id: true }
       });
-      
+
       if (!paciente) {
         return { citas: [], pagination: { page, limit, total: 0, totalPages: 0 } };
       }
-      
+
       where.idPaciente = paciente.id;
     }
 
@@ -511,7 +533,7 @@ export class CitaService {
   async obtenerCitasHoy(idMedico: string) {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    
+
     const manana = new Date(hoy);
     manana.setDate(manana.getDate() + 1);
 

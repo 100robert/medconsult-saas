@@ -3,10 +3,11 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Clock, Video, MapPin, User, Check, Loader2 } from 'lucide-react';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Alert } from '@/components/ui';
+import { ArrowLeft, Calendar, Clock, Video, MapPin, User, Check, Loader2, CreditCard, Lock, Shield } from 'lucide-react';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Alert, Input } from '@/components/ui';
 import { buscarMedicos, Doctor as DoctorAPI } from '@/lib/doctors';
 import { createCita } from '@/lib/appointments';
+import { createPago } from '@/lib/payments';
 
 interface Doctor {
   id: string;
@@ -54,6 +55,20 @@ function NewAppointmentContent() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Estados de pago
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    cardName: '',
+    cardNumber: '',
+    expiry: '',
+    cvc: ''
+  });
+
+  const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPaymentData(prev => ({ ...prev, [name]: value }));
+  };
+
   // Cargar médicos desde la API
   useEffect(() => {
     async function cargarMedicos() {
@@ -68,7 +83,7 @@ function NewAppointmentContent() {
           precio: Number(m.precioPorConsulta),
         }));
         setDoctors(medicosFormateados);
-        
+
         // Si hay un doctorId en la URL, seleccionarlo
         if (doctorIdParam) {
           const doctor = medicosFormateados.find((d) => d.id === doctorIdParam);
@@ -104,15 +119,28 @@ function NewAppointmentContent() {
 
   const availableDates = getAvailableDates();
 
-  const handleSubmit = async () => {
+  const handleBooking = async () => {
     if (!selectedDoctorId || !selectedDate || !selectedTime) {
       setError('Faltan datos para crear la cita');
       return;
     }
 
+    // Validar si el doctor cobra y no se ha pagado aun
+    if (selectedDoctor && selectedDoctor.precio > 0 && !showPayment) {
+      setShowPayment(true);
+      return;
+    }
+
+    if (showPayment) {
+      if (!paymentData.cardNumber || !paymentData.cvc || !paymentData.expiry || !paymentData.cardName) {
+        setError('Por favor complete los datos de pago.');
+        return;
+      }
+    }
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Calcular hora de fin (30 min después)
       const [hours, minutes] = selectedTime.split(':').map(Number);
@@ -120,7 +148,8 @@ function NewAppointmentContent() {
       const endMinutes = (minutes + 30) % 60;
       const horaFin = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
 
-      await createCita({
+      // 1. Crear la cita
+      const nuevaCita = await createCita({
         idMedico: selectedDoctorId,
         fecha: selectedDate,
         horaInicio: selectedTime,
@@ -128,14 +157,33 @@ function NewAppointmentContent() {
         tipo: appointmentType,
         motivo: motivo || 'Consulta general',
       });
-      
+
+      // 2. Procesar el pago si hay costo
+      if (selectedDoctor && selectedDoctor.precio > 0) {
+        // Simular llamada al servicio de pagos
+        await createPago({
+          idCita: nuevaCita.id,
+          monto: selectedDoctor.precio,
+          metodoPago: 'TARJETA',
+          concepto: `Consulta con Dr. ${selectedDoctor.nombre} ${selectedDoctor.apellido}`,
+        });
+
+        // Simular tiempo de proceso de pago
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
       setSuccess(true);
       setTimeout(() => {
         router.push('/dashboard/appointments');
-      }, 2000);
+      }, 3000);
     } catch (err: any) {
       console.error('Error al crear cita:', err);
-      setError(err.response?.data?.message || 'Error al agendar la cita. Intenta de nuevo.');
+      // Si el error es por límite de citas gratis, mostrar mensaje específico
+      if (err.message?.includes('límite')) {
+        setError(err.message);
+      } else {
+        setError(err.response?.data?.message || 'Error al agendar la cita. Intenta de nuevo.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -149,15 +197,15 @@ function NewAppointmentContent() {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">¡Cita Agendada!</h2>
+            <h2 className="text-2xl font-bold text-gray-900">¡Cita Agendada y Pagada!</h2>
             <p className="text-gray-600 mt-2">
-              Tu cita ha sido agendada exitosamente. Recibirás una confirmación por email.
+              Tu cita ha sido confirmada. Hemos enviado el recibo a tu correo.
             </p>
             <div className="mt-6 p-4 bg-gray-50 rounded-lg text-left">
               <p><strong>Médico:</strong> Dr. {selectedDoctor?.nombre} {selectedDoctor?.apellido}</p>
               <p><strong>Fecha:</strong> {selectedDate && new Date(selectedDate).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
               <p><strong>Hora:</strong> {selectedTime}</p>
-              <p><strong>Tipo:</strong> {appointmentType === 'VIDEOCONSULTA' ? 'Videoconsulta' : 'Presencial'}</p>
+              <p><strong>Total Pagado:</strong> S/. {selectedDoctor?.precio}</p>
             </div>
             <Link href="/dashboard/appointments">
               <Button className="mt-6">Ver Mis Citas</Button>
@@ -189,9 +237,8 @@ function NewAppointmentContent() {
         {[1, 2, 3, 4].map((s) => (
           <div
             key={s}
-            className={`flex-1 h-2 rounded-full ${
-              s <= step ? 'bg-blue-600' : 'bg-gray-200'
-            }`}
+            className={`flex-1 h-2 rounded-full ${s <= step ? 'bg-blue-600' : 'bg-gray-200'
+              }`}
           />
         ))}
       </div>
@@ -223,11 +270,10 @@ function NewAppointmentContent() {
                       setSelectedDoctorId(doctor.id);
                       setStep(2);
                     }}
-                    className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
-                      selectedDoctor?.id === doctor.id
+                    className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${selectedDoctor?.id === doctor.id
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -241,7 +287,10 @@ function NewAppointmentContent() {
                           <p className="text-sm text-blue-600">{doctor.especialidad}</p>
                         </div>
                       </div>
-                      <p className="text-lg font-bold text-gray-900">S/. {doctor.precio}</p>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-gray-900">S/. {doctor.precio}</p>
+                        <p className="text-xs text-gray-500">por consulta</p>
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -274,11 +323,10 @@ function NewAppointmentContent() {
                       setSelectedDate(date);
                       setStep(3);
                     }}
-                    className={`p-4 rounded-lg border-2 text-center transition-colors ${
-                      selectedDate === date
+                    className={`p-4 rounded-lg border-2 text-center transition-colors ${selectedDate === date
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <p className="text-sm text-gray-500 capitalize">{dayName}</p>
                     <p className="text-2xl font-bold text-gray-900">{dayNum}</p>
@@ -321,13 +369,12 @@ function NewAppointmentContent() {
                     }
                   }}
                   disabled={!slot.disponible}
-                  className={`p-3 rounded-lg border-2 text-center transition-colors ${
-                    !slot.disponible
+                  className={`p-3 rounded-lg border-2 text-center transition-colors ${!slot.disponible
                       ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
                       : selectedTime === slot.hora
-                      ? 'border-blue-600 bg-blue-50 text-blue-600'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
                 >
                   <Clock className={`w-4 h-4 mx-auto mb-1 ${!slot.disponible ? 'text-gray-300' : ''}`} />
                   <p className="font-medium">{slot.hora}</p>
@@ -343,12 +390,12 @@ function NewAppointmentContent() {
         </Card>
       )}
 
-      {/* Step 4: Confirmation */}
+      {/* Step 4: Confirmation & Payment */}
       {step === 4 && (
         <Card>
           <CardHeader>
             <CardTitle>Confirmar Cita</CardTitle>
-            <CardDescription>Revisa los detalles y confirma tu cita</CardDescription>
+            <CardDescription>Revisa los detalles y realiza el pago</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
@@ -393,11 +440,10 @@ function NewAppointmentContent() {
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setAppointmentType('VIDEOCONSULTA')}
-                    className={`p-4 rounded-lg border-2 text-center transition-colors ${
-                      appointmentType === 'VIDEOCONSULTA'
+                    className={`p-4 rounded-lg border-2 text-center transition-colors ${appointmentType === 'VIDEOCONSULTA'
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <Video className="w-6 h-6 mx-auto mb-2 text-blue-600" />
                     <p className="font-medium">Videoconsulta</p>
@@ -405,11 +451,10 @@ function NewAppointmentContent() {
                   </button>
                   <button
                     onClick={() => setAppointmentType('PRESENCIAL')}
-                    className={`p-4 rounded-lg border-2 text-center transition-colors ${
-                      appointmentType === 'PRESENCIAL'
+                    className={`p-4 rounded-lg border-2 text-center transition-colors ${appointmentType === 'PRESENCIAL'
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                   >
                     <MapPin className="w-6 h-6 mx-auto mb-2 text-blue-600" />
                     <p className="font-medium">Presencial</p>
@@ -432,11 +477,81 @@ function NewAppointmentContent() {
                 />
               </div>
 
-              {/* Price */}
-              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                <p className="font-medium text-gray-900">Total a pagar</p>
-                <p className="text-2xl font-bold text-blue-600">S/. {selectedDoctor?.precio}</p>
-              </div>
+              {/* Payment Section - Only if needed */}
+              {selectedDoctor && selectedDoctor.precio > 0 && (
+                <div className={`mt-6 rounded-xl border-2 transition-all p-5 ${showPayment ? 'border-teal-500 bg-white ring-4 ring-teal-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="text-teal-600 w-5 h-5" />
+                      <h3 className="font-bold text-gray-900">Método de Pago</h3>
+                    </div>
+                    <p className="font-bold text-xl text-teal-600">S/. {selectedDoctor.precio}</p>
+                  </div>
+
+                  {!showPayment ? (
+                    <Button
+                      className="w-full"
+                      variant="secondary"
+                      onClick={() => setShowPayment(true)}
+                    >
+                      Proceder al Pago
+                    </Button>
+                  ) : (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Nombre en la tarjeta</label>
+                        <Input
+                          name="cardName"
+                          placeholder="Juan Pérez"
+                          value={paymentData.cardName}
+                          onChange={handlePaymentChange}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-700">Número de tarjeta</label>
+                        <Input
+                          name="cardNumber"
+                          placeholder="0000 0000 0000 0000"
+                          value={paymentData.cardNumber}
+                          onChange={handlePaymentChange}
+                          maxLength={19}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">Expiración (MM/YY)</label>
+                          <Input
+                            name="expiry"
+                            placeholder="12/26"
+                            value={paymentData.expiry}
+                            onChange={handlePaymentChange}
+                            maxLength={5}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">CVC</label>
+                          <Input
+                            name="cvc"
+                            placeholder="123"
+                            type="password"
+                            value={paymentData.cvc}
+                            onChange={handlePaymentChange}
+                            maxLength={4}
+                            leftIcon={<Lock className="w-5 h-5 text-gray-400" />}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                        <Shield className="w-4 h-4 text-green-600" />
+                        <p>Pagos procesados de forma segura. No guardamos tu CVC.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Error message */}
               {error && (
@@ -446,12 +561,19 @@ function NewAppointmentContent() {
               )}
 
               {/* Actions */}
-              <div className="flex justify-between">
+              <div className="flex justify-between pt-4">
                 <Button variant="outline" onClick={() => setStep(3)}>
                   Atrás
                 </Button>
-                <Button onClick={handleSubmit} isLoading={isLoading}>
-                  Confirmar y Pagar
+                <Button
+                  onClick={handleBooking}
+                  isLoading={isLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {selectedDoctor && selectedDoctor.precio > 0
+                    ? (showPayment ? `Pagar S/. ${selectedDoctor.precio} y Confirmar` : 'Proceder al Pago')
+                    : 'Confirmar Cita Gratis'
+                  }
                 </Button>
               </div>
             </div>

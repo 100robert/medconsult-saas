@@ -18,15 +18,34 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
     changeOrigin: true,
     pathRewrite: (path, req) => {
       // Cuando Express monta con router.use('/auth', proxy), 
-      // el path que llega al proxy es solo /login (sin /auth)
-      // pero req.baseUrl contiene /auth
+      // Express quita el /auth del path, entonces el proxy recibe solo /login
+      // pero el servicio espera /auth/login
       // Necesitamos reconstruir la ruta completa para el servicio
       const expressReq = req as any;
       const baseUrl = expressReq.baseUrl || '';
-      // baseUrl es /api/auth, necesitamos solo /auth
-      const servicePrefix = baseUrl.replace(/^\/api/, '');
-      const newPath = servicePrefix + path;
-      console.log(`📝 PathRewrite: baseUrl=${baseUrl}, path=${path}, newPath=${newPath}`);
+      const originalUrl = expressReq.originalUrl || req.url || '';
+      
+      // Si baseUrl está disponible y contiene el prefijo del servicio
+      if (baseUrl) {
+        // baseUrl es /api/auth, necesitamos solo /auth
+        const servicePrefix = baseUrl.replace(/^\/api/, '');
+        const newPath = servicePrefix + path;
+        console.log(`📝 PathRewrite: baseUrl=${baseUrl}, path=${path}, newPath=${newPath}`);
+        return newPath;
+      }
+      
+      // Fallback: intentar extraer de originalUrl
+      // originalUrl es /api/auth/login, necesitamos /auth/login
+      if (originalUrl.startsWith('/api/')) {
+        const servicePath = originalUrl.replace(/^\/api/, '');
+        console.log(`📝 PathRewrite (fallback): originalUrl=${originalUrl}, newPath=${servicePath}`);
+        return servicePath;
+      }
+      
+      // Último recurso: usar el pathPrefix pasado como parámetro
+      // Esto funciona porque pathPrefix está en el closure de la función
+      const newPath = pathPrefix ? pathPrefix + path : path;
+      console.log(`📝 PathRewrite (default): pathPrefix=${pathPrefix}, path=${path}, newPath=${newPath}`);
       return newPath;
     },
     on: {
@@ -92,13 +111,11 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
 }
 
 // Crear proxies para cada servicio con sus prefijos correctos
-// Cuando el gateway monta router.use('/auth', authProxy), el path que llega
-// al proxy INCLUYE el /auth del mount point. Entonces:
-// - Request: /api/auth/login
-// - Después del mount /auth: el path es /auth/login (el mount point se conserva)
-// - Proxy recibe: /auth/login y lo envía tal cual
+// Cuando el gateway monta router.use('/auth', authProxy), Express quita el /auth
+// del path, entonces el proxy recibe solo /login pero el servicio espera /auth/login
+// Por eso necesitamos agregar el prefijo /auth
 export const authProxy = createProxyMiddleware(
-  createProxyOptions(services.auth.url, services.auth.name, '')
+  createProxyOptions(services.auth.url, services.auth.name, '/auth')
 );
 
 export const usersProxy = createProxyMiddleware(

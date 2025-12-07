@@ -159,6 +159,13 @@ export class AuthService {
     ip?: string,
     userAgent?: string
   ): Promise<AuthResponse> {
+    // Logging para debugging
+    console.log('🔐 Intento de login:', {
+      correo: data.correo,
+      ip,
+      timestamp: new Date().toISOString()
+    });
+
     // 1. Buscar usuario por email
     const usuario = await prisma.usuario.findUnique({
       where: { correo: data.correo },
@@ -166,6 +173,7 @@ export class AuthService {
 
     // 2. Si no existe o contraseña incorrecta
     if (!usuario) {
+      console.log('❌ Usuario no encontrado:', data.correo);
       // Registrar intento fallido
       await this.registrarIntentoLogin(
         data.correo,
@@ -178,8 +186,17 @@ export class AuthService {
       throw new AuthenticationError('Credenciales inválidas');
     }
 
+    console.log('✅ Usuario encontrado:', {
+      id: usuario.id,
+      correo: usuario.correo,
+      rol: usuario.rol,
+      activo: usuario.activo,
+      correoVerificado: usuario.correoVerificado
+    });
+
     // 3. Verificar que el usuario esté activo
     if (!usuario.activo) {
+      console.log('❌ Usuario inactivo:', usuario.id);
       await this.registrarIntentoLogin(
         data.correo,
         usuario.id,
@@ -191,13 +208,47 @@ export class AuthService {
       throw new AuthenticationError('Cuenta inactiva. Contacta a soporte.');
     }
 
-    // 4. Comparar contraseña
-    const contrasenaValida = await comparePassword(
-      data.contrasena,
-      usuario.hashContrasena
-    );
+    // 4. Verificar formato del hash antes de comparar
+    if (!usuario.hashContrasena || !usuario.hashContrasena.startsWith('$2')) {
+      console.log('❌ Hash de contraseña inválido para usuario:', usuario.id);
+      console.log('   Hash recibido:', usuario.hashContrasena?.substring(0, 20) || 'null/undefined');
+      await this.registrarIntentoLogin(
+        data.correo,
+        usuario.id,
+        false,
+        'Hash de contraseña inválido',
+        ip,
+        userAgent
+      );
+      throw new AuthenticationError('Error en la autenticación. Por favor, contacta a soporte.');
+    }
+
+    // 5. Comparar contraseña
+    console.log('🔑 Comparando contraseña...');
+    console.log('   Hash almacenado (primeros 30 chars):', usuario.hashContrasena.substring(0, 30));
+    
+    let contrasenaValida = false;
+    try {
+      contrasenaValida = await comparePassword(
+        data.contrasena,
+        usuario.hashContrasena
+      );
+    } catch (error) {
+      console.log('❌ Error al comparar contraseña:', error);
+      await this.registrarIntentoLogin(
+        data.correo,
+        usuario.id,
+        false,
+        `Error al comparar contraseña: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        ip,
+        userAgent
+      );
+      throw new AuthenticationError('Error en la autenticación. Por favor, intenta de nuevo.');
+    }
 
     if (!contrasenaValida) {
+      console.log('❌ Contraseña incorrecta para usuario:', usuario.id);
+      console.log('   Rol:', usuario.rol);
       await this.registrarIntentoLogin(
         data.correo,
         usuario.id,
@@ -208,6 +259,8 @@ export class AuthService {
       );
       throw new AuthenticationError('Credenciales inválidas');
     }
+
+    console.log('✅ Contraseña válida, generando tokens...');
 
     // 5. Login exitoso - Generar tokens
     const accessToken = generateAccessToken({

@@ -37,17 +37,17 @@ export default function HealthMetricsForm({ onClose, onSuccess }: HealthMetricsF
     try {
       // Limpiar datos: eliminar campos undefined, null o vacíos
       const cleanedData: CreateMetricaSaludDTO = {};
-      
-      if (formData.peso !== undefined && formData.peso !== null && formData.peso !== '') {
+
+      if (formData.peso !== undefined && formData.peso !== null) {
         cleanedData.peso = Number(formData.peso);
       }
-      if (formData.altura !== undefined && formData.altura !== null && formData.altura !== '') {
+      if (formData.altura !== undefined && formData.altura !== null) {
         cleanedData.altura = Number(formData.altura);
       }
-      if (formData.temperatura !== undefined && formData.temperatura !== null && formData.temperatura !== '') {
+      if (formData.temperatura !== undefined && formData.temperatura !== null) {
         cleanedData.temperatura = Number(formData.temperatura);
       }
-      if (formData.saturacionOxigeno !== undefined && formData.saturacionOxigeno !== null && formData.saturacionOxigeno !== '') {
+      if (formData.saturacionOxigeno !== undefined && formData.saturacionOxigeno !== null) {
         cleanedData.saturacionOxigeno = Number(formData.saturacionOxigeno);
       }
       if (formData.notas && formData.notas.trim() !== '') {
@@ -71,17 +71,17 @@ export default function HealthMetricsForm({ onClose, onSuccess }: HealthMetricsF
       console.error('Tipo de error:', typeof err);
       console.error('Error completo:', JSON.stringify(err, null, 2));
       console.error('Error keys:', Object.keys(err || {}));
-      
+
       let errorMessage = 'Error al guardar las métricas. Por favor, intenta de nuevo.';
-      
+
       // Intentar extraer el mensaje de error de diferentes formas
       if (err?.response?.data?.message) {
         errorMessage = err.response.data.message;
       } else if (err?.response?.data?.error) {
         errorMessage = err.response.data.error;
       } else if (err?.response?.data) {
-        errorMessage = typeof err.response.data === 'string' 
-          ? err.response.data 
+        errorMessage = typeof err.response.data === 'string'
+          ? err.response.data
           : JSON.stringify(err.response.data);
       } else if (err?.message) {
         errorMessage = err.message;
@@ -90,7 +90,7 @@ export default function HealthMetricsForm({ onClose, onSuccess }: HealthMetricsF
       } else if (err?.toString) {
         errorMessage = err.toString();
       }
-      
+
       console.error('Mensaje de error final:', errorMessage);
       setError(errorMessage);
     } finally {

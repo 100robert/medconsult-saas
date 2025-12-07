@@ -453,6 +453,8 @@ model Resena {
   cita                 Cita         @relation(fields: [idCita], references: [id], onDelete: Cascade)
   calificacion         Int // 1-5 estrellas
   comentario           String?      @db.Text
+  respuesta            String?      @db.Text
+  fechaRespuesta       DateTime?
   anonima              Boolean      @default(false)
   cuantasUtilesIndican Int          @default(0)
   verificada           Boolean      @default(true)

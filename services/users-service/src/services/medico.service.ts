@@ -4,16 +4,16 @@
 
 import { prisma } from '../config/database';
 import { Prisma, EstadoMedico } from '@prisma/client';
-import { 
-  CreateMedicoDTO, 
+import {
+  CreateMedicoDTO,
   UpdateMedicoDTO,
   BuscarMedicosQuery,
   NotFoundError,
-  ConflictError 
+  ConflictError
 } from '../types';
 
 export class MedicoService {
-  
+
   /**
    * Crear perfil de médico
    */
@@ -205,7 +205,7 @@ export class MedicoService {
 
     const actualizado = await prisma.medico.update({
       where: { id },
-      data: { 
+      data: {
         estado,
         fechaActualizacion: new Date(),
       },
@@ -379,7 +379,7 @@ export class MedicoService {
    */
   async actualizarCalificacion(id: string) {
     const resultado = await prisma.resena.aggregate({
-      where: { 
+      where: {
         idMedico: id,
         estado: 'APROBADA'
       },
@@ -395,6 +395,67 @@ export class MedicoService {
       }
     });
   }
+  /**
+   * Obtener estadísticas del médico (Dashboard)
+   */
+  async obtenerEstadisticas(idUsuario: string) {
+    const medico = await this.obtenerPorUsuarioId(idUsuario);
+    const idMedico = medico.id;
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const [
+      citasPendientes,
+      consultasCompletadas,
+      pacientesUnicos,
+      ingresos
+    ] = await Promise.all([
+      // Citas Pendientes (Programadas o Confirmadas que aún no ocurren)
+      prisma.cita.count({
+        where: {
+          idMedico,
+          estado: { in: ['PROGRAMADA', 'CONFIRMADA'] },
+          fechaHoraCita: { gte: now }
+        }
+      }),
+      // Consultas Completadas Total
+      prisma.cita.count({
+        where: {
+          idMedico,
+          estado: 'COMPLETADA'
+        }
+      }),
+      // Pacientes Totales (Unique)
+      prisma.cita.findMany({
+        where: { idMedico },
+        select: { idPaciente: true },
+        distinct: ['idPaciente']
+      }),
+      // Ingresos Mes Actual
+      prisma.pago.aggregate({
+        where: {
+          idMedico,
+          estado: 'COMPLETADO',
+          fechaCreacion: {
+            gte: startOfMonth,
+            lte: endOfMonth
+          }
+        },
+        _sum: { montoMedico: true }
+      })
+    ]);
+
+    return {
+      citasPendientes,
+      consultasCompletadas,
+      pacientesTotales: pacientesUnicos.length,
+      ingresosMes: ingresos._sum.montoMedico || 0,
+      calificacion: medico.calificacionPromedio
+    };
+  }
 }
 
 export const medicoService = new MedicoService();
+

@@ -31,6 +31,11 @@ router.post('/', authenticate, authorize('MEDICO'), (req, res, next) => {
   medicoController.crear(req, res, next);
 });
 
+// Obtener estadísticas
+router.get('/me/stats', authenticate, authorize('MEDICO'), (req, res, next) => {
+  medicoController.obtenerEstadisticas(req, res, next);
+});
+
 // Obtener mi perfil
 router.get('/me/perfil', authenticate, authorize('MEDICO'), (req, res, next) => {
   medicoController.obtenerMiPerfil(req, res, next);

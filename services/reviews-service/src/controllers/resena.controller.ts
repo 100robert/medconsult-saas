@@ -114,7 +114,7 @@ export class ResenaController {
     try {
       const { id } = req.params;
       const { estado } = req.body;
-      
+
       if (!Object.values(EstadoResena).includes(estado)) {
         res.status(400).json({
           success: false,
@@ -230,8 +230,52 @@ export class ResenaController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
-      
+
       const resultado = await resenaService.obtenerPendientes(page, limit);
+
+      res.json({
+        success: true,
+        ...resultado
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  /**
+   * PATCH /resenas/:id/responder
+   * Responder a una reseña
+   */
+  async responder(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { respuesta } = req.body;
+      const idUsuario = req.user!.userId;
+
+      if (!respuesta) {
+        res.status(400).json({ success: false, message: 'La respuesta es requerida' });
+        return;
+      }
+
+      const actualizada = await resenaService.responder(id, idUsuario, respuesta);
+
+      res.json({
+        success: true,
+        message: 'Respuesta enviada exitosamente',
+        data: actualizada
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /resenas/medico/me
+   * Obtener mis reseñas (Médico)
+   */
+  async obtenerMias(req: Request, res: Response, next: NextFunction) {
+    try {
+      const idUsuario = req.user!.userId;
+      const resultado = await resenaService.obtenerMias(idUsuario);
 
       res.json({
         success: true,

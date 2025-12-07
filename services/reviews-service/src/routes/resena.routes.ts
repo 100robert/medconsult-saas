@@ -13,6 +13,13 @@ const router = Router();
 // Obtener reseñas públicas (para landing page)
 router.get('/publicas', resenaController.obtenerPublicas);
 
+// Obtener mis reseñas (médico)
+router.get('/medico/me',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['MEDICO']),
+  resenaController.obtenerMias
+);
+
 // Obtener reseñas de un médico (público)
 router.get('/medico/:idMedico', resenaController.obtenerPorMedico);
 
@@ -38,6 +45,13 @@ router.get('/:id',
 router.put('/:id',
   authMiddleware.verifyToken,
   resenaController.actualizar
+);
+
+// Responder reseña (médico)
+router.patch('/:id/responder',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['MEDICO']),
+  resenaController.responder
 );
 
 // Eliminar reseña

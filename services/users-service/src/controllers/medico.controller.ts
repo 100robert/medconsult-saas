@@ -32,6 +32,23 @@ export class MedicoController {
   }
 
   /**
+   * GET /medicos/me/stats
+   * Obtener estadísticas del médico
+   */
+  async obtenerEstadisticas(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stats = await medicoService.obtenerEstadisticas(req.user!.userId);
+
+      res.json({
+        success: true,
+        data: stats
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /medicos/me
    * Obtener mi perfil de médico
    */
@@ -135,14 +152,14 @@ export class MedicoController {
         especialidad: req.query.especialidad as string,
         ciudad: req.query.ciudad as string,
         pais: req.query.pais as string,
-        calificacionMinima: req.query.calificacionMinima 
-          ? parseFloat(req.query.calificacionMinima as string) 
+        calificacionMinima: req.query.calificacionMinima
+          ? parseFloat(req.query.calificacionMinima as string)
           : undefined,
-        precioMinimo: req.query.precioMinimo 
-          ? parseFloat(req.query.precioMinimo as string) 
+        precioMinimo: req.query.precioMinimo
+          ? parseFloat(req.query.precioMinimo as string)
           : undefined,
-        precioMaximo: req.query.precioMaximo 
-          ? parseFloat(req.query.precioMaximo as string) 
+        precioMaximo: req.query.precioMaximo
+          ? parseFloat(req.query.precioMaximo as string)
           : undefined,
         idioma: req.query.idioma as string,
         aceptaNuevosPacientes: req.query.aceptaNuevosPacientes !== 'false',

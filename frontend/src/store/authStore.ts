@@ -52,7 +52,25 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
         } catch (error: any) {
-          const message = error.response?.data?.message || 'Error al registrarse';
+          // Manejar errores de validación del backend
+          let message = 'Error al registrarse';
+          
+          if (error.response?.status === 400) {
+            const errorData = error.response.data;
+            // Si hay errores de validación específicos, mostrarlos
+            if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+              // Extraer solo los mensajes de error
+              const errorMessages = errorData.errors.map((err: any) => err.mensaje || err.message).join('. ');
+              message = errorMessages;
+            } else {
+              message = errorData.message || message;
+            }
+          } else if (error.message) {
+            message = error.message;
+          } else if (error.response?.data?.message) {
+            message = error.response.data.message;
+          }
+          
           set({ error: message, isLoading: false });
           throw new Error(message);
         }

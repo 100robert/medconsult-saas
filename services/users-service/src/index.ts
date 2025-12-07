@@ -12,6 +12,7 @@ import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import pacienteRoutes from './routes/paciente.routes';
 import medicoRoutes from './routes/medico.routes';
 import especialidadRoutes from './routes/especialidad.routes';
+import metricaSaludRoutes from './routes/metrica-salud.routes';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3002;
@@ -72,11 +73,12 @@ app.get('/', (req, res) => {
   res.status(200).json({
     message: 'MedConsult Users Service API',
     version: '1.0.0',
-    endpoints: {
+      endpoints: {
       health: '/health',
       pacientes: '/pacientes',
       medicos: '/medicos',
       especialidades: '/especialidades',
+      metricasSalud: '/metricas-salud',
     },
   });
 });
@@ -88,6 +90,7 @@ app.get('/', (req, res) => {
 app.use('/pacientes', pacienteRoutes);
 app.use('/medicos', medicoRoutes);
 app.use('/especialidades', especialidadRoutes);
+app.use('/metricas-salud', metricaSaludRoutes);
 
 // ============================================
 // MANEJO DE ERRORES

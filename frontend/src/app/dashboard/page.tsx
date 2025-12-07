@@ -23,6 +23,7 @@ import {
   Thermometer,
   Scale,
   Loader2,
+  Plus,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -41,6 +42,8 @@ import { useAuthStore } from '@/store/authStore';
 import { GlassCard } from '@/components/ui';
 import { getMisCitas } from '@/lib/appointments';
 import { getMisConsultas } from '@/lib/consultations';
+import { obtenerUltimaMetrica, MetricaSalud } from '@/lib/health-metrics';
+import HealthMetricsForm from '@/components/health-metrics/HealthMetricsForm';
 
 // Health data for charts
 const healthData = [
@@ -88,6 +91,8 @@ export default function DashboardPage() {
     citasPendientes: 0,
     proximaCita: null as any,
   });
+  const [ultimaMetrica, setUltimaMetrica] = useState<MetricaSalud | null>(null);
+  const [showMetricsForm, setShowMetricsForm] = useState(false);
 
   // Redirigir ADMIN y MEDICO a sus dashboards específicos
   useEffect(() => {
@@ -108,9 +113,10 @@ export default function DashboardPage() {
       
       setLoading(true);
       try {
-        const [citas, consultas] = await Promise.all([
+        const [citas, consultas, metrica] = await Promise.all([
           getMisCitas().catch(() => []),
           getMisConsultas().catch(() => []),
+          obtenerUltimaMetrica().catch(() => null),
         ]);
 
         const hoy = new Date();
@@ -152,6 +158,10 @@ export default function DashboardPage() {
           citasPendientes: citasPendientes.length,
           proximaCita,
         });
+        
+        if (metrica) {
+          setUltimaMetrica(metrica);
+        }
       } catch (error) {
         console.error('Error al cargar datos del dashboard:', error);
       } finally {
@@ -161,6 +171,22 @@ export default function DashboardPage() {
 
     fetchDashboardData();
   }, [user?.id]);
+
+  const handleMetricsSuccess = async () => {
+    try {
+      const metrica = await obtenerUltimaMetrica();
+      setUltimaMetrica(metrica);
+    } catch (error) {
+      console.error('Error al cargar métricas:', error);
+    }
+  };
+
+  // Calcular IMC si hay peso y altura
+  const calcularIMC = (peso?: number, altura?: number): string | null => {
+    if (!peso || !altura || altura === 0) return null;
+    const imc = peso / (altura * altura);
+    return imc.toFixed(1);
+  };
 
   // Stats según el rol
   const getStats = () => {
@@ -193,12 +219,48 @@ export default function DashboardPage() {
 
   const stats = getStats();
 
-  // Health Metrics for patient
+  // Health Metrics for patient - usar datos reales o valores por defecto
   const healthMetrics = [
-    { label: 'Ritmo Cardíaco', value: '72', unit: 'bpm', icon: Heart, color: 'bg-rose-500', status: 'Normal' },
-    { label: 'Presión Arterial', value: '120/80', unit: 'mmHg', icon: Activity, color: 'bg-teal-500', status: 'Óptima' },
-    { label: 'Glucosa', value: '95', unit: 'mg/dL', icon: Droplets, color: 'bg-slate-500', status: 'Normal' },
-    { label: 'Peso', value: '70', unit: 'kg', icon: Scale, color: 'bg-emerald-500', status: 'IMC: 22.5' },
+    { 
+      label: 'Ritmo Cardíaco', 
+      value: ultimaMetrica?.ritmoCardiaco?.toString() || '--', 
+      unit: 'bpm', 
+      icon: Heart, 
+      color: 'bg-rose-500', 
+      status: ultimaMetrica?.ritmoCardiaco ? (ultimaMetrica.ritmoCardiaco >= 60 && ultimaMetrica.ritmoCardiaco <= 100 ? 'Normal' : 'Revisar') : 'Sin datos'
+    },
+    { 
+      label: 'Presión Arterial', 
+      value: ultimaMetrica?.presionSistolica && ultimaMetrica?.presionDiastolica 
+        ? `${ultimaMetrica.presionSistolica}/${ultimaMetrica.presionDiastolica}` 
+        : '--/--', 
+      unit: 'mmHg', 
+      icon: Activity, 
+      color: 'bg-teal-500', 
+      status: ultimaMetrica?.presionSistolica && ultimaMetrica?.presionDiastolica 
+        ? (ultimaMetrica.presionSistolica < 120 && ultimaMetrica.presionDiastolica < 80 ? 'Óptima' : 'Revisar')
+        : 'Sin datos'
+    },
+    { 
+      label: 'Glucosa', 
+      value: ultimaMetrica?.glucosa?.toString() || '--', 
+      unit: 'mg/dL', 
+      icon: Droplets, 
+      color: 'bg-slate-500', 
+      status: ultimaMetrica?.glucosa 
+        ? (ultimaMetrica.glucosa >= 70 && ultimaMetrica.glucosa <= 100 ? 'Normal' : 'Revisar')
+        : 'Sin datos'
+    },
+    { 
+      label: 'Peso', 
+      value: ultimaMetrica?.peso?.toString() || '--', 
+      unit: 'kg', 
+      icon: Scale, 
+      color: 'bg-emerald-500', 
+      status: ultimaMetrica?.peso && ultimaMetrica?.altura 
+        ? `IMC: ${calcularIMC(Number(ultimaMetrica.peso), Number(ultimaMetrica.altura)) || '--'}`
+        : 'Sin datos'
+    },
   ];
 
   // Quick actions según el rol
@@ -368,7 +430,24 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-bold text-gray-900">
                   Métricas de Salud
                 </h2>
-                <span className="text-sm text-gray-500">Última actualización: Hoy</span>
+                <div className="flex items-center gap-3">
+                  {ultimaMetrica && (
+                    <span className="text-sm text-gray-500">
+                      Última actualización: {new Date(ultimaMetrica.fechaRegistro).toLocaleDateString('es-ES', { 
+                        day: 'numeric', 
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setShowMetricsForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Agregar Métricas
+                  </button>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -426,6 +505,14 @@ export default function DashboardPage() {
               </div>
             </GlassCard>
           </motion.div>
+        )}
+
+        {/* Formulario de Métricas */}
+        {showMetricsForm && (
+          <HealthMetricsForm
+            onClose={() => setShowMetricsForm(false)}
+            onSuccess={handleMetricsSuccess}
+          />
         )}
 
         {/* Quick Actions */}

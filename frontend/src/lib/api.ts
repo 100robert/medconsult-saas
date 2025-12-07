@@ -31,18 +31,25 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     
-    // Si el error es 401 y no es un retry, intentar refresh token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Rutas que NO deben activar el refresh token automático
+    const publicRoutes = ['/auth/login', '/auth/register', '/auth/refresh-token'];
+    const isPublicRoute = originalRequest.url && publicRoutes.some(route => 
+      originalRequest.url?.includes(route)
+    );
+    
+    // Si el error es 401, no es una ruta pública, y no es un retry, intentar refresh token
+    if (error.response?.status === 401 && !originalRequest._retry && !isPublicRoute) {
       originalRequest._retry = true;
       
       const refreshToken = Cookies.get('refreshToken');
       if (refreshToken) {
         try {
-          const response = await axios.post(`${API_URL}/auth/refresh`, {
+          const response = await axios.post(`${API_URL}/auth/refresh-token`, {
             refreshToken,
           });
           
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          // La respuesta del backend tiene estructura: { success, message, data: { usuario, accessToken, refreshToken } }
+          const { accessToken, refreshToken: newRefreshToken } = response.data.data || response.data;
           
           // Guardar nuevos tokens
           Cookies.set('accessToken', accessToken, { expires: 1 }); // 1 día
@@ -57,7 +64,10 @@ api.interceptors.response.use(
           // Si falla el refresh, limpiar tokens y redirigir a login
           Cookies.remove('accessToken');
           Cookies.remove('refreshToken');
-          window.location.href = '/login';
+          // Solo redirigir si no estamos ya en la página de login
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
         }
       }

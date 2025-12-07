@@ -10,10 +10,12 @@ import { RolUsuario, EstadoConsulta, TipoConsulta, EstadoReceta } from '@prisma/
 
 export interface JWTPayload {
   userId: string;
-  email: string;
+  email: string; // Puede venir como 'correo' del JWT, se normaliza a 'email'
   rol: RolUsuario;
   iat?: number;
   exp?: number;
+  // Campos opcionales del JWT original
+  correo?: string; // Campo original del JWT
 }
 
 declare global {

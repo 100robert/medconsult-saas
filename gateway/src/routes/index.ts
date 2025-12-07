@@ -77,6 +77,7 @@ router.use('/usuarios', authMiddleware, usersProxy);
 router.use('/pacientes', authMiddleware, usersProxy);
 router.use('/medicos', authMiddleware, usersProxy);
 router.use('/especialidades', usersProxy); // Público
+router.use('/metricas-salud', authMiddleware, usersProxy);
 
 // ============================================
 // RUTAS DE CITAS (Requieren auth)

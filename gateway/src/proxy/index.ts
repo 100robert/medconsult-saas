@@ -29,6 +29,12 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
       if (baseUrl) {
         // baseUrl es /api/auth, necesitamos solo /auth
         const servicePrefix = baseUrl.replace(/^\/api/, '');
+        // Verificar si el path ya contiene el prefijo para evitar duplicación
+        if (path.startsWith(servicePrefix)) {
+          // Ya tiene el prefijo, devolver tal cual
+          console.log(`📝 PathRewrite: path ya tiene prefijo, path=${path}`);
+          return path;
+        }
         const newPath = servicePrefix + path;
         console.log(`📝 PathRewrite: baseUrl=${baseUrl}, path=${path}, newPath=${newPath}`);
         return newPath;
@@ -43,10 +49,15 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
       }
       
       // Último recurso: usar el pathPrefix pasado como parámetro
-      // Esto funciona porque pathPrefix está en el closure de la función
-      const newPath = pathPrefix ? pathPrefix + path : path;
-      console.log(`📝 PathRewrite (default): pathPrefix=${pathPrefix}, path=${path}, newPath=${newPath}`);
-      return newPath;
+      // Verificar si el path ya contiene el pathPrefix para evitar duplicación
+      if (pathPrefix && !path.startsWith(pathPrefix)) {
+        const newPath = pathPrefix + path;
+        console.log(`📝 PathRewrite (default): pathPrefix=${pathPrefix}, path=${path}, newPath=${newPath}`);
+        return newPath;
+      }
+      
+      console.log(`📝 PathRewrite (sin cambios): path=${path}`);
+      return path;
     },
     on: {
       proxyReq: (proxyReq: ClientRequest, req: IncomingMessage, res: ServerResponse) => {
@@ -57,14 +68,17 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
           proxyReq.setHeader('Authorization', req.headers.authorization);
         }
         
-        // Pasar información del usuario si existe
+        // Pasar información del usuario si existe (del gateway o del token)
         if (expressReq.user) {
-          if (expressReq.user.userId) {
-            proxyReq.setHeader('X-User-Id', expressReq.user.userId);
+          // El JWT puede tener userId directamente o como id
+          const userId = expressReq.user.userId || (expressReq.user as any).id;
+          if (userId) {
+            proxyReq.setHeader('X-User-Id', userId);
           }
           // El JWT usa 'correo' no 'email'
-          if (expressReq.user.correo || expressReq.user.email) {
-            proxyReq.setHeader('X-User-Email', expressReq.user.correo || expressReq.user.email);
+          const userEmail = expressReq.user.correo || expressReq.user.email || (expressReq.user as any).correo;
+          if (userEmail) {
+            proxyReq.setHeader('X-User-Email', userEmail);
           }
           if (expressReq.user.rol) {
             proxyReq.setHeader('X-User-Role', expressReq.user.rol);

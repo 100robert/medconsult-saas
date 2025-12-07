@@ -23,6 +23,26 @@ export function authenticate(
   next: NextFunction
 ): void {
   try {
+    // ==========================================
+    // OPCIÓN 1: Usar headers del gateway (si están presentes)
+    // ==========================================
+    const userIdFromHeader = req.headers['x-user-id'] as string;
+    const userEmailFromHeader = req.headers['x-user-email'] as string;
+    const userRoleFromHeader = req.headers['x-user-role'] as string;
+
+    if (userIdFromHeader && userRoleFromHeader) {
+      // Gateway ya verificó el token, usar la info de los headers
+      req.user = {
+        userId: userIdFromHeader,
+        email: userEmailFromHeader || '',
+        rol: userRoleFromHeader as RolUsuario,
+      };
+      return next();
+    }
+
+    // ==========================================
+    // OPCIÓN 2: Verificar token directamente
+    // ==========================================
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -30,15 +50,32 @@ export function authenticate(
     }
 
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-
-    req.user = decoded;
-    next();
+    
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      
+      // Normalizar el payload (el JWT puede usar 'correo' o 'email')
+      req.user = {
+        userId: decoded.userId || decoded.id,
+        email: decoded.correo || decoded.email || '',
+        rol: decoded.rol as RolUsuario,
+        iat: decoded.iat,
+        exp: decoded.exp,
+      };
+      
+      next();
+    } catch (jwtError) {
+      if (jwtError instanceof jwt.JsonWebTokenError) {
+        next(new UnauthorizedError(`Token inválido: ${jwtError.message}`));
+      } else if (jwtError instanceof jwt.TokenExpiredError) {
+        next(new UnauthorizedError('Token expirado'));
+      } else {
+        next(jwtError);
+      }
+    }
   } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      next(new UnauthorizedError('Token inválido'));
-    } else if (error instanceof jwt.TokenExpiredError) {
-      next(new UnauthorizedError('Token expirado'));
+    if (error instanceof UnauthorizedError) {
+      next(error);
     } else {
       next(error);
     }

@@ -35,9 +35,13 @@ const registerSchema = z.object({
   genero: z.enum(['MASCULINO', 'FEMENINO', 'OTRO', 'PREFIERO_NO_DECIR']).optional(),
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
-    .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
-    .regex(/[a-z]/, 'Debe contener al menos una minúscula')
-    .regex(/[0-9]/, 'Debe contener al menos un número'),
+    .regex(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
+    .regex(/[a-z]/, 'Debe contener al menos una letra minúscula')
+    .regex(/[0-9]/, 'Debe contener al menos un número')
+    .regex(
+      /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+      'Debe contener al menos un carácter especial (!@#$%^&*()_+-=[]{}|;:,.<>?)'
+    ),
   confirmPassword: z.string(),
   acceptTerms: z.boolean().refine((val) => val === true, {
     message: 'Debes aceptar los términos y condiciones',
@@ -361,7 +365,7 @@ export default function RegisterPage() {
                       </button>
                     }
                     error={errors.password?.message}
-                    helperText="Mín. 8 caracteres, mayúscula, minúscula y número"
+                    helperText="Mín. 8 caracteres, mayúscula, minúscula, número y carácter especial"
                     {...register('password')}
                   />
                 </motion.div>

@@ -10,7 +10,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-productio
 
 export interface JWTPayload {
   userId: string;
-  email: string;
+  email?: string; // Campo opcional, puede venir como 'correo'
+  correo?: string; // Campo del JWT del auth-service
   rol: string;
   iat?: number;
   exp?: number;
@@ -63,10 +64,17 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 
   try {
     // Verificar y decodificar el token
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
     
-    // Agregar el usuario al request
-    req.user = decoded;
+    // Normalizar el payload (el JWT puede usar 'correo' o 'email')
+    req.user = {
+      userId: decoded.userId || decoded.id,
+      email: decoded.correo || decoded.email,
+      correo: decoded.correo || decoded.email,
+      rol: decoded.rol,
+      iat: decoded.iat,
+      exp: decoded.exp,
+    };
     
     // Continuar al siguiente middleware
     next();

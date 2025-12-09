@@ -34,7 +34,7 @@ export function authenticate(
       // Gateway ya verificó el token, usar la info de los headers
       req.user = {
         userId: userIdFromHeader,
-        email: userEmailFromHeader || '',
+        correo: userEmailFromHeader || '',
         rol: userRoleFromHeader as RolUsuario,
       };
       return next();
@@ -50,19 +50,19 @@ export function authenticate(
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
-      
+
       // Normalizar el payload (el JWT puede usar 'correo' o 'email')
       req.user = {
         userId: decoded.userId || decoded.id,
-        email: decoded.correo || decoded.email || '',
+        correo: decoded.correo || decoded.email || '',
         rol: decoded.rol as RolUsuario,
         iat: decoded.iat,
         exp: decoded.exp,
       };
-      
+
       next();
     } catch (jwtError) {
       if (jwtError instanceof jwt.JsonWebTokenError) {

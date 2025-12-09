@@ -4,7 +4,7 @@
 
 import { prisma } from '../config/database';
 import { EstadoPago, MetodoPago } from '@prisma/client';
-import { 
+import {
   CreatePagoDTO,
   ProcesarPagoDTO,
   ReembolsoDTO,
@@ -17,20 +17,29 @@ import {
 } from '../types';
 
 export class PagoService {
-  
+
   /**
    * Crear pago pendiente
    */
   async crear(data: CreatePagoDTO) {
+    console.log('💳 Iniciando creación de pago:', data);
+
     // Verificar que la cita existe
-    const cita = await prisma.cita.findUnique({
-      where: { id: data.idCita },
-      include: { 
-        pago: true,
-        paciente: true,
-        medico: true
-      }
-    });
+    let cita;
+    try {
+      cita = await prisma.cita.findUnique({
+        where: { id: data.idCita },
+        include: {
+          pago: true,
+          paciente: true,
+          medico: true
+        }
+      });
+      console.log('✅ Cita encontrada para pago:', cita ? 'Sí' : 'No');
+    } catch (dbError: any) {
+      console.error('❌ Error buscando cita en DB:', dbError);
+      throw new Error(`Error de base de datos al buscar cita: ${dbError.message}`);
+    }
 
     if (!cita) {
       throw new NotFoundError('Cita no encontrada');
@@ -52,38 +61,49 @@ export class PagoService {
     // Generar ID de transacción único
     const idTransaccion = await this.generarIdTransaccion();
 
-    const pago = await prisma.pago.create({
-      data: {
-        idCita: data.idCita,
-        idPaciente: cita.idPaciente,
-        idMedico: cita.idMedico,
-        monto: data.monto,
-        comisionPlataforma,
-        montoMedico,
-        moneda: data.moneda || 'USD',
-        metodoPago: data.metodoPago || MetodoPago.TARJETA,
-        idTransaccion,
-        estado: EstadoPago.PENDIENTE,
-      },
-      include: {
-        cita: true,
-        paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true, correo: true } 
-            } 
-          }
-        },
-        medico: {
-          include: { 
-            usuario: { select: { nombre: true, apellido: true } },
-            especialidad: true
-          }
-        }
-      }
+    console.log('💳 Intentando guardar pago en DB:', {
+      idCita: data.idCita,
+      monto: data.monto,
+      idTransaccion
     });
 
-    return pago;
+    try {
+      const pago = await prisma.pago.create({
+        data: {
+          idCita: data.idCita,
+          idPaciente: cita.idPaciente,
+          idMedico: cita.idMedico,
+          monto: data.monto,
+          comisionPlataforma,
+          montoMedico,
+          moneda: data.moneda || 'USD',
+          metodoPago: data.metodoPago || MetodoPago.TARJETA,
+          idTransaccion,
+          estado: EstadoPago.PENDIENTE,
+        },
+        include: {
+          cita: true,
+          paciente: {
+            include: {
+              usuario: {
+                select: { nombre: true, apellido: true, correo: true }
+              }
+            }
+          },
+          medico: {
+            include: {
+              usuario: { select: { nombre: true, apellido: true } },
+              especialidad: true
+            }
+          }
+        }
+      });
+      console.log('✅ Pago guardado exitosamente:', pago.id);
+      return pago;
+    } catch (createError: any) {
+      console.error('❌ Error creando registro de pago:', createError);
+      throw new Error(`Error BD creando pago: ${createError.message}`);
+    }
   }
 
   /**
@@ -95,14 +115,14 @@ export class PagoService {
       include: {
         cita: true,
         paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true, correo: true } 
-            } 
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true, correo: true }
+            }
           }
         },
         medico: {
-          include: { 
+          include: {
             usuario: { select: { nombre: true, apellido: true } },
             especialidad: true
           }
@@ -126,14 +146,14 @@ export class PagoService {
       include: {
         cita: true,
         paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true } 
-            } 
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true }
+            }
           }
         },
         medico: {
-          include: { 
+          include: {
             usuario: { select: { nombre: true, apellido: true } },
             especialidad: true
           }
@@ -182,10 +202,10 @@ export class PagoService {
         },
         include: {
           paciente: {
-            include: { 
-              usuario: { 
-                select: { nombre: true, apellido: true, correo: true } 
-              } 
+            include: {
+              usuario: {
+                select: { nombre: true, apellido: true, correo: true }
+              }
             }
           }
         }
@@ -288,7 +308,7 @@ export class PagoService {
         include: {
           cita: true,
           medico: {
-            include: { 
+            include: {
               usuario: { select: { nombre: true, apellido: true } },
               especialidad: true
             }
@@ -335,8 +355,8 @@ export class PagoService {
         include: {
           cita: true,
           paciente: {
-            include: { 
-              usuario: { select: { nombre: true, apellido: true } } 
+            include: {
+              usuario: { select: { nombre: true, apellido: true } }
             }
           }
         },
@@ -418,7 +438,7 @@ export class PagoService {
     const month = String(fecha.getMonth() + 1).padStart(2, '0');
     const day = String(fecha.getDate()).padStart(2, '0');
     const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
+
     return `PAY-${year}${month}${day}-${random}`;
   }
 
@@ -428,7 +448,7 @@ export class PagoService {
   private async simularProcesamiento(_data: ProcesarPagoDTO): Promise<boolean> {
     // Simular delay de procesamiento
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     // Simular 95% de éxito
     return Math.random() > 0.05;
   }

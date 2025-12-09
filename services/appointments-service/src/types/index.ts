@@ -2,7 +2,7 @@
 // TIPOS Y INTERFACES - APPOINTMENTS SERVICE
 // ============================================
 
-import { RolUsuario, DiaSemana, EstadoCita, CanceladaPor } from '@prisma/client';
+import { RolUsuario, DiaSemana, EstadoCita, CanceladaPor, TipoCita } from '@prisma/client';
 
 // ============================================
 // DTOs - DISPONIBILIDAD
@@ -37,6 +37,8 @@ export interface CreateCitaDTO {
   idDisponibilidad: string;
   fechaHoraCita: Date;
   motivo?: string;
+  tipo?: TipoCita;
+  isPro?: boolean; // Flag para indicar si el usuario es Pro (simulación)
 }
 
 export interface UpdateCitaDTO {

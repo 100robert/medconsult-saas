@@ -404,6 +404,9 @@ model Receta {
   fechaCreacion       DateTime     @default(now())
   fechaActualizacion  DateTime     @updatedAt
 
+  // Relaciones
+  // medicos Medicos[] // Removed to fix validation
+
   @@index([idConsulta])
   @@index([idMedico])
   @@index([idPaciente])

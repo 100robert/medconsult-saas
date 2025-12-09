@@ -55,9 +55,7 @@ export class CitaService {
     }
 
     // POLITICA DE NEGOCIO: Límite de 5 citas para cuentas gratuitas
-    // TODO: Implementar campo 'plan' en modelo Paciente
-    // Por ahora, simulamos que todos son GRATIS y aplicamos el límite
-    // Para desbloquear, el usuario debe actualizar a PRO (simulado en frontend)
+    // Si el usuario es Pro (simulado desde frontend), no aplicamos el límite
 
     const totalCitasPaciente = await prisma.cita.count({
       where: {
@@ -67,16 +65,35 @@ export class CitaService {
     });
 
     const LIMITE_CITAS_GRATIS = 5;
-    // Asumimos que si tiene más de 5 citas, es PRO o debe ser bloqueado
-    // En un caso real, verificaríamos: if (paciente.plan === 'GRATIS' && totalCitasPaciente >= 5)
 
-    if (totalCitasPaciente >= LIMITE_CITAS_GRATIS) {
-      // Aquí podríamos verificar un flag de "esPro" si existiera.
-      // Por ahora, lanzamos el error para incitar la suscripción.
+    // Solo aplicar límite si NO es Pro
+    if (!data.isPro && totalCitasPaciente >= LIMITE_CITAS_GRATIS) {
       throw new ValidationError('Has alcanzado el límite de 5 citas del plan gratuito. Actualiza a MedConsult Pro para citas ilimitadas.');
     }
 
-    // Verificar que la disponibilidad existe (solo si se proporciona)
+    // Validar que la fecha no esté marcada como NO DISPONIBLE
+    const fechaCita = new Date(data.fechaHoraCita);
+    const fechaSoloDia = new Date(fechaCita);
+    fechaSoloDia.setHours(0, 0, 0, 0);
+
+    const fechaBloqueada = await prisma.fechaNoDisponible.findFirst({
+      where: {
+        idMedico: data.idMedico,
+        fecha: fechaSoloDia
+      }
+    });
+
+    if (fechaBloqueada) {
+      throw new ValidationError(`El médico no está disponible en esta fecha: ${fechaBloqueada.motivo || 'Motivo no especificado'}`);
+    }
+
+    // Identificar día de la semana y hora para validar disponibilidad horaria
+    const diasSemana = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+    const diaCita = diasSemana[fechaCita.getDay()] as any; // Cast to DiaSemana
+    const horaCita = `${String(fechaCita.getHours()).padStart(2, '0')}:${String(fechaCita.getMinutes()).padStart(2, '0')}`;
+    const minutosCita = fechaCita.getHours() * 60 + fechaCita.getMinutes();
+
+    // Validar cobertura de disponibilidad (Si se provee ID, se valida ese específico. Si no, se busca uno que cubra)
     if (data.idDisponibilidad) {
       const disponibilidad = await prisma.disponibilidad.findUnique({
         where: { id: data.idDisponibilidad }
@@ -86,7 +103,18 @@ export class CitaService {
         throw new NotFoundError('Disponibilidad no encontrada o no activa');
       }
 
-      // Verificar que no haya otra cita en ese horario con esa disponibilidad
+      // Validar que la hora coincida con el rango de la disponibilidad seleccionada
+      // Esto es extra seguridad por si mandan un ID válido pero una hora fuera de rango
+      const [inicioH, inicioM] = disponibilidad.horaInicio.split(':').map(Number);
+      const [finH, finM] = disponibilidad.horaFin.split(':').map(Number);
+      const inicioMin = inicioH * 60 + inicioM;
+      const finMin = finH * 60 + finM;
+
+      if (minutosCita < inicioMin || minutosCita >= finMin) { // >= finMin porque la cita no puede empezar a la hora de cierre exacta si dura algo, pero asumimos simple inicio
+        throw new ValidationError('La hora de la cita no corresponde a la disponibilidad seleccionada');
+      }
+
+      // Verificar conflictos (lógica existente)
       const citaExistente = await prisma.cita.findFirst({
         where: {
           idDisponibilidad: data.idDisponibilidad,
@@ -99,7 +127,27 @@ export class CitaService {
         throw new ConflictError('Ya existe una cita programada para este horario');
       }
     } else {
-      // Verificar que no haya otra cita con el mismo médico en ese horario
+      // Si no envían idDisponibilidad, DEBEMOS verificar que exista ALGUNA disponibilidad activa que cubra este horario
+      console.log('DEBUG CITA:', { diaCita, horaCita, idMedico: data.idMedico });
+      const disponibilidadCubierta = await prisma.disponibilidad.findFirst({
+        where: {
+          idMedico: data.idMedico,
+          diaSemana: diaCita,
+          activo: true,
+          horaInicio: { lte: horaCita },
+          horaFin: { gt: horaCita } // La hora de inicio de la cita debe ser estrictamente menor a la hora de fin del turno
+        }
+      });
+      console.log('DEBUG DISPONIBILIDAD:', disponibilidadCubierta);
+
+      if (!disponibilidadCubierta) {
+        throw new ValidationError('El médico no tiene disponibilidad activa para este horario');
+      }
+
+      // Asignar el ID de disponibilidad encontrado a la cita para mantener la consistencia
+      data.idDisponibilidad = disponibilidadCubierta.id;
+
+      // Verificar conflictos generales
       const citaExistente = await prisma.cita.findFirst({
         where: {
           idMedico: data.idMedico,
@@ -124,6 +172,7 @@ export class CitaService {
       medico: { connect: { id: data.idMedico } },
       fechaHoraCita: data.fechaHoraCita,
       motivo: data.motivo,
+      tipo: data.tipo, // <-- Nuevo campo tipo
       estado: 'PROGRAMADA',
     };
 
@@ -198,8 +247,10 @@ export class CitaService {
    * Obtener citas del usuario autenticado (busca por idUsuario)
    */
   async obtenerPorUsuario(idUsuario: string, rol: string, filtros: FiltrarCitasQuery) {
-    const { estado, fechaDesde, fechaHasta, page = 1, limit = 10 } = filtros;
+    const { estado, fechaDesde, fechaHasta, page = 1, limit = 50 } = filtros;  // Aumentado a 50
     const skip = (page - 1) * limit;
+
+    console.log('🔍 obtenerPorUsuario - Buscando citas para:', { idUsuario, rol });
 
     let where: Prisma.CitaWhereInput = {};
 
@@ -211,7 +262,10 @@ export class CitaService {
         select: { id: true }
       });
 
+      console.log('🔍 Médico encontrado:', medico);
+
       if (!medico) {
+        console.log('❌ No se encontró perfil de médico para idUsuario:', idUsuario);
         return { citas: [], pagination: { page, limit, total: 0, totalPages: 0 } };
       }
 
@@ -223,7 +277,10 @@ export class CitaService {
         select: { id: true }
       });
 
+      console.log('🔍 Paciente encontrado:', paciente);
+
       if (!paciente) {
+        console.log('❌ No se encontró perfil de paciente para idUsuario:', idUsuario);
         return { citas: [], pagination: { page, limit, total: 0, totalPages: 0 } };
       }
 
@@ -245,7 +302,7 @@ export class CitaService {
         where,
         skip,
         take: limit,
-        orderBy: { fechaHoraCita: 'desc' },
+        orderBy: { fechaCreacion: 'desc' },  // Ordenar por fecha de creación más reciente
         include: {
           paciente: {
             include: {
@@ -269,8 +326,28 @@ export class CitaService {
       prisma.cita.count({ where })
     ]);
 
+
+
+    // Mapear resultados para incluir campos formateados que espera el frontend
+    const citasFormateadas = citas.map(cita => {
+      const fecha = cita.fechaHoraCita.toISOString().split('T')[0];
+      const horaInicio = cita.fechaHoraCita.toISOString().split('T')[1].substring(0, 5);
+
+      // Calcular hora fin (30 min después)
+      const fechaFin = new Date(cita.fechaHoraCita);
+      fechaFin.setMinutes(fechaFin.getMinutes() + 30);
+      const horaFin = fechaFin.toISOString().split('T')[1].substring(0, 5);
+
+      return {
+        ...cita,
+        fecha,
+        horaInicio,
+        horaFin
+      };
+    });
+
     return {
-      citas,
+      citas: citasFormateadas,
       pagination: {
         page,
         limit,

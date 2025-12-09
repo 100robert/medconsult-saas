@@ -76,7 +76,7 @@ export default function SubscriptionPage() {
                                 <CardDescription>Configura tu pago automático mensual</CardDescription>
                             </div>
                             <div className="text-right">
-                                <span className="block text-2xl font-bold text-teal-700">$9.99</span>
+                                <span className="block text-2xl font-bold text-teal-700">S/ 29.99</span>
                                 <span className="text-xs text-teal-600">/mes</span>
                             </div>
                         </div>
@@ -214,7 +214,7 @@ export default function SubscriptionPage() {
                         </div>
                         <CardDescription>Máxima prioridad y beneficios</CardDescription>
                         <div className="mt-4 flex items-baseline gap-1">
-                            <span className="text-5xl font-bold text-gray-900">$9.99</span>
+                            <span className="text-5xl font-bold text-gray-900">S/ 29.99</span>
                             <span className="text-gray-500">/mes</span>
                         </div>
                     </CardHeader>

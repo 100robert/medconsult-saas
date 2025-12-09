@@ -24,6 +24,8 @@ import {
   Scale,
   Loader2,
   Plus,
+  Video,
+  MapPin,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -99,8 +101,10 @@ export default function DashboardPage() {
     id: string;
     name: string;
     time: string;
+    fecha: string;
     status: 'próxima' | 'confirmada' | 'pendiente';
     specialty: string;
+    tipo: 'VIDEOCONSULTA' | 'PRESENCIAL';
   }>>([]);
   const [loadingCitas, setLoadingCitas] = useState(true);
 
@@ -145,16 +149,23 @@ export default function DashboardPage() {
         const manana = new Date(hoy);
         manana.setDate(manana.getDate() + 1);
 
-        // Filtrar citas
+        console.log('🔍 DEBUG: Total citas recibidas:', citas.length);
+        console.log('🔍 DEBUG: Estados de las citas:', citas.map((c: any) => c.estado));
+
+        // Filtrar citas de hoy
         const citasHoy = citas.filter((c: any) => {
           const fechaCita = new Date(c.fechaHoraCita || c.fecha);
-          return fechaCita >= hoy && fechaCita < manana && c.estado !== 'CANCELADA';
+          const hoyFecha = new Date();
+          hoyFecha.setHours(0, 0, 0, 0);
+          const mananaFecha = new Date(hoyFecha);
+          mananaFecha.setDate(mananaFecha.getDate() + 1);
+          return fechaCita >= hoyFecha && fechaCita < mananaFecha && c.estado !== 'CANCELADA';
         });
 
-        const proximasCitas = citas.filter((c: any) => {
-          const fechaCita = new Date(c.fechaHoraCita || c.fecha);
-          return fechaCita >= hoy && c.estado !== 'CANCELADA' && c.estado !== 'COMPLETADA';
-        });
+        // TEMPORAL: Mostrar TODAS las citas sin ningún filtro para depuración
+        const proximasCitas = [...citas];
+
+        console.log('🔍 DEBUG: Próximas citas (TODAS):', proximasCitas.length);
 
         const citasPendientes = citas.filter((c: any) =>
           c.estado === 'PROGRAMADA' || c.estado === 'PENDIENTE'
@@ -164,10 +175,13 @@ export default function DashboardPage() {
           new Date(a.fechaHoraCita || a.fecha).getTime() - new Date(b.fechaHoraCita || b.fecha).getTime()
         )[0];
 
-        // Formatear lista para mostrar
+        // Ordenar por fecha más reciente y tomar las primeras 5
         const citasOrdenadas = [...proximasCitas].sort((a: any, b: any) =>
-          new Date(a.fechaHoraCita || a.fecha).getTime() - new Date(b.fechaHoraCita || b.fecha).getTime()
+          new Date(b.fechaHoraCita || b.fecha).getTime() - new Date(a.fechaHoraCita || a.fecha).getTime()
         ).slice(0, 5);
+
+        console.log('🔍 DEBUG: Citas a mostrar:', citasOrdenadas.length);
+
 
         const citasFormateadas = citasOrdenadas.map((cita: any, index: number) => {
           const fechaCita = new Date(cita.fechaHoraCita || cita.fecha);
@@ -200,15 +214,28 @@ export default function DashboardPage() {
           if (index === 0) status = 'próxima';
           else if (cita.estado === 'PENDIENTE' || cita.estado === 'PROGRAMADA') status = 'pendiente';
 
+          // Tipo de cita
+          const tipoCita = cita.tipo || 'PRESENCIAL';
+
+          // Fecha formateada
+          const fechaFormateada = fechaCita.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'short'
+          });
+
           return {
             id: cita.id || String(index),
             name: String(nombreMedico),
-            time: timeStr,
+            time: hora,
+            fecha: fechaFormateada,
             status,
             specialty: String(especialidad),
+            tipo: tipoCita as 'VIDEOCONSULTA' | 'PRESENCIAL',
           };
         });
 
+        console.log('🔍 DEBUG: Citas formateadas FINALES:', citasFormateadas);
         setProximasCitasList(citasFormateadas);
 
         // Generar resumen mensual para el gráfico (últimos 6 meses)
@@ -455,7 +482,7 @@ export default function DashboardPage() {
       >
         {/* Welcome Banner */}
         <motion.div variants={item}>
-          <div className="relative overflow-hidden bg-gradient-to-br from-teal-600 to-emerald-600 rounded-3xl p-8 text-white shadow-xl">
+          <div className="relative overflow-hidden rounded-3xl p-8 text-white shadow-xl" style={{ backgroundColor: '#14DBD8' }}>
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
             <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-emerald-500/20 rounded-full translate-y-1/2 blur-2xl" />
@@ -740,8 +767,12 @@ export default function DashboardPage() {
                     >
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <div className="w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
-                            {appointment.name.split(' ').filter(n => n).map(n => n[0]).join('').substring(0, 2)}
+                          <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold shadow-lg" style={{ backgroundColor: '#14DBD8' }}>
+                            {appointment.tipo === 'VIDEOCONSULTA' ? (
+                              <Video className="w-6 h-6" />
+                            ) : (
+                              <MapPin className="w-6 h-6" />
+                            )}
                           </div>
                           {index === 0 && (
                             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse" />
@@ -749,7 +780,21 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-gray-900">{appointment.name}</p>
-                          <p className="text-sm text-gray-500">{appointment.specialty} • {appointment.time}</p>
+                          <p className="text-sm text-gray-500">{appointment.specialty}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                              📅 {appointment.fecha}
+                            </span>
+                            <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">
+                              🕐 {appointment.time}
+                            </span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${appointment.tipo === 'VIDEOCONSULTA'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-orange-100 text-orange-700'
+                              }`}>
+                              {appointment.tipo === 'VIDEOCONSULTA' ? '📹 Virtual' : '🏥 Presencial'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <span className={`px-3 py-1.5 text-xs font-semibold rounded-full ${appointment.status === 'próxima'

@@ -40,6 +40,10 @@ export interface Paciente {
   ultimaConsulta?: string;
   totalConsultas: number;
   proximaCita?: string;
+  usuario?: {
+    nombre: string;
+    apellido: string;
+  };
 }
 
 

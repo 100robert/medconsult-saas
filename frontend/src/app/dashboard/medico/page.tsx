@@ -89,14 +89,28 @@ export default function DoctorDashboardPage() {
 
       // 3. Procesar Citas
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const todayStr = today.toISOString().split('T')[0];
 
+      console.log('🔍 MÉDICO DEBUG: Total citas recibidas:', allCitas.length);
+      console.log('🔍 MÉDICO DEBUG: Estados:', allCitas.map(c => c.estado));
+
+      // Citas de HOY
       const citasHoy = allCitas.filter(app => {
         if (!app.fecha) return false;
-        // Manejo robusto de fechas
         const appFecha = new Date(app.fecha).toISOString().split('T')[0];
-        return appFecha === todayStr;
+        return appFecha === todayStr && app.estado !== 'CANCELADA';
       });
+
+      // Todas las citas próximas (no canceladas)
+      const citasProximas = allCitas.filter(app => {
+        if (!app.fecha) return false;
+        const appFecha = new Date(app.fecha);
+        return appFecha >= today && app.estado !== 'CANCELADA';
+      });
+
+      console.log('🔍 MÉDICO DEBUG: Citas de hoy:', citasHoy.length);
+      console.log('🔍 MÉDICO DEBUG: Citas próximas:', citasProximas.length);
 
       // 4. Calcular estadísticas locales (fallback)
       const citasPendientesTotal = allCitas.filter(a => a.estado === 'PENDIENTE' || a.estado === 'PROGRAMADA').length;
@@ -113,23 +127,25 @@ export default function DoctorDashboardPage() {
         consultasCompletadas: backendStats?.consultasCompletadas ?? consultasRealizadas,
       });
 
-      // 5. Mapear citas para la vista (TodayAppointment)
-      const citasMapeadas: TodayAppointment[] = citasHoy.map(c => ({
+      // 5. Mapear citas próximas para la vista (mostrar próximas 5, no solo hoy)
+      const citasParaMostrar = citasProximas.length > 0 ? citasProximas : citasHoy;
+      const citasMapeadas: TodayAppointment[] = citasParaMostrar.slice(0, 10).map(c => ({
         id: c.id,
         paciente: {
-          nombre: c.paciente?.nombre || 'Paciente',
-          apellido: c.paciente?.apellido || 'Sin Nombre'
+          nombre: c.paciente?.nombre || c.paciente?.usuario?.nombre || 'Paciente',
+          apellido: c.paciente?.apellido || c.paciente?.usuario?.apellido || ''
         },
-        horaInicio: c.horaInicio || '00:00',
-        horaFin: c.horaFin || '00:00',
-        tipo: (c.tipo as any) || 'PRESENCIAL', // Cast seguro
-        estado: c.estado || 'PENDIENTE',
+        horaInicio: c.horaInicio || new Date(c.fecha).toTimeString().slice(0, 5),
+        horaFin: c.horaFin || '00:30',
+        tipo: (c.tipo as any) || 'PRESENCIAL',
+        estado: c.estado || 'PROGRAMADA',
         motivo: c.motivo || 'Consulta general'
       }));
 
-      // Ordenar por hora
+      // Ordenar por fecha más próxima
       citasMapeadas.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
 
+      console.log('🔍 MÉDICO DEBUG: Citas mapeadas finales:', citasMapeadas.length);
       setTodayAppointments(citasMapeadas);
 
     } catch (error) {
@@ -231,9 +247,9 @@ export default function DoctorDashboardPage() {
         {/* Schedule */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-900">Agenda de Hoy</h2>
-            <span className="text-sm text-gray-500 capitalize">
-              {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+            <h2 className="text-lg font-semibold text-gray-900">Próximas Citas</h2>
+            <span className="text-sm text-gray-500">
+              {todayAppointments.length} cita(s) programada(s)
             </span>
           </div>
 
@@ -241,7 +257,7 @@ export default function DoctorDashboardPage() {
             {todayAppointments.length === 0 ? (
               <div className="p-12 text-center">
                 <Calendar className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-500">No hay citas programadas para hoy</p>
+                <p className="text-gray-500">No hay citas próximas programadas</p>
               </div>
             ) : (
               todayAppointments.map((apt) => {

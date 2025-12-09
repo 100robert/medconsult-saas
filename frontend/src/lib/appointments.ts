@@ -135,17 +135,12 @@ export async function getCitaById(id: string): Promise<Appointment> {
 }
 
 // Crear nueva cita
-export async function createCita(data: CreateAppointmentData): Promise<Appointment> {
-  // Verificar si el usuario es Pro (simulación con localStorage)
-  const isPro = typeof window !== 'undefined' && localStorage.getItem('medconsult_pro') === 'true';
-
+export async function createCita(data: CreateAppointmentData, isPro: boolean = false): Promise<Appointment> {
   const response = await api.post<BackendResponse<Appointment>>(
     '/citas',
-    data,
     {
-      headers: {
-        'X-MedConsult-Pro': isPro ? 'true' : 'false'
-      }
+      ...data,
+      isPro
     }
   );
   console.log('Respuesta createCita:', response.data);

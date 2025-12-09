@@ -53,7 +53,12 @@ export class CitaController {
       }
 
       // Verificar si el usuario es Pro (simulación desde header del frontend)
-      const isPro = req.headers['x-medconsult-pro'] === 'true';
+      const headerValue = req.headers['x-medconsult-pro'];
+      const isPro = headerValue === 'true';
+
+      console.log('🔍 CREAR CITA - Header recibido:', headerValue);
+      console.log('🔍 CREAR CITA - isPro calculado:', isPro);
+      console.log('🔍 CREAR CITA - Paciente ID:', paciente.id);
 
       const cita = await citaService.crear({
         ...req.body,

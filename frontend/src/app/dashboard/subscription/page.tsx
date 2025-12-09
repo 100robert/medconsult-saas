@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Check, Star, Shield, Zap, CreditCard, Sparkles, Lock, AlertCircle } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Input, Alert } from '@/components/ui';
 
+
+// funcion de pago simulada
 export default function SubscriptionPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +22,38 @@ export default function SubscriptionPage() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        
+        // Formateo especial para número de tarjeta
+        if (name === 'cardNumber') {
+            // Remover espacios y caracteres no numéricos
+            const cleaned = value.replace(/\s+/g, '').replace(/[^0-9]/g, '');
+            // Limitar a 16 dígitos
+            const limited = cleaned.substring(0, 16);
+            // Agregar espacio cada 4 dígitos
+            const formatted = limited.match(/.{1,4}/g)?.join(' ') || limited;
+            setPaymentData(prev => ({ ...prev, [name]: formatted }));
+            return;
+        }
+        
+        // Formateo para expiración (MM/YY)
+        if (name === 'expiry') {
+            const cleaned = value.replace(/\D/g, '');
+            if (cleaned.length >= 2) {
+                const formatted = cleaned.substring(0, 2) + '/' + cleaned.substring(2, 4);
+                setPaymentData(prev => ({ ...prev, [name]: formatted }));
+            } else {
+                setPaymentData(prev => ({ ...prev, [name]: cleaned }));
+            }
+            return;
+        }
+        
+        // Formateo para CVC (solo números)
+        if (name === 'cvc') {
+            const cleaned = value.replace(/\D/g, '').substring(0, 4);
+            setPaymentData(prev => ({ ...prev, [name]: cleaned }));
+            return;
+        }
+        
         setPaymentData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -68,16 +102,16 @@ export default function SubscriptionPage() {
                     ← Volver a planes
                 </Button>
 
-                <Card className="border-teal-200 shadow-xl ring-1 ring-teal-100">
-                    <CardHeader className="bg-gradient-to-r from-teal-50 to-emerald-50 border-b border-teal-100">
+                <Card className="border-gray-200 shadow-sm rounded-xl overflow-hidden">
+                    <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-t-xl">
                         <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-xl text-teal-800">Finalizar Suscripción Pro</CardTitle>
-                                <CardDescription>Configura tu pago automático mensual</CardDescription>
+                            <div className="text-left">
+                                <CardTitle className="block text-2xl font-semibold text-gray-900">Finalizar Suscripción Pro</CardTitle>
+                                <CardDescription className="text-gray-600">Configura tu pago automático mensual</CardDescription>
                             </div>
                             <div className="text-right">
-                                <span className="block text-2xl font-bold text-teal-700">S/ 29.99</span>
-                                <span className="text-xs text-teal-600">/mes</span>
+                                <span className="block text-3xl font-bold text-teal-700">S/ 29.99</span>
+                                <span className="text-sm text-teal-600">/mes</span>
                             </div>
                         </div>
                     </CardHeader>
@@ -110,6 +144,7 @@ export default function SubscriptionPage() {
                                     onChange={handleInputChange}
                                     leftIcon={<CreditCard className="w-5 h-5 text-gray-400" />}
                                     maxLength={19}
+                                    inputMode="numeric"
                                 />
                             </div>
 
@@ -147,10 +182,10 @@ export default function SubscriptionPage() {
 
                             <Button
                                 type="submit"
-                                className="w-full bg-teal-600 hover:bg-teal-700 text-lg py-6"
+                                className="w-full bg-gray-900 hover:bg-gray-800 text-white text-lg py-6 font-medium"
                                 isLoading={isLoading}
                             >
-                                Pagar y Suscribirse
+                                Confirmar Pago S/ 29.99/mes
                             </Button>
                         </form>
                     </CardContent>

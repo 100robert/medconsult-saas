@@ -211,6 +211,7 @@ model Paciente {
   medicamentosActuales String?   @db.Text
   contactoEmergencia   String?   @db.VarChar(255)
   telefonoEmergencia   String?   @db.VarChar(20)
+  esPro                Boolean   @default(false)  // Plan Pro/Premium
   fechaCreacion        DateTime  @default(now())
   fechaActualizacion   DateTime  @updatedAt
 

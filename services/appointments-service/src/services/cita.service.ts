@@ -54,22 +54,33 @@ export class CitaService {
       throw new NotFoundError('Paciente no encontrado');
     }
 
-    // POLITICA DE NEGOCIO: Límite de 5 citas para cuentas gratuitas
+    // POLITICA DE NEGOCIO: Límite de 5 citas POR MES para cuentas gratuitas
     // Si el usuario es Pro (simulado desde frontend), no aplicamos el límite
 
-    const totalCitasPaciente = await prisma.cita.count({
+    // Calcular inicio y fin del mes actual
+    const now = new Date();
+    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const finMes = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const totalCitasMesActual = await prisma.cita.count({
       where: {
         idPaciente: data.idPaciente,
-        estado: { not: 'CANCELADA' } // Contamos todas las citas activas o pasadas no canceladas
+        estado: { not: 'CANCELADA' }, // Contamos solo citas no canceladas
+        fechaHoraCita: {
+          gte: inicioMes,
+          lte: finMes
+        }
       }
     });
 
     const LIMITE_CITAS_GRATIS = 5;
 
     // Solo aplicar límite si NO es Pro
-    if (!data.isPro && totalCitasPaciente >= LIMITE_CITAS_GRATIS) {
-      throw new ValidationError('Has alcanzado el límite de 5 citas del plan gratuito. Actualiza a MedConsult Pro para citas ilimitadas.');
+    if (!data.isPro && totalCitasMesActual >= LIMITE_CITAS_GRATIS) {
+      throw new ValidationError(`Has alcanzado el límite de ${LIMITE_CITAS_GRATIS} citas por mes del plan gratuito. Actualiza a MedConsult Pro para citas ilimitadas.`);
     }
+
+    console.log(`📊 Límite de citas - Paciente: ${data.idPaciente}, Mes actual: ${totalCitasMesActual}/${LIMITE_CITAS_GRATIS}, Es Pro: ${data.isPro}`);
 
     // Validar que la fecha no esté marcada como NO DISPONIBLE
     const fechaCita = new Date(data.fechaHoraCita);

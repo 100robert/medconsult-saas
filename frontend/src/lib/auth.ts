@@ -15,6 +15,7 @@ export interface User {
   imagenPerfil?: string;
   correoVerificado: boolean;
   activo: boolean;
+  isPro?: boolean; // Plan Pro/Premium
   createdAt: string;
   updatedAt: string;
 }

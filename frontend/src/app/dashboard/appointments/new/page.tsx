@@ -8,6 +8,7 @@ import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Aler
 import { buscarMedicos, Doctor as DoctorAPI } from '@/lib/doctors';
 import { createCita, getAvailableSlots, Slot } from '@/lib/appointments';
 import { createPago } from '@/lib/payments';
+import { useAuthStore } from '@/store/authStore';
 
 interface Doctor {
   id: string;
@@ -23,6 +24,7 @@ function NewAppointmentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const doctorIdParam = searchParams.get('doctorId');
+  const { user } = useAuthStore();
 
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
@@ -62,6 +64,38 @@ function NewAppointmentContent() {
 
   const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    
+    // Formateo especial para número de tarjeta
+    if (name === 'cardNumber') {
+      // Remover espacios y caracteres no numéricos
+      const cleaned = value.replace(/\s+/g, '').replace(/[^0-9]/g, '');
+      // Limitar a 16 dígitos
+      const limited = cleaned.substring(0, 16);
+      // Agregar espacio cada 4 dígitos
+      const formatted = limited.match(/.{1,4}/g)?.join(' ') || limited;
+      setPaymentData(prev => ({ ...prev, [name]: formatted }));
+      return;
+    }
+    
+    // Formateo para expiración (MM/YY)
+    if (name === 'expiry') {
+      const cleaned = value.replace(/\D/g, '');
+      if (cleaned.length >= 2) {
+        const formatted = cleaned.substring(0, 2) + '/' + cleaned.substring(2, 4);
+        setPaymentData(prev => ({ ...prev, [name]: formatted }));
+      } else {
+        setPaymentData(prev => ({ ...prev, [name]: cleaned }));
+      }
+      return;
+    }
+    
+    // Formateo para CVC (solo números)
+    if (name === 'cvc') {
+      const cleaned = value.replace(/\D/g, '').substring(0, 4);
+      setPaymentData(prev => ({ ...prev, [name]: cleaned }));
+      return;
+    }
+    
     setPaymentData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -223,7 +257,7 @@ function NewAppointmentContent() {
       const endMinutes = (minutes + 30) % 60;
       const horaFin = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
 
-      // 1. Crear la cita
+      // 1. Crear la cita - pasar isPro del usuario
       const nuevaCita = await createCita({
         idMedico: selectedDoctorId,
         fecha: selectedDate,
@@ -231,7 +265,7 @@ function NewAppointmentContent() {
         horaFin: horaFin,
         tipo: appointmentType,
         motivo: motivo || 'Consulta general',
-      });
+      }, user?.isPro || false);
 
       console.log('Cita creada:', nuevaCita);
 
@@ -339,7 +373,7 @@ function NewAppointmentContent() {
           </Card>
 
           {/* Plan Pro (recomendado) */}
-          <Card className="border-2 border-teal-500 relative overflow-hidden shadow-xl shadow-teal-500/20">
+          <Card className="border-3 border-teal-500 relative overflow-hidden shadow-xl shadow-teal-500/20">
             <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-teal-500 to-emerald-500 text-white text-center py-2 font-semibold text-sm">
               ⭐ RECOMENDADO
             </div>
@@ -354,7 +388,7 @@ function NewAppointmentContent() {
             </CardHeader>
             <CardContent>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-gray-900">$29.99</span>
+                <span className="text-4xl font-bold text-gray-900">s/ 29.99</span>
                 <span className="text-gray-500">/mes</span>
               </div>
               <ul className="space-y-3 text-gray-700">
@@ -426,7 +460,7 @@ function NewAppointmentContent() {
               ) : (
                 <>
                   {/* Header del modal */}
-                  <div className="bg-gradient-to-r from-teal-500 to-emerald-500 p-6 rounded-t-2xl text-white">
+                  <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-b border-teal-100">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-xl font-bold">MedConsult Pro</h3>
@@ -947,6 +981,7 @@ function NewAppointmentContent() {
                           value={paymentData.cardNumber}
                           onChange={handlePaymentChange}
                           maxLength={19}
+                          inputMode="numeric"
                         />
                       </div>
 

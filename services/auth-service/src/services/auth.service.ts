@@ -651,6 +651,15 @@ async logout(refreshToken: string): Promise<MessageResponse> {
       throw new NotFoundError('Usuario no encontrado');
     }
 
+    // Obtener información de Pro si es paciente
+    let isPro = false;
+    if (usuario.rol === 'PACIENTE') {
+      const paciente = await prisma.paciente.findUnique({
+        where: { idUsuario: userId }
+      });
+      isPro = paciente?.esPro || false;
+    }
+
     return {
       success: true,
       data: {
@@ -666,6 +675,7 @@ async logout(refreshToken: string): Promise<MessageResponse> {
           fechaNacimiento: usuario.fechaNacimiento,
           genero: usuario.genero,
           imagenPerfil: usuario.imagenPerfil,
+          isPro,
         },
       },
     };

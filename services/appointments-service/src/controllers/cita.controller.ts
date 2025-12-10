@@ -17,8 +17,8 @@ export class CitaController {
     try {
       // Obtener el ID del paciente basado en el usuario autenticado
       // El JWT puede tener 'userId' o 'id' dependiendo de cómo se generó
-      const idUsuario = req.user?.userId || req.user?.id;
-      
+      const idUsuario = req.user?.userId;
+
       if (!idUsuario) {
         return res.status(401).json({
           success: false,
@@ -52,19 +52,28 @@ export class CitaController {
         });
       }
 
+      // Verificar si el usuario es Pro (simulación desde header del frontend)
+      const headerValue = req.headers['x-medconsult-pro'];
+      const isPro = headerValue === 'true';
+
+      console.log('🔍 CREAR CITA - Header recibido:', headerValue);
+      console.log('🔍 CREAR CITA - isPro calculado:', isPro);
+      console.log('🔍 CREAR CITA - Paciente ID:', paciente.id);
+
       const cita = await citaService.crear({
         ...req.body,
         idPaciente: paciente.id,
         fechaHoraCita,
+        isPro, // Pasar flag de Pro al servicio
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         message: 'Cita creada exitosamente',
         data: cita
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -74,7 +83,7 @@ export class CitaController {
    */
   async obtenerMisCitas(req: Request, res: Response, next: NextFunction) {
     try {
-      const idUsuario = req.user?.userId || req.user?.id;
+      const idUsuario = req.user?.userId;
       const rol = req.user?.rol || 'PACIENTE'; // Default a PACIENTE si no viene
 
       console.log('📋 obtenerMisCitas - Usuario:', { idUsuario, rol, user: req.user });
@@ -96,13 +105,13 @@ export class CitaController {
 
       const resultado = await citaService.obtenerPorUsuario(idUsuario, rol!, filtros);
 
-      res.json({
+      return res.json({
         success: true,
         citas: resultado.citas,
         pagination: resultado.pagination
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -115,12 +124,12 @@ export class CitaController {
       const { id } = req.params;
       const cita = await citaService.obtenerPorId(id);
 
-      res.json({
+      return res.json({
         success: true,
         data: cita
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -141,12 +150,12 @@ export class CitaController {
 
       const resultado = await citaService.obtenerPorPaciente(idPaciente, filtros);
 
-      res.json({
+      return res.json({
         success: true,
         ...resultado
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -167,12 +176,12 @@ export class CitaController {
 
       const resultado = await citaService.obtenerPorMedico(idMedico, filtros);
 
-      res.json({
+      return res.json({
         success: true,
         ...resultado
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -185,12 +194,12 @@ export class CitaController {
       const { idMedico } = req.params;
       const citas = await citaService.obtenerCitasHoy(idMedico);
 
-      res.json({
+      return res.json({
         success: true,
         data: citas
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -203,13 +212,13 @@ export class CitaController {
       const { id } = req.params;
       const cita = await citaService.confirmar(id, req.body.notas);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Cita confirmada exitosamente',
         data: cita
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -221,19 +230,19 @@ export class CitaController {
     try {
       const { id } = req.params;
       const cita = await citaService.cancelar(
-        id, 
-        req.body, 
-        req.user!.userId, 
+        id,
+        req.body,
+        req.user!.userId,
         req.user!.rol
       );
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Cita cancelada exitosamente',
         data: cita
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -246,13 +255,13 @@ export class CitaController {
       const { id } = req.params;
       const cita = await citaService.completar(id);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Cita completada exitosamente',
         data: cita
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
@@ -265,13 +274,13 @@ export class CitaController {
       const { id } = req.params;
       const cita = await citaService.actualizarNotas(id, req.body);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Notas actualizadas exitosamente',
         data: cita
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 }

@@ -11,7 +11,15 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  console.error('❌ Error:', err);
+  console.error('❌ Error detallado:', {
+    name: err.name,
+    message: err.message,
+    stack: err.stack,
+    // @ts-ignore
+    code: err.code,
+    // @ts-ignore
+    meta: err.meta
+  });
 
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
@@ -25,9 +33,9 @@ export function errorHandler(
   res.status(500).json({
     success: false,
     message: 'Error interno del servidor',
-    ...(process.env.NODE_ENV === 'development' && { 
+    ...(process.env.NODE_ENV === 'development' && {
       error: err.message,
-      stack: err.stack 
+      stack: err.stack
     }),
   });
 }

@@ -4,8 +4,8 @@
 
 import { prisma } from '../config/database';
 import { DiaSemana } from '@prisma/client';
-import { 
-  CreateDisponibilidadDTO, 
+import {
+  CreateDisponibilidadDTO,
   UpdateDisponibilidadDTO,
   CreateFechaNoDisponibleDTO,
   NotFoundError,
@@ -14,7 +14,7 @@ import {
 } from '../types';
 
 export class DisponibilidadService {
-  
+
   /**
    * Crear horario de disponibilidad
    */
@@ -80,7 +80,7 @@ export class DisponibilidadService {
    * Obtener disponibilidades de un médico
    */
   async obtenerPorMedico(idMedico: string, soloActivos: boolean = true) {
-    const where = soloActivos 
+    const where = soloActivos
       ? { idMedico, activo: true }
       : { idMedico };
 
@@ -176,7 +176,7 @@ export class DisponibilidadService {
    */
   async obtenerFechasNoDisponibles(idMedico: string, desde?: Date) {
     const where: any = { idMedico };
-    
+
     if (desde) {
       where.fecha = { gte: desde };
     }
@@ -212,8 +212,8 @@ export class DisponibilidadService {
    * Obtener slots disponibles para un médico en un rango de fechas
    */
   async obtenerSlotsDisponibles(
-    idMedico: string, 
-    fechaDesde: Date, 
+    idMedico: string,
+    fechaDesde: Date,
     fechaHasta: Date,
     duracionConsulta: number = 30
   ) {
@@ -251,17 +251,17 @@ export class DisponibilidadService {
     const diasSemana: DiaSemana[] = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
 
     let fecha = new Date(fechaDesde);
-    
+
     while (fecha <= fechaHasta) {
       const fechaStr = fecha.toISOString().split('T')[0];
-      
+
       // Saltar si es fecha no disponible
       if (fechasNoDispSet.has(fechaStr)) {
         fecha.setDate(fecha.getDate() + 1);
         continue;
       }
 
-      const diaSemana = diasSemana[fecha.getDay()];
+      const diaSemana = diasSemana[fecha.getUTCDay()];
 
       // Buscar disponibilidades para este día
       const disponibilidadesDia = disponibilidades.filter(d => d.diaSemana === diaSemana);
@@ -277,7 +277,7 @@ export class DisponibilidadService {
         while (slotInicio + duracionConsulta <= finMinutos) {
           const slotHora = Math.floor(slotInicio / 60);
           const slotMinuto = slotInicio % 60;
-          
+
           const fechaHoraSlot = new Date(fecha);
           fechaHoraSlot.setHours(slotHora, slotMinuto, 0, 0);
 

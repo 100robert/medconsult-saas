@@ -8,9 +8,14 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint src/**/*.ts",
-    "prisma:generate": "prisma generate --schema=../../shared/prisma/schema.prisma"
+    "prisma:generate": "prisma generate"
   },
-  "keywords": ["medconsult", "reviews", "ratings", "healthcare"],
+  "keywords": [
+    "medconsult",
+    "reviews",
+    "ratings",
+    "healthcare"
+  ],
   "author": "MedConsult Team",
   "license": "ISC",
   "dependencies": {

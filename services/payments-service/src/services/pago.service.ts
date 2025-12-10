@@ -4,7 +4,7 @@
 
 import { prisma } from '../config/database';
 import { EstadoPago, MetodoPago } from '@prisma/client';
-import { 
+import {
   CreatePagoDTO,
   ProcesarPagoDTO,
   ReembolsoDTO,
@@ -17,20 +17,29 @@ import {
 } from '../types';
 
 export class PagoService {
-  
+
   /**
    * Crear pago pendiente
    */
   async crear(data: CreatePagoDTO) {
+    console.log('💳 Iniciando creación de pago:', data);
+
     // Verificar que la cita existe
-    const cita = await prisma.cita.findUnique({
-      where: { id: data.idCita },
-      include: { 
-        pago: true,
-        paciente: true,
-        medico: true
-      }
-    });
+    let cita;
+    try {
+      cita = await prisma.cita.findUnique({
+        where: { id: data.idCita },
+        include: {
+          pago: true,
+          paciente: true,
+          medico: true
+        }
+      });
+      console.log('✅ Cita encontrada para pago:', cita ? 'Sí' : 'No');
+    } catch (dbError: any) {
+      console.error('❌ Error buscando cita en DB:', dbError);
+      throw new Error(`Error de base de datos al buscar cita: ${dbError.message}`);
+    }
 
     if (!cita) {
       throw new NotFoundError('Cita no encontrada');
@@ -45,45 +54,56 @@ export class PagoService {
     }
 
     // Calcular comisión y monto médico
-    const comisionPorcentaje = 0.10; // 10% de comisión
+    const comisionPorcentaje = 0.30; // 30% de comisión de plataforma
     const comisionPlataforma = data.monto * comisionPorcentaje;
     const montoMedico = data.monto - comisionPlataforma;
 
     // Generar ID de transacción único
     const idTransaccion = await this.generarIdTransaccion();
 
-    const pago = await prisma.pago.create({
-      data: {
-        idCita: data.idCita,
-        idPaciente: cita.idPaciente,
-        idMedico: cita.idMedico,
-        monto: data.monto,
-        comisionPlataforma,
-        montoMedico,
-        moneda: data.moneda || 'USD',
-        metodoPago: data.metodoPago || MetodoPago.TARJETA,
-        idTransaccion,
-        estado: EstadoPago.PENDIENTE,
-      },
-      include: {
-        cita: true,
-        paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true, correo: true } 
-            } 
-          }
-        },
-        medico: {
-          include: { 
-            usuario: { select: { nombre: true, apellido: true } },
-            especialidad: true
-          }
-        }
-      }
+    console.log('💳 Intentando guardar pago en DB:', {
+      idCita: data.idCita,
+      monto: data.monto,
+      idTransaccion
     });
 
-    return pago;
+    try {
+      const pago = await prisma.pago.create({
+        data: {
+          idCita: data.idCita,
+          idPaciente: cita.idPaciente,
+          idMedico: cita.idMedico,
+          monto: data.monto,
+          comisionPlataforma,
+          montoMedico,
+          moneda: data.moneda || 'USD',
+          metodoPago: data.metodoPago || MetodoPago.TARJETA,
+          idTransaccion,
+          estado: EstadoPago.PENDIENTE,
+        },
+        include: {
+          cita: true,
+          paciente: {
+            include: {
+              usuario: {
+                select: { nombre: true, apellido: true, correo: true }
+              }
+            }
+          },
+          medico: {
+            include: {
+              usuario: { select: { nombre: true, apellido: true } },
+              especialidad: true
+            }
+          }
+        }
+      });
+      console.log('✅ Pago guardado exitosamente:', pago.id);
+      return pago;
+    } catch (createError: any) {
+      console.error('❌ Error creando registro de pago:', createError);
+      throw new Error(`Error BD creando pago: ${createError.message}`);
+    }
   }
 
   /**
@@ -95,14 +115,14 @@ export class PagoService {
       include: {
         cita: true,
         paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true, correo: true } 
-            } 
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true, correo: true }
+            }
           }
         },
         medico: {
-          include: { 
+          include: {
             usuario: { select: { nombre: true, apellido: true } },
             especialidad: true
           }
@@ -126,14 +146,14 @@ export class PagoService {
       include: {
         cita: true,
         paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true } 
-            } 
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true }
+            }
           }
         },
         medico: {
-          include: { 
+          include: {
             usuario: { select: { nombre: true, apellido: true } },
             especialidad: true
           }
@@ -182,10 +202,10 @@ export class PagoService {
         },
         include: {
           paciente: {
-            include: { 
-              usuario: { 
-                select: { nombre: true, apellido: true, correo: true } 
-              } 
+            include: {
+              usuario: {
+                select: { nombre: true, apellido: true, correo: true }
+              }
             }
           }
         }
@@ -288,7 +308,7 @@ export class PagoService {
         include: {
           cita: true,
           medico: {
-            include: { 
+            include: {
               usuario: { select: { nombre: true, apellido: true } },
               especialidad: true
             }
@@ -335,8 +355,8 @@ export class PagoService {
         include: {
           cita: true,
           paciente: {
-            include: { 
-              usuario: { select: { nombre: true, apellido: true } } 
+            include: {
+              usuario: { select: { nombre: true, apellido: true } }
             }
           }
         },
@@ -410,6 +430,124 @@ export class PagoService {
   }
 
   /**
+   * Obtener resumen de comisiones para Admin
+   */
+  async obtenerResumenComisiones(fechaDesde?: Date, fechaHasta?: Date) {
+    const where: any = { estado: EstadoPago.COMPLETADO };
+
+    if (fechaDesde || fechaHasta) {
+      where.fechaCreacion = {};
+      if (fechaDesde) where.fechaCreacion.gte = fechaDesde;
+      if (fechaHasta) where.fechaCreacion.lte = fechaHasta;
+    }
+
+    const [totales, porMes] = await Promise.all([
+      prisma.pago.aggregate({
+        where,
+        _sum: {
+          monto: true,
+          comisionPlataforma: true,
+          montoMedico: true,
+        },
+        _count: true,
+      }),
+      prisma.$queryRaw`
+        SELECT 
+          DATE_TRUNC('month', "fechaCreacion") as mes,
+          SUM("monto") as "totalBruto",
+          SUM("comisionPlataforma") as "totalComision",
+          SUM("montoMedico") as "totalMedicos",
+          COUNT(*)::int as "cantidad"
+        FROM "pagos"
+        WHERE "estado" = 'COMPLETADO'
+        ${fechaDesde ? prisma.$queryRaw`AND "fechaCreacion" >= ${fechaDesde}` : prisma.$queryRaw``}
+        ${fechaHasta ? prisma.$queryRaw`AND "fechaCreacion" <= ${fechaHasta}` : prisma.$queryRaw``}
+        GROUP BY DATE_TRUNC('month', "fechaCreacion")
+        ORDER BY mes DESC
+        LIMIT 12
+      `.catch(() => []) // Si falla el raw query, devolver array vacío
+    ]);
+
+    return {
+      totalBruto: Number(totales._sum.monto) || 0,
+      totalComisionPlataforma: Number(totales._sum.comisionPlataforma) || 0,
+      totalPagadoMedicos: Number(totales._sum.montoMedico) || 0,
+      cantidadTransacciones: totales._count,
+      porcentajeComision: 30, // 30% actual
+      porMes: Array.isArray(porMes) ? porMes : [],
+    };
+  }
+
+  /**
+   * Obtener ganancias del médico con desglose de comisiones
+   */
+  async obtenerGananciasMedico(idMedico: string, fechaDesde?: Date, fechaHasta?: Date) {
+    const where: any = {
+      idMedico,
+      estado: EstadoPago.COMPLETADO
+    };
+
+    if (fechaDesde || fechaHasta) {
+      where.fechaCreacion = {};
+      if (fechaDesde) where.fechaCreacion.gte = fechaDesde;
+      if (fechaHasta) where.fechaCreacion.lte = fechaHasta;
+    }
+
+    const [totales, pendientes, ultimosPagos] = await Promise.all([
+      prisma.pago.aggregate({
+        where,
+        _sum: {
+          monto: true,
+          comisionPlataforma: true,
+          montoMedico: true,
+        },
+        _count: true,
+      }),
+      prisma.pago.aggregate({
+        where: { idMedico, estado: EstadoPago.PENDIENTE },
+        _sum: { monto: true },
+        _count: true,
+      }),
+      prisma.pago.findMany({
+        where: { idMedico },
+        orderBy: { fechaCreacion: 'desc' },
+        take: 10,
+        include: {
+          cita: true,
+          paciente: {
+            include: {
+              usuario: { select: { nombre: true, apellido: true } }
+            }
+          }
+        }
+      })
+    ]);
+
+    return {
+      ingresosBrutos: Number(totales._sum.monto) || 0,
+      comisionRetenida: Number(totales._sum.comisionPlataforma) || 0,
+      ingresosNetos: Number(totales._sum.montoMedico) || 0,
+      cantidadConsultas: totales._count,
+      porcentajeComision: 30,
+      pendientes: {
+        monto: Number(pendientes._sum.monto) || 0,
+        cantidad: pendientes._count,
+      },
+      ultimosPagos: ultimosPagos.map(p => ({
+        id: p.id,
+        fecha: p.fechaCreacion,
+        montoBruto: Number(p.monto),
+        comision: Number(p.comisionPlataforma),
+        montoNeto: Number(p.montoMedico),
+        paciente: p.paciente?.usuario
+          ? `${p.paciente.usuario.nombre} ${p.paciente.usuario.apellido}`
+          : 'Paciente',
+        estado: p.estado,
+      })),
+    };
+  }
+
+  /**
    * Generar ID de transacción único
    */
   private async generarIdTransaccion(): Promise<string> {
@@ -418,7 +556,7 @@ export class PagoService {
     const month = String(fecha.getMonth() + 1).padStart(2, '0');
     const day = String(fecha.getDate()).padStart(2, '0');
     const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
+
     return `PAY-${year}${month}${day}-${random}`;
   }
 
@@ -428,7 +566,7 @@ export class PagoService {
   private async simularProcesamiento(_data: ProcesarPagoDTO): Promise<boolean> {
     // Simular delay de procesamiento
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     // Simular 95% de éxito
     return Math.random() > 0.05;
   }

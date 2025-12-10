@@ -23,6 +23,33 @@ router.get('/resumen',
   pagoController.obtenerResumen
 );
 
+// ========== RUTAS DE COMISIONES (ADMIN) ==========
+
+// Obtener resumen de comisiones de la plataforma
+router.get('/admin/comisiones',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['ADMIN']),
+  pagoController.obtenerComisionesAdmin
+);
+
+// ========== RUTAS DE GANANCIAS (MÉDICO) ==========
+
+// Obtener mis ganancias (médico autenticado)
+router.get('/me/ganancias',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['MEDICO']),
+  pagoController.obtenerMisGanancias
+);
+
+// Obtener ganancias de un médico específico (admin)
+router.get('/medico/ganancias/:idMedico',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['ADMIN']),
+  pagoController.obtenerGananciasMedico
+);
+
+// ========== RUTAS DE PAGOS ==========
+
 // Obtener pago por ID
 router.get('/:id',
   authMiddleware.verifyToken,

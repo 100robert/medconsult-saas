@@ -269,9 +269,87 @@ export const adminCreateUserSchema = z.object({
   }),
 
   // Opciones adicionales para admin
-  correoVerificado: z.boolean().optional().default(true), // Admin puede pre-verificar
+  correoVerificado: z.boolean().optional().default(true),
   activo: z.boolean().optional().default(true),
-});
+
+  // ============ CAMPOS ESPECÍFICOS PARA MÉDICO ============
+  // Estos campos son REQUERIDOS cuando rol = MEDICO
+  numeroLicencia: z
+    .string()
+    .min(3, 'El número de licencia debe tener al menos 3 caracteres')
+    .max(50, 'El número de licencia es demasiado largo')
+    .optional(),
+
+  idEspecialidad: z
+    .string()
+    .uuid('ID de especialidad inválido')
+    .optional(),
+
+  precioPorConsulta: z
+    .number()
+    .min(0, 'El precio no puede ser negativo')
+    .max(10000, 'El precio es demasiado alto')
+    .optional(),
+
+  moneda: z
+    .string()
+    .length(3, 'La moneda debe tener 3 caracteres (ej: PEN, USD)')
+    .default('PEN')
+    .optional(),
+
+  duracionConsulta: z
+    .number()
+    .int('La duración debe ser un número entero')
+    .min(15, 'La duración mínima es 15 minutos')
+    .max(120, 'La duración máxima es 120 minutos')
+    .default(30)
+    .optional(),
+
+  aniosExperiencia: z
+    .number()
+    .int('Los años de experiencia deben ser un número entero')
+    .min(0, 'Los años de experiencia no pueden ser negativos')
+    .max(70, 'Los años de experiencia son demasiados')
+    .default(0)
+    .optional(),
+
+  biografia: z
+    .string()
+    .max(2000, 'La biografía es demasiado larga')
+    .optional(),
+
+  educacion: z
+    .string()
+    .max(1000, 'La educación es demasiado larga')
+    .optional(),
+
+  certificaciones: z
+    .string()
+    .max(1000, 'Las certificaciones son demasiado largas')
+    .optional(),
+
+  subespecialidades: z
+    .string()
+    .max(500, 'Las subespecialidades son demasiado largas')
+    .optional(),
+
+  idiomas: z
+    .array(z.string())
+    .default(['Español'])
+    .optional(),
+}).refine(
+  (data) => {
+    // Si el rol es MEDICO, los campos específicos de médico son obligatorios
+    if (data.rol === 'MEDICO') {
+      return data.numeroLicencia && data.idEspecialidad && data.precioPorConsulta !== undefined;
+    }
+    return true;
+  },
+  {
+    message: 'Para crear un médico se requiere: número de licencia, especialidad y precio por consulta',
+    path: ['rol'],
+  }
+);
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

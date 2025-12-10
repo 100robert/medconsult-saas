@@ -7,6 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
+    "prisma:generate": "cd shared/prisma && npx prisma generate",
     "dev": "concurrently -n \"gateway,auth,users,appointments,consultations,payments,notifications,reviews,audit\" -c \"cyan,green,blue,yellow,magenta,red,white,gray,orange\" \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:users\" \"npm run dev:appointments\" \"npm run dev:consultations\" \"npm run dev:payments\" \"npm run dev:notifications\" \"npm run dev:reviews\" \"npm run dev:audit\"",
     "dev:gateway": "cd gateway && npm run dev",
     "dev:auth": "cd services/auth-service && npm run dev",

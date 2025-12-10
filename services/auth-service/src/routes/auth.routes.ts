@@ -290,6 +290,33 @@ router.patch(
 );
 
 /**
+ * @route   PATCH /auth/admin/users/:id
+ * @desc    Actualizar datos de un usuario (solo admin)
+ * @access  Private (ADMIN)
+ * @body    { nombre?, apellido?, correo?, telefono?, rol?, activo?, correoVerificado? }
+ * @returns { success, message, data }
+ */
+router.patch(
+  '/admin/users/:id',
+  authMiddleware,
+  requireRole(['ADMIN']),
+  authController.updateUser.bind(authController)
+);
+
+/**
+ * @route   DELETE /auth/admin/users/:id
+ * @desc    Eliminar un usuario (solo admin)
+ * @access  Private (ADMIN)
+ * @returns { success, message }
+ */
+router.delete(
+  '/admin/users/:id',
+  authMiddleware,
+  requireRole(['ADMIN']),
+  authController.deleteUser.bind(authController)
+);
+
+/**
  * @route   GET /auth/admin/stats
  * @desc    Obtener estadísticas del sistema (solo admin)
  * @access  Private (ADMIN)

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
+import { Toaster } from 'sonner';
 import "./globals.css";
 
 const inter = Inter({
@@ -19,9 +20,10 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         {children}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

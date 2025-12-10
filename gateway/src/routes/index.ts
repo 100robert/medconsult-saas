@@ -25,18 +25,18 @@ const router = Router();
 
 router.get('/health/services', async (req: Request, res: Response) => {
   const healthChecks: Record<string, any> = {};
-  
+
   for (const [key, service] of Object.entries(services)) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
-      
+
       const response = await fetch(`${service.url}${service.healthCheck}`, {
         signal: controller.signal
       });
-      
+
       clearTimeout(timeout);
-      
+
       healthChecks[key] = {
         name: service.name,
         status: response.ok ? 'healthy' : 'unhealthy',
@@ -77,13 +77,14 @@ router.use('/usuarios', authMiddleware, usersProxy);
 router.use('/pacientes', authMiddleware, usersProxy);
 router.use('/medicos', authMiddleware, usersProxy);
 router.use('/especialidades', usersProxy); // Público
+router.use('/metricas-salud', authMiddleware, usersProxy);
 
 // ============================================
 // RUTAS DE CITAS (Requieren auth)
 // ============================================
 
 router.use('/citas', authMiddleware, appointmentsProxy);
-router.use('/disponibilidad', authMiddleware, appointmentsProxy);
+router.use('/disponibilidades', authMiddleware, appointmentsProxy);
 
 // ============================================
 // RUTAS DE CONSULTAS (Requieren auth)
@@ -114,9 +115,9 @@ router.use('/resenas', reviewsProxy); // El servicio maneja auth internamente
 // RUTAS DE AUDITORÍA (Solo admin)
 // ============================================
 
-router.use('/auditoria', 
-  authMiddleware, 
-  requireRoles(['ADMIN']), 
+router.use('/auditoria',
+  authMiddleware,
+  requireRoles(['ADMIN']),
   auditProxy
 );
 

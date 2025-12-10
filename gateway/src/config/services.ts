@@ -23,7 +23,7 @@ export const services: Record<string, ServiceConfig> = {
     name: 'Users Service',
     url: process.env.USERS_SERVICE_URL || 'http://localhost:3002',
     healthCheck: '/health',
-    routes: ['/usuarios', '/pacientes', '/medicos', '/especialidades'],
+    routes: ['/usuarios', '/pacientes', '/medicos', '/especialidades', '/metricas-salud'],
     requiresAuth: true,
   },
   appointments: {

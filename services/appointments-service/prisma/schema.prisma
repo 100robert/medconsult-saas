@@ -1,0 +1,552 @@
+// ============================================
+// SCHEMA PRISMA - MEDCONSULT SAAS
+// ============================================
+// Sistema de Consultas Médicas Online
+// Arquitectura de Microservicios
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum RolUsuario {
+  PACIENTE
+  MEDICO
+  ADMIN
+}
+
+enum Genero {
+  MASCULINO
+  FEMENINO
+  OTRO
+  PREFIERO_NO_DECIR
+}
+
+enum EstadoMedico {
+  PENDIENTE
+  VERIFICADO
+  RECHAZADO
+  SUSPENDIDO
+}
+
+enum DiaSemana {
+  LUNES
+  MARTES
+  MIERCOLES
+  JUEVES
+  VIERNES
+  SABADO
+  DOMINGO
+}
+
+enum EstadoCita {
+  PROGRAMADA
+  CONFIRMADA
+  COMPLETADA
+  CANCELADA
+}
+
+enum CanceladaPor {
+  PACIENTE
+  MEDICO
+  SISTEMA
+}
+
+enum TipoConsulta {
+  CHAT
+  VIDEO
+  HIBRIDA
+}
+
+enum EstadoConsulta {
+  EN_PROGRESO
+  COMPLETADA
+  CANCELADA
+}
+
+enum EstadoReceta {
+  ACTIVA
+  VENCIDA
+  CANCELADA
+}
+
+enum MetodoPago {
+  TARJETA
+  BILLETERA
+  TRANSFERENCIA
+}
+
+enum EstadoPago {
+  PENDIENTE
+  COMPLETADO
+  FALLIDO
+  REEMBOLSADO
+}
+
+enum EstadoResena {
+  APROBADA
+  PENDIENTE
+  RECHAZADA
+}
+
+enum TipoNotificacion {
+  CORREO
+  SMS
+  EN_APP
+}
+
+enum EstadoNotificacion {
+  PENDIENTE
+  ENVIADA
+  FALLIDA
+}
+
+enum AccionAuditoria {
+  VER
+  CREAR
+  ACTUALIZAR
+  ELIMINAR
+}
+
+// ============================================
+// AUTH SERVICE - Autenticación y Usuarios Base
+// ============================================
+
+model Usuario {
+  id                          String     @id @default(uuid()) @db.Uuid
+  correo                      String     @unique @db.VarChar(255)
+  hashContrasena              String     @db.VarChar(255)
+  nombre                      String     @db.VarChar(100)
+  apellido                    String     @db.VarChar(100)
+  telefono                    String?    @db.VarChar(20)
+  fechaNacimiento             DateTime?  @db.Date
+  genero                      Genero?
+  imagenPerfil                String?    @db.Text
+  rol                         RolUsuario
+  correoVerificado            Boolean    @default(false)
+  activo                      Boolean    @default(true)
+  ultimoAcceso                DateTime?
+  tokenVerificacion           String?    @unique @db.VarChar(255)
+  tokenRecuperacion           String?    @unique @db.VarChar(255)
+  expirationTokenRecuperacion DateTime?
+  fechaCreacion               DateTime   @default(now())
+  fechaActualizacion          DateTime   @updatedAt
+
+  // Relaciones
+  refreshTokens      RefreshToken[]
+  intentosLogin      IntentoLogin[]
+  paciente           Paciente?
+  medico             Medico?
+  notificaciones     Notificacion[]
+  registrosAuditoria RegistroAuditoria[]
+
+  @@index([correo])
+  @@index([rol])
+  @@index([activo])
+  @@index([correoVerificado])
+  @@map("usuarios")
+}
+
+model RefreshToken {
+  id            String   @id @default(uuid()) @db.Uuid
+  token         String   @unique @db.Text
+  idUsuario     String   @db.Uuid
+  usuario       Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  expiraEn      DateTime
+  esRevocado    Boolean  @default(false)
+  direccionIP   String?  @db.VarChar(45)
+  agenteUsuario String?  @db.Text
+  fechaCreacion DateTime @default(now())
+
+  @@index([token])
+  @@index([idUsuario])
+  @@index([expiraEn])
+  @@index([esRevocado])
+  @@map("refresh_tokens")
+}
+
+model IntentoLogin {
+  id            String   @id @default(uuid()) @db.Uuid
+  correo        String   @db.VarChar(255)
+  idUsuario     String?  @db.Uuid
+  usuario       Usuario? @relation(fields: [idUsuario], references: [id], onDelete: SetNull)
+  exitoso       Boolean
+  direccionIP   String   @db.VarChar(45)
+  agenteUsuario String?  @db.Text
+  razon         String?  @db.Text
+  fecha         DateTime @default(now())
+
+  @@index([correo])
+  @@index([fecha])
+  @@index([exitoso])
+  @@index([direccionIP])
+  @@map("intentos_login")
+}
+
+// ============================================
+// USERS SERVICE - Pacientes y Médicos
+// ============================================
+
+model Paciente {
+  id                   String    @id @default(uuid()) @db.Uuid
+  idUsuario            String    @unique @db.Uuid
+  usuario              Usuario   @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  fechaNacimiento      DateTime? @db.Date
+  genero               Genero?
+  direccion            String?   @db.Text
+  ciudad               String?   @db.VarChar(100)
+  pais                 String?   @db.VarChar(100)
+  grupoSanguineo       String?   @db.VarChar(5)
+  alergias             String?   @db.Text
+  condicionesCronicas  String?   @db.Text
+  medicamentosActuales String?   @db.Text
+  contactoEmergencia   String?   @db.VarChar(255)
+  telefonoEmergencia   String?   @db.VarChar(20)
+  fechaCreacion        DateTime  @default(now())
+  fechaActualizacion   DateTime  @updatedAt
+
+  // Relaciones
+  citas         Cita[]
+  recetas       Receta[]
+  pagos         Pago[]
+  resenas       Resena[]
+  metricasSalud MetricaSalud[]
+
+  @@index([idUsuario])
+  @@map("pacientes")
+}
+
+model Medico {
+  id                    String       @id @default(uuid()) @db.Uuid
+  idUsuario             String       @unique @db.Uuid
+  usuario               Usuario      @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  numeroLicencia        String       @unique @db.VarChar(50)
+  idEspecialidad        String       @db.Uuid
+  especialidad          Especialidad @relation(fields: [idEspecialidad], references: [id])
+  subespecialidades     String?      @db.Text
+  aniosExperiencia      Int          @default(0)
+  biografia             String?      @db.Text
+  educacion             String?      @db.Text
+  certificaciones       String?      @db.Text
+  idiomas               String[]     @default(["Español"])
+  precioPorConsulta     Decimal      @db.Decimal(10, 2)
+  moneda                String       @default("USD") @db.VarChar(3)
+  duracionConsulta      Int          @default(30) // minutos
+  calificacionPromedio  Decimal      @default(0) @db.Decimal(3, 2)
+  totalResenas          Int          @default(0)
+  totalConsultas        Int          @default(0)
+  estado                EstadoMedico @default(PENDIENTE)
+  aceptaNuevosPacientes Boolean      @default(true)
+  fechaCreacion         DateTime     @default(now())
+  fechaActualizacion    DateTime     @updatedAt
+
+  // Relaciones
+  disponibilidades    Disponibilidad[]
+  fechasNoDisponibles FechaNoDisponible[]
+  citas               Cita[]
+  recetas             Receta[]
+  pagos               Pago[]
+  resenas             Resena[]
+
+  @@index([idEspecialidad])
+  @@index([calificacionPromedio])
+  @@index([estado])
+  @@index([aceptaNuevosPacientes])
+  @@map("medicos")
+}
+
+model Especialidad {
+  id                 String   @id @default(uuid()) @db.Uuid
+  nombre             String   @unique @db.VarChar(100)
+  descripcion        String?  @db.Text
+  icono              String?  @db.VarChar(50)
+  activa             Boolean  @default(true)
+  fechaCreacion      DateTime @default(now())
+  fechaActualizacion DateTime @updatedAt
+
+  // Relaciones
+  medicos Medico[]
+
+  @@index([nombre])
+  @@index([activa])
+  @@map("especialidades")
+}
+
+// ============================================
+// APPOINTMENTS SERVICE - Citas y Disponibilidad
+// ============================================
+
+model Disponibilidad {
+  id                 String    @id @default(uuid()) @db.Uuid
+  idMedico           String    @db.Uuid
+  medico             Medico    @relation(fields: [idMedico], references: [id], onDelete: Cascade)
+  diaSemana          DiaSemana
+  horaInicio         String    @db.VarChar(5) // "09:00"
+  horaFin            String    @db.VarChar(5) // "17:00"
+  activo             Boolean   @default(true)
+  fechaCreacion      DateTime  @default(now())
+  fechaActualizacion DateTime  @updatedAt
+
+  // Relaciones
+  citas Cita[]
+
+  @@unique([idMedico, diaSemana, horaInicio])
+  @@index([idMedico])
+  @@index([diaSemana])
+  @@index([activo])
+  @@map("disponibilidades")
+}
+
+model FechaNoDisponible {
+  id            String   @id @default(uuid()) @db.Uuid
+  idMedico      String   @db.Uuid
+  medico        Medico   @relation(fields: [idMedico], references: [id], onDelete: Cascade)
+  fecha         DateTime @db.Date
+  motivo        String?  @db.VarChar(255)
+  fechaCreacion DateTime @default(now())
+
+  @@unique([idMedico, fecha])
+  @@index([idMedico])
+  @@index([fecha])
+  @@map("fechas_no_disponibles")
+}
+
+model Cita {
+  id                 String          @id @default(uuid()) @db.Uuid
+  idPaciente         String          @db.Uuid
+  paciente           Paciente        @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
+  idMedico           String          @db.Uuid
+  medico             Medico          @relation(fields: [idMedico], references: [id], onDelete: Cascade)
+  idDisponibilidad   String?         @db.Uuid
+  disponibilidad     Disponibilidad? @relation(fields: [idDisponibilidad], references: [id])
+  fechaHoraCita      DateTime
+  estado             EstadoCita      @default(PROGRAMADA)
+  tipo               TipoCita        @default(VIDEOCONSULTA)
+  motivo             String?         @db.Text
+  notas              String?         @db.Text
+  razonCancelacion   String?         @db.Text
+  fechaCancelacion   DateTime?
+  canceladaPor       CanceladaPor?
+  fechaCreacion      DateTime        @default(now())
+  fechaActualizacion DateTime        @updatedAt
+
+  // Relaciones
+  consulta Consulta?
+  pago     Pago?
+  resena   Resena?
+
+  // @@unique([idMedico, fechaHoraCita])
+  @@index([idPaciente])
+  @@index([idMedico])
+  @@index([fechaHoraCita])
+  @@index([estado])
+  @@map("citas")
+}
+
+enum TipoCita {
+  PRESENCIAL
+  VIDEOCONSULTA
+}
+
+// ============================================
+// CONSULTATIONS SERVICE - Consultas y Recetas
+// ============================================
+
+model Consulta {
+  id                  String         @id @default(uuid()) @db.Uuid
+  idCita              String         @unique @db.Uuid
+  cita                Cita           @relation(fields: [idCita], references: [id], onDelete: Cascade)
+  fechaInicio         DateTime
+  fechaFin            DateTime?
+  duracion            Int? // minutos
+  tipoConsulta        TipoConsulta
+  notas               String?        @db.Text
+  diagnostico         String?        @db.Text
+  tratamiento         String?        @db.Text
+  requiereSeguimiento Boolean        @default(false)
+  fechaSeguimiento    DateTime?
+  estado              EstadoConsulta @default(EN_PROGRESO)
+  fechaCreacion       DateTime       @default(now())
+  fechaActualizacion  DateTime       @updatedAt
+
+  // Relaciones
+  recetas Receta[]
+
+  @@index([fechaInicio])
+  @@index([estado])
+  @@map("consultas")
+}
+
+model Receta {
+  id                  String       @id @default(uuid()) @db.Uuid
+  idConsulta          String       @db.Uuid
+  consulta            Consulta     @relation(fields: [idConsulta], references: [id], onDelete: Cascade)
+  idMedico            String       @db.Uuid
+  medico              Medico       @relation(fields: [idMedico], references: [id])
+  idPaciente          String       @db.Uuid
+  paciente            Paciente     @relation(fields: [idPaciente], references: [id])
+  medicamentos        Json // Array de medicamentos con estructura flexible
+  instrucciones       String?      @db.Text
+  duracionTratamiento String?      @db.VarChar(100)
+  notas               String?      @db.Text
+  fechaEmision        DateTime     @default(now())
+  fechaVencimiento    DateTime?
+  estado              EstadoReceta @default(ACTIVA)
+  fechaCreacion       DateTime     @default(now())
+  fechaActualizacion  DateTime     @updatedAt
+
+  // Relaciones
+  // medicos Medicos[] // Removed to fix validation
+
+  @@index([idConsulta])
+  @@index([idMedico])
+  @@index([idPaciente])
+  @@index([fechaVencimiento])
+  @@index([estado])
+  @@map("recetas")
+}
+
+// ============================================
+// PAYMENTS SERVICE - Pagos
+// ============================================
+
+model Pago {
+  id                 String     @id @default(uuid()) @db.Uuid
+  idCita             String     @unique @db.Uuid
+  cita               Cita       @relation(fields: [idCita], references: [id], onDelete: Cascade)
+  idPaciente         String     @db.Uuid
+  paciente           Paciente   @relation(fields: [idPaciente], references: [id])
+  idMedico           String     @db.Uuid
+  medico             Medico     @relation(fields: [idMedico], references: [id])
+  monto              Decimal    @db.Decimal(10, 2)
+  comisionPlataforma Decimal    @db.Decimal(10, 2)
+  montoMedico        Decimal    @db.Decimal(10, 2)
+  moneda             String     @default("USD") @db.VarChar(3)
+  metodoPago         MetodoPago
+  idTransaccion      String     @db.VarChar(255)
+  estado             EstadoPago @default(PENDIENTE)
+  montoReembolsado   Decimal    @default(0) @db.Decimal(10, 2)
+  razonReembolso     String?    @db.Text
+  fechaProcesamiento DateTime?
+  fechaCreacion      DateTime   @default(now())
+  fechaActualizacion DateTime   @updatedAt
+
+  @@index([idPaciente])
+  @@index([idMedico])
+  @@index([estado])
+  @@index([fechaProcesamiento])
+  @@map("pagos")
+}
+
+// ============================================
+// REVIEWS SERVICE - Reseñas
+// ============================================
+
+model Resena {
+  id                   String       @id @default(uuid()) @db.Uuid
+  idMedico             String       @db.Uuid
+  medico               Medico       @relation(fields: [idMedico], references: [id], onDelete: Cascade)
+  idPaciente           String       @db.Uuid
+  paciente             Paciente     @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
+  idCita               String       @unique @db.Uuid
+  cita                 Cita         @relation(fields: [idCita], references: [id], onDelete: Cascade)
+  calificacion         Int // 1-5 estrellas
+  comentario           String?      @db.Text
+  respuesta            String?      @db.Text
+  fechaRespuesta       DateTime?
+  anonima              Boolean      @default(false)
+  cuantasUtilesIndican Int          @default(0)
+  verificada           Boolean      @default(true)
+  estado               EstadoResena @default(PENDIENTE)
+  fechaCreacion        DateTime     @default(now())
+  fechaActualizacion   DateTime     @updatedAt
+
+  @@unique([idMedico, idPaciente, idCita])
+  @@index([idMedico])
+  @@index([calificacion])
+  @@index([fechaCreacion])
+  @@map("resenas")
+}
+
+// ============================================
+// NOTIFICATIONS SERVICE - Notificaciones
+// ============================================
+
+model Notificacion {
+  id              String             @id @default(uuid()) @db.Uuid
+  idUsuario       String             @db.Uuid
+  usuario         Usuario            @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  tipo            TipoNotificacion
+  asunto          String?            @db.VarChar(255)
+  mensaje         String             @db.Text
+  destinatario    String?            @db.VarChar(255) // correo o teléfono
+  estado          EstadoNotificacion @default(PENDIENTE)
+  intentosReenvio Int                @default(0)
+  fechaEnvio      DateTime?
+  fechaCreacion   DateTime           @default(now())
+
+  @@index([idUsuario])
+  @@index([estado])
+  @@index([fechaCreacion])
+  @@map("notificaciones")
+}
+
+// ============================================
+// USERS SERVICE - Métricas de Salud
+// ============================================
+
+model MetricaSalud {
+  id                 String   @id @default(uuid()) @db.Uuid
+  idPaciente         String   @db.Uuid
+  paciente           Paciente @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
+  ritmoCardiaco      Int? // bpm
+  presionSistolica   Int? // mmHg
+  presionDiastolica  Int? // mmHg
+  glucosa            Decimal? @db.Decimal(5, 2) // mg/dL
+  peso               Decimal? @db.Decimal(5, 2) // kg
+  altura             Decimal? @db.Decimal(3, 2) // metros
+  temperatura        Decimal? @db.Decimal(4, 2) // °C
+  saturacionOxigeno  Decimal? @db.Decimal(5, 2) // %
+  notas              String?  @db.Text
+  fechaRegistro      DateTime @default(now())
+  fechaCreacion      DateTime @default(now())
+  fechaActualizacion DateTime @updatedAt
+
+  @@index([idPaciente])
+  @@index([fechaRegistro])
+  @@map("metricas_salud")
+}
+
+// ============================================
+// AUDIT SERVICE - Auditoría HIPAA
+// ============================================
+
+model RegistroAuditoria {
+  id            String          @id @default(uuid()) @db.Uuid
+  idUsuario     String          @db.Uuid
+  usuario       Usuario         @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  accion        AccionAuditoria
+  tipoEntidad   String          @db.VarChar(50) // RECETA, PACIENTE, CONSULTA, etc.
+  idEntidad     String?         @db.Uuid
+  valorAnterior Json?
+  valorNuevo    Json?
+  direccionIP   String?         @db.VarChar(45)
+  agenteUsuario String?         @db.Text
+  fechaAccion   DateTime        @default(now())
+
+  @@index([idUsuario])
+  @@index([idEntidad])
+  @@index([fechaAccion])
+  @@index([accion])
+  @@index([tipoEntidad])
+  @@map("registros_auditoria")
+}

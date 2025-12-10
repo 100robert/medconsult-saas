@@ -18,11 +18,15 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  X,
+  Eye,
+  EyeOff,
+  Loader2
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
-import { getAllUsers, updateUserStatus, User, GetUsersParams } from '@/lib/admin';
+import { getAllUsers, updateUserStatus, createUser, updateUser, deleteUser, getEspecialidades, User, GetUsersParams, CreateUserData, UpdateUserData } from '@/lib/admin';
 
 export default function UsersManagementPage() {
   const { user } = useAuthStore();
@@ -38,6 +42,43 @@ export default function UsersManagementPage() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const itemsPerPage = 10;
+
+  // Estados para el modal de creación
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [especialidades, setEspecialidades] = useState<Array<{id: string; nombre: string}>>([]);
+  const [newUser, setNewUser] = useState<CreateUserData>({
+    nombre: '',
+    apellido: '',
+    correo: '',
+    contrasena: '',
+    rol: 'PACIENTE',
+    telefono: '',
+    // Campos de médico
+    numeroLicencia: '',
+    idEspecialidad: '',
+    precioPorConsulta: 100,
+    moneda: 'PEN',
+    duracionConsulta: 30,
+    aniosExperiencia: 0,
+    biografia: '',
+    educacion: '',
+  });
+
+  // Estados para el modal de edición
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editData, setEditData] = useState<UpdateUserData>({});
+
+  // Estados para el modal de eliminación
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -77,7 +118,19 @@ export default function UsersManagementPage() {
       return;
     }
     fetchUsers();
+    // Cargar especialidades para el formulario de médicos
+    loadEspecialidades();
   }, [user, router, fetchUsers]);
+
+  const loadEspecialidades = async () => {
+    try {
+      const data = await getEspecialidades();
+      setEspecialidades(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error al cargar especialidades:', error);
+      setEspecialidades([]);
+    }
+  };
 
   // Debounce search
   useEffect(() => {
@@ -133,6 +186,134 @@ export default function UsersManagementPage() {
     }
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError(null);
+    setCreating(true);
+    
+    try {
+      const result = await createUser(newUser);
+      
+      if (result.success) {
+        setShowCreateModal(false);
+        resetNewUserForm();
+        fetchUsers(); // Recargar lista
+      } else {
+        setCreateError(result.error || 'Error al crear usuario');
+      }
+    } catch (error) {
+      setCreateError('Error inesperado al crear usuario');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const resetNewUserForm = () => {
+    setNewUser({
+      nombre: '',
+      apellido: '',
+      correo: '',
+      contrasena: '',
+      rol: 'PACIENTE',
+      telefono: '',
+      numeroLicencia: '',
+      idEspecialidad: '',
+      precioPorConsulta: 100,
+      moneda: 'PEN',
+      duracionConsulta: 30,
+      aniosExperiencia: 0,
+      biografia: '',
+      educacion: '',
+    });
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setCreateError(null);
+    resetNewUserForm();
+  };
+
+  // ========== FUNCIONES DE EDICIÓN ==========
+  const handleOpenEditModal = (userToEdit: User) => {
+    setEditingUser(userToEdit);
+    setEditData({
+      nombre: userToEdit.nombre,
+      apellido: userToEdit.apellido,
+      correo: userToEdit.correo,
+      telefono: userToEdit.telefono || '',
+      rol: userToEdit.rol,
+      activo: userToEdit.activo,
+      correoVerificado: userToEdit.correoVerificado,
+    });
+    setEditError(null);
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditError(null);
+    setEditingUser(null);
+    setEditData({});
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    
+    setEditError(null);
+    setEditing(true);
+    
+    try {
+      const result = await updateUser(editingUser.id, editData);
+      
+      if (result.success) {
+        handleCloseEditModal();
+        fetchUsers();
+      } else {
+        setEditError(result.error || 'Error al actualizar usuario');
+      }
+    } catch (error) {
+      setEditError('Error inesperado al actualizar usuario');
+    } finally {
+      setEditing(false);
+    }
+  };
+
+  // ========== FUNCIONES DE ELIMINACIÓN ==========
+  const handleOpenDeleteModal = (userToRemove: User) => {
+    setUserToDelete(userToRemove);
+    setDeleteError(null);
+    setShowDeleteModal(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeleteError(null);
+    setUserToDelete(null);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setDeleteError(null);
+    setDeleting(true);
+    
+    try {
+      const result = await deleteUser(userToDelete.id);
+      
+      if (result.success) {
+        handleCloseDeleteModal();
+        fetchUsers();
+      } else {
+        setDeleteError(result.error || 'Error al eliminar usuario');
+      }
+    } catch (error) {
+      setDeleteError('Error inesperado al eliminar usuario');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const getRoleBadge = (rol: string) => {
     const config = {
       ADMIN: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Admin' },
@@ -175,7 +356,10 @@ export default function UsersManagementPage() {
             <Download className="w-4 h-4" />
             Exportar
           </button>
-          <button className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium flex items-center gap-2">
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium flex items-center gap-2"
+          >
             <UserPlus className="w-4 h-4" />
             Nuevo Usuario
           </button>
@@ -313,10 +497,18 @@ export default function UsersManagementPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors">
+                      <button 
+                        onClick={() => handleOpenEditModal(u)}
+                        className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                        title="Editar usuario"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                      <button 
+                        onClick={() => handleOpenDeleteModal(u)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar usuario"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
@@ -367,6 +559,517 @@ export default function UsersManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Crear Usuario */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header del Modal */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Crear Nuevo Usuario</h2>
+                <p className="text-sm text-gray-500 mt-1">Complete los datos del nuevo usuario</p>
+              </div>
+              <button
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Formulario */}
+            <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+              {createError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  <p className="font-medium mb-1">Error de validación:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {createError.split('\n').map((err, idx) => (
+                      <li key={idx}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newUser.nombre}
+                    onChange={(e) => setNewUser(prev => ({ ...prev, nombre: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    placeholder="Juan"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Apellido *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newUser.apellido}
+                    onChange={(e) => setNewUser(prev => ({ ...prev, apellido: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    placeholder="Pérez"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Correo electrónico *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={newUser.correo}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, correo: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  placeholder="usuario@ejemplo.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contraseña *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    value={newUser.contrasena}
+                    onChange={(e) => setNewUser(prev => ({ ...prev, contrasena: e.target.value }))}
+                    className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    placeholder="Mín. 8 caracteres, mayúscula, número y símbolo"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Debe incluir mayúscula, minúscula, número y carácter especial</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Teléfono
+                </label>
+                <input
+                  type="tel"
+                  value={newUser.telefono}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, telefono: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  placeholder="+51999999999"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rol *
+                </label>
+                <select
+                  required
+                  value={newUser.rol}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, rol: e.target.value as 'PACIENTE' | 'MEDICO' | 'ADMIN' }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="PACIENTE">Paciente</option>
+                  <option value="MEDICO">Médico</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+              </div>
+
+              {/* Campos adicionales para médico */}
+              {newUser.rol === 'MEDICO' && (
+                <div className="space-y-4 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <h4 className="font-medium text-emerald-800 flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Información del Médico
+                  </h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Número de Licencia *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newUser.numeroLicencia || ''}
+                        onChange={(e) => setNewUser(prev => ({ ...prev, numeroLicencia: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        placeholder="CMP-12345"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Años de Experiencia
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="70"
+                        value={newUser.aniosExperiencia || 0}
+                        onChange={(e) => setNewUser(prev => ({ ...prev, aniosExperiencia: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Especialidad *
+                    </label>
+                    <select
+                      required
+                      value={newUser.idEspecialidad || ''}
+                      onChange={(e) => setNewUser(prev => ({ ...prev, idEspecialidad: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    >
+                      <option value="">Seleccione una especialidad</option>
+                      {Array.isArray(especialidades) && especialidades.map((esp) => (
+                        <option key={esp.id} value={esp.id}>{esp.nombre}</option>
+                      ))}
+                    </select>
+                    {(!Array.isArray(especialidades) || especialidades.length === 0) && (
+                      <p className="text-xs text-amber-600 mt-1">No hay especialidades disponibles. Cree una primero.</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Precio Consulta *
+                      </label>
+                      <input
+                        type="number"
+                        required
+                        min="0"
+                        step="0.01"
+                        value={newUser.precioPorConsulta || 100}
+                        onChange={(e) => setNewUser(prev => ({ ...prev, precioPorConsulta: parseFloat(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Moneda
+                      </label>
+                      <select
+                        value={newUser.moneda || 'PEN'}
+                        onChange={(e) => setNewUser(prev => ({ ...prev, moneda: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      >
+                        <option value="PEN">PEN (S/.)</option>
+                        <option value="USD">USD ($)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Duración (min)
+                      </label>
+                      <select
+                        value={newUser.duracionConsulta || 30}
+                        onChange={(e) => setNewUser(prev => ({ ...prev, duracionConsulta: parseInt(e.target.value) }))}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      >
+                        <option value={15}>15 min</option>
+                        <option value={30}>30 min</option>
+                        <option value={45}>45 min</option>
+                        <option value={60}>60 min</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Biografía
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={newUser.biografia || ''}
+                      onChange={(e) => setNewUser(prev => ({ ...prev, biografia: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="Breve descripción profesional..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Educación
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={newUser.educacion || ''}
+                      onChange={(e) => setNewUser(prev => ({ ...prev, educacion: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      placeholder="Universidad, títulos, certificaciones..."
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creating}
+                  className="flex-1 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creando...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      Crear Usuario
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Usuario */}
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header del Modal */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Editar Usuario</h2>
+                <p className="text-sm text-gray-500 mt-1">Modifique los datos del usuario</p>
+              </div>
+              <button
+                onClick={handleCloseEditModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Formulario */}
+            <form onSubmit={handleEditUser} className="p-6 space-y-4">
+              {editError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  <p className="font-medium mb-1">Error:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {editError.split('\n').map((err, idx) => (
+                      <li key={idx}>{err}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editData.nombre || ''}
+                    onChange={(e) => setEditData(prev => ({ ...prev, nombre: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Apellido *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editData.apellido || ''}
+                    onChange={(e) => setEditData(prev => ({ ...prev, apellido: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Correo electrónico *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={editData.correo || ''}
+                  onChange={(e) => setEditData(prev => ({ ...prev, correo: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Teléfono
+                </label>
+                <input
+                  type="tel"
+                  value={editData.telefono || ''}
+                  onChange={(e) => setEditData(prev => ({ ...prev, telefono: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  placeholder="+51999999999"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rol *
+                </label>
+                <select
+                  required
+                  value={editData.rol || 'PACIENTE'}
+                  onChange={(e) => setEditData(prev => ({ ...prev, rol: e.target.value as 'PACIENTE' | 'MEDICO' | 'ADMIN' }))}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="PACIENTE">Paciente</option>
+                  <option value="MEDICO">Médico</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editData.activo ?? true}
+                    onChange={(e) => setEditData(prev => ({ ...prev, activo: e.target.checked }))}
+                    className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                  />
+                  <span className="text-sm text-gray-700">Usuario Activo</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editData.correoVerificado ?? false}
+                    onChange={(e) => setEditData(prev => ({ ...prev, correoVerificado: e.target.checked }))}
+                    className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                  />
+                  <span className="text-sm text-gray-700">Correo Verificado</span>
+                </label>
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={editing}
+                  className="flex-1 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {editing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="w-4 h-4" />
+                      Guardar Cambios
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmar Eliminación */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+            {/* Header del Modal */}
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Eliminar Usuario</h2>
+                  <p className="text-sm text-gray-500 mt-1">Esta acción no se puede deshacer</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-6">
+              {deleteError && (
+                <div className="p-3 mb-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                  {deleteError}
+                </div>
+              )}
+
+              <p className="text-gray-600">
+                ¿Estás seguro de que deseas eliminar al usuario{' '}
+                <span className="font-semibold text-gray-900">
+                  {userToDelete.nombre} {userToDelete.apellido}
+                </span>
+                ?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Correo: {userToDelete.correo}
+              </p>
+
+              {/* Botones */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={handleCloseDeleteModal}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  disabled={deleting}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Eliminando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Eliminar
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

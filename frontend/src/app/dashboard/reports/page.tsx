@@ -101,9 +101,9 @@ export default function ReportsPage() {
               {Math.abs(reportData.ingresos.variacion)}%
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mt-4">${reportData.ingresos.actual.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-4">S/ {reportData.ingresos.actual.toLocaleString()}</p>
           <p className="text-sm text-gray-500 mt-1">Ingresos totales</p>
-          <p className="text-xs text-gray-400 mt-2">vs ${reportData.ingresos.anterior.toLocaleString()} periodo anterior</p>
+          <p className="text-xs text-gray-400 mt-2">vs S/ {reportData.ingresos.anterior.toLocaleString()} periodo anterior</p>
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -200,7 +200,7 @@ export default function ReportsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-700">{esp.citas}</td>
-                    <td className="px-6 py-4 text-gray-700">${esp.ingresos.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-gray-700">S/ {esp.ingresos.toLocaleString()}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-2 bg-gray-100 rounded-full max-w-[100px]">

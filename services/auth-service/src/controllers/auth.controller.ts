@@ -536,6 +536,124 @@ export class AuthController {
       next(error);
     }
   }
+
+  // ==========================================
+  // ENDPOINT: PATCH /auth/admin/users/:id
+  // ==========================================
+  // Actualizar datos de un usuario (solo admin)
+  // ==========================================
+
+  async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { nombre, apellido, correo, telefono, rol, activo, correoVerificado } = req.body;
+
+      // Validaciones básicas
+      const updateData: any = {};
+      
+      if (nombre !== undefined) {
+        if (typeof nombre !== 'string' || nombre.trim().length < 2) {
+          res.status(400).json({
+            success: false,
+            message: 'El nombre debe tener al menos 2 caracteres',
+            errors: [{ campo: 'nombre', mensaje: 'El nombre debe tener al menos 2 caracteres' }]
+          });
+          return;
+        }
+        updateData.nombre = nombre.trim();
+      }
+
+      if (apellido !== undefined) {
+        if (typeof apellido !== 'string' || apellido.trim().length < 2) {
+          res.status(400).json({
+            success: false,
+            message: 'El apellido debe tener al menos 2 caracteres',
+            errors: [{ campo: 'apellido', mensaje: 'El apellido debe tener al menos 2 caracteres' }]
+          });
+          return;
+        }
+        updateData.apellido = apellido.trim();
+      }
+
+      if (correo !== undefined) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correo)) {
+          res.status(400).json({
+            success: false,
+            message: 'Formato de correo inválido',
+            errors: [{ campo: 'correo', mensaje: 'Formato de correo inválido' }]
+          });
+          return;
+        }
+        updateData.correo = correo.toLowerCase().trim();
+      }
+
+      if (telefono !== undefined) {
+        updateData.telefono = telefono || null;
+      }
+
+      if (rol !== undefined) {
+        if (!['ADMIN', 'MEDICO', 'PACIENTE'].includes(rol)) {
+          res.status(400).json({
+            success: false,
+            message: 'Rol inválido',
+            errors: [{ campo: 'rol', mensaje: 'Rol debe ser ADMIN, MEDICO o PACIENTE' }]
+          });
+          return;
+        }
+        updateData.rol = rol;
+      }
+
+      if (activo !== undefined) {
+        updateData.activo = Boolean(activo);
+      }
+
+      if (correoVerificado !== undefined) {
+        updateData.correoVerificado = Boolean(correoVerificado);
+      }
+
+      const resultado = await authService.updateUser(id, updateData);
+
+      res.status(200).json({
+        success: true,
+        message: 'Usuario actualizado correctamente',
+        data: resultado,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // ENDPOINT: DELETE /auth/admin/users/:id
+  // ==========================================
+  // Eliminar un usuario (solo admin)
+  // ==========================================
+
+  async deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const adminId = (req as any).user?.userId;
+
+      // No permitir auto-eliminación
+      if (id === adminId) {
+        res.status(400).json({
+          success: false,
+          message: 'No puedes eliminar tu propia cuenta',
+        });
+        return;
+      }
+
+      await authService.deleteUser(id);
+
+      res.status(200).json({
+        success: true,
+        message: 'Usuario eliminado correctamente',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 // ==========================================

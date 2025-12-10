@@ -1,29 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
+import {
   Star,
   MessageSquare,
   ThumbsUp,
-  Calendar,
   Filter,
-  TrendingUp,
-  User
+  Send,
+  X
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
-
-interface Review {
-  id: string;
-  paciente: {
-    nombre: string;
-    apellido: string;
-  };
-  calificacion: number;
-  comentario: string;
-  fecha: string;
-  respuesta?: string;
-}
+import { getMisResenas, responderResena, Review } from '@/lib/medico';
+import { toast } from 'sonner';
 
 export default function ReviewsPage() {
   const { user } = useAuthStore();
@@ -33,65 +22,71 @@ export default function ReviewsPage() {
   const [averageRating, setAverageRating] = useState(0);
   const [filterRating, setFilterRating] = useState<string>('all');
 
+  // State for replying
+  const [replyingId, setReplyingId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
+
   useEffect(() => {
-    if (user?.rol !== 'MEDICO') {
+    if (user && user.rol !== 'MEDICO') {
       router.push('/dashboard');
       return;
     }
-    fetchReviews();
+
+    if (user) {
+      fetchReviews();
+    }
   }, [user, router]);
 
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockReviews: Review[] = [
-        {
-          id: '1',
-          paciente: { nombre: 'María', apellido: 'González' },
-          calificacion: 5,
-          comentario: 'Excelente atención, muy profesional y amable. Me explicó todo con detalle y me sentí muy cómoda durante la consulta.',
-          fecha: '2025-12-01',
-          respuesta: 'Muchas gracias María, fue un gusto atenderla. ¡La esperamos en su próximo control!'
-        },
-        {
-          id: '2',
-          paciente: { nombre: 'Juan', apellido: 'Pérez' },
-          calificacion: 4,
-          comentario: 'Buen médico, muy atento. La espera fue un poco larga pero valió la pena.',
-          fecha: '2025-11-28',
-        },
-        {
-          id: '3',
-          paciente: { nombre: 'Ana', apellido: 'Rodríguez' },
-          calificacion: 5,
-          comentario: 'Increíble experiencia. El doctor se tomó el tiempo necesario para responder todas mis dudas.',
-          fecha: '2025-11-25',
-        },
-        {
-          id: '4',
-          paciente: { nombre: 'Carlos', apellido: 'López' },
-          calificacion: 5,
-          comentario: 'Muy recomendado. Puntual, profesional y muy claro en sus explicaciones.',
-          fecha: '2025-11-20',
-        },
-        {
-          id: '5',
-          paciente: { nombre: 'Laura', apellido: 'Fernández' },
-          calificacion: 3,
-          comentario: 'La consulta estuvo bien pero sentí que fue un poco apresurada.',
-          fecha: '2025-11-15',
-        },
-      ];
-      
-      setReviews(mockReviews);
-      const avg = mockReviews.reduce((acc, r) => acc + r.calificacion, 0) / mockReviews.length;
-      setAverageRating(Math.round(avg * 10) / 10);
+      const data = await getMisResenas();
+      setReviews(data);
+
+      if (data.length > 0) {
+        const avg = data.reduce((acc, r) => acc + r.calificacion, 0) / data.length;
+        setAverageRating(Math.round(avg * 10) / 10);
+      }
     } catch (error) {
       console.error('Error al cargar reseñas:', error);
+      toast.error('Error al cargar las reseñas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartReply = (id: string) => {
+    setReplyingId(id);
+    setReplyText('');
+  };
+
+  const handleCancelReply = () => {
+    setReplyingId(null);
+    setReplyText('');
+  };
+
+  const handleSubmitReply = async (id: string) => {
+    if (!replyText.trim()) return;
+
+    try {
+      setSubmittingReply(true);
+      const success = await responderResena(id, replyText);
+
+      if (success) {
+        toast.success('Respuesta enviada correctamente');
+        // Update local state
+        setReviews(prev => prev.map(r =>
+          r.id === id ? { ...r, respuesta: replyText } : r
+        ));
+        handleCancelReply();
+      } else {
+        toast.error('No se pudo enviar la respuesta');
+      }
+    } catch (error) {
+      toast.error('Error al enviar la respuesta');
+    } finally {
+      setSubmittingReply(false);
     }
   };
 
@@ -103,16 +98,16 @@ export default function ReviewsPage() {
   const ratingDistribution = [5, 4, 3, 2, 1].map(rating => ({
     rating,
     count: reviews.filter(r => r.calificacion === rating).length,
-    percentage: reviews.length > 0 
+    percentage: reviews.length > 0
       ? Math.round((reviews.filter(r => r.calificacion === rating).length / reviews.length) * 100)
       : 0
   }));
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
-      <Star 
-        key={i} 
-        className={`w-4 h-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} 
+      <Star
+        key={i}
+        className={`w-4 h-4 ${i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
       />
     ));
   };
@@ -188,7 +183,7 @@ export default function ReviewsPage() {
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
               </div>
               <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-yellow-400 rounded-full transition-all"
                   style={{ width: `${percentage}%` }}
                 />
@@ -223,16 +218,23 @@ export default function ReviewsPage() {
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-medium">
-                  {review.paciente.nombre[0]}{review.paciente.apellido[0]}
+                  {review.paciente ? (
+                    `${review.paciente.nombre[0]}${review.paciente.apellido[0]}`
+                  ) : (
+                    'AN'
+                  )}
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">
-                    {review.paciente.nombre} {review.paciente.apellido}
+                    {review.paciente
+                      ? `${review.paciente.nombre} ${review.paciente.apellido}`
+                      : 'Paciente Anónimo'
+                    }
                   </p>
                   <div className="flex items-center gap-2">
                     <div className="flex">{renderStars(review.calificacion)}</div>
                     <span className="text-sm text-gray-500">
-                      {new Date(review.fecha).toLocaleDateString('es-ES')}
+                      {new Date(review.creadoEn || new Date()).toLocaleDateString('es-ES')}
                     </span>
                   </div>
                 </div>
@@ -246,8 +248,42 @@ export default function ReviewsPage() {
                 <p className="text-sm font-medium text-gray-700 mb-1">Tu respuesta:</p>
                 <p className="text-sm text-gray-600">{review.respuesta}</p>
               </div>
+            ) : replyingId === review.id ? (
+              <div className="space-y-3 mt-4 animate-in fade-in slide-in-from-top-2">
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="Escribe tu respuesta al paciente..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent min-h-[100px]"
+                  disabled={submittingReply}
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={handleCancelReply}
+                    className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    disabled={submittingReply}
+                  >
+                    <X className="w-4 h-4" /> Cancelar
+                  </button>
+                  <button
+                    onClick={() => handleSubmitReply(review.id)}
+                    disabled={!replyText.trim() || submittingReply}
+                    className="flex items-center gap-1 px-4 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submittingReply ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    Enviar respuesta
+                  </button>
+                </div>
+              </div>
             ) : (
-              <button className="text-sm text-teal-600 font-medium hover:text-teal-700">
+              <button
+                onClick={() => handleStartReply(review.id)}
+                className="text-sm text-teal-600 font-medium hover:text-teal-700"
+              >
                 Responder a esta reseña
               </button>
             )}
@@ -258,7 +294,9 @@ export default function ReviewsPage() {
       {filteredReviews.length === 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
           <Star className="w-12 h-12 mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500">No hay reseñas con esta calificación</p>
+          <p className="text-gray-500">
+            {reviews.length === 0 ? 'No tienes reseñas todavía' : 'No hay reseñas con esta calificación'}
+          </p>
         </div>
       )}
     </div>

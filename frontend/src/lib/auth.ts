@@ -15,6 +15,7 @@ export interface User {
   imagenPerfil?: string;
   correoVerificado: boolean;
   activo: boolean;
+  isPro?: boolean; // Plan Pro/Premium
   createdAt: string;
   updatedAt: string;
 }
@@ -102,6 +103,16 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
   };
 }
 
+// Interfaz para errores de validación del backend
+interface BackendValidationError {
+  success: false;
+  message: string;
+  errors?: Array<{
+    campo: string;
+    mensaje: string;
+  }>;
+}
+
 // Registro (solo pacientes)
 export async function register(data: RegisterData): Promise<AuthResponse> {
   // Transformar campos al formato que espera el backend
@@ -114,17 +125,38 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
     genero: data.genero || undefined,
   };
   
-  const response = await api.post<BackendAuthResponse>('/auth/register', backendData);
-  
-  // Guardar tokens en cookies
-  Cookies.set('accessToken', response.data.data.accessToken, { expires: 1 });
-  Cookies.set('refreshToken', response.data.data.refreshToken, { expires: 7 });
-  
-  return {
-    user: transformUser(response.data.data.usuario),
-    accessToken: response.data.data.accessToken,
-    refreshToken: response.data.data.refreshToken,
-  };
+  try {
+    const response = await api.post<BackendAuthResponse>('/auth/register', backendData);
+    
+    // Guardar tokens en cookies
+    Cookies.set('accessToken', response.data.data.accessToken, { expires: 1 });
+    Cookies.set('refreshToken', response.data.data.refreshToken, { expires: 7 });
+    
+    return {
+      user: transformUser(response.data.data.usuario),
+      accessToken: response.data.data.accessToken,
+      refreshToken: response.data.data.refreshToken,
+    };
+  } catch (error: any) {
+    // Si hay errores de validación del backend, formatearlos
+    if (error.response?.status === 400 && error.response?.data?.errors) {
+      const validationError = error.response.data as BackendValidationError;
+      const errorMessages = validationError.errors?.map(err => {
+        // Mapear nombres de campos del backend al frontend
+        const fieldMap: Record<string, string> = {
+          'contrasena': 'password',
+          'correo': 'email',
+        };
+        const frontendField = fieldMap[err.campo] || err.campo;
+        return `${frontendField}: ${err.mensaje}`;
+      }).join(', ') || validationError.message;
+      
+      const enhancedError = new Error(errorMessages);
+      (enhancedError as any).response = error.response;
+      throw enhancedError;
+    }
+    throw error;
+  }
 }
 
 // Logout

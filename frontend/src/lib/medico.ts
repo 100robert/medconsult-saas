@@ -40,6 +40,41 @@ export interface Paciente {
   ultimaConsulta?: string;
   totalConsultas: number;
   proximaCita?: string;
+  usuario?: {
+    nombre: string;
+    apellido: string;
+  };
+}
+
+
+export interface Medico {
+  id: string;
+  idUsuario: string;
+  numeroLicencia: string;
+  idEspecialidad: string;
+  subespecialidades: string[];
+  aniosExperiencia: number;
+  biografia: string;
+  educacion: string[];
+  certificaciones: string[];
+  idiomas: string[];
+  precioPorConsulta: number;
+  moneda: string;
+  duracionConsulta: number;
+  calificacionPromedio: number;
+  totalResenas: number;
+  estado: 'PENDIENTE' | 'VERIFICADO' | 'RECHAZADO' | 'SUSPENDIDO';
+  usuario?: {
+    nombre: string;
+    apellido: string;
+    email: string;
+    telefono?: string;
+    imagenPerfil?: string;
+  };
+  especialidad?: {
+    id: string;
+    nombre: string;
+  };
 }
 
 export interface Review {
@@ -55,6 +90,24 @@ export interface Review {
     apellido: string;
   };
 }
+
+// ============ PERFIL MÉDICO ============
+
+export async function getMiPerfilMedico(): Promise<Medico | null> {
+  try {
+    const response = await api.get<any>('/medicos/me/perfil');
+    return response.data.data || response.data;
+  } catch (error: any) {
+    console.error('Error al obtener perfil médico:', error);
+    return null;
+  }
+}
+
+export async function updateMiPerfilMedico(data: Partial<Medico>): Promise<Medico> {
+  const response = await api.put<any>('/medicos/me', data);
+  return response.data.data;
+}
+
 
 // ============ DISPONIBILIDAD ============
 

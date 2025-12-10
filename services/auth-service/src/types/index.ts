@@ -65,6 +65,7 @@ export interface UserData {
   telefono?: string | null;
   fechaNacimiento?: Date | null;
   genero?: string | null;
+  isPro?: boolean; // Plan Pro/Premium para pacientes
 }
 
 export interface MessageResponse {

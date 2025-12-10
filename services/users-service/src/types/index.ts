@@ -38,6 +38,41 @@ export interface UpdatePacienteDTO {
 }
 
 // ============================================
+// DTOs - MÉTRICAS DE SALUD
+// ============================================
+
+export interface CreateMetricaSaludDTO {
+  idUsuario: string;
+  // Estos campos se calculan automáticamente, no se envían desde el frontend
+  // ritmoCardiaco?: number; // bpm - CALCULADO
+  // presionSistolica?: number; // mmHg - CALCULADO
+  // presionDiastolica?: number; // mmHg - CALCULADO
+  // glucosa?: number; // mg/dL - CALCULADO
+  // Campos que el paciente puede ingresar
+  peso?: number; // kg
+  altura?: number; // metros
+  temperatura?: number; // °C
+  saturacionOxigeno?: number; // %
+  notas?: string;
+  fechaRegistro?: string | Date;
+}
+
+export interface UpdateMetricaSaludDTO {
+  // Estos campos se recalculan automáticamente si se actualiza peso o altura
+  // ritmoCardiaco?: number; // CALCULADO
+  // presionSistolica?: number; // CALCULADO
+  // presionDiastolica?: number; // CALCULADO
+  // glucosa?: number; // CALCULADO
+  // Campos que el paciente puede actualizar
+  peso?: number;
+  altura?: number;
+  temperatura?: number;
+  saturacionOxigeno?: number;
+  notas?: string;
+  fechaRegistro?: string | Date;
+}
+
+// ============================================
 // DTOs - MÉDICO
 // ============================================
 

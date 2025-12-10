@@ -3,8 +3,7 @@
 // ============================================
 
 import 'dotenv/config';
-// Usar el cliente Prisma generado en auth-service (compartido)
-import { PrismaClient } from '../../../auth-service/node_modules/.prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
   return new PrismaClient({

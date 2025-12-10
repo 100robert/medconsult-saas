@@ -4,7 +4,7 @@
 
 import { prisma } from '../config/database';
 import { EstadoCita, EstadoResena } from '@prisma/client';
-import { 
+import {
   CreateResenaDTO,
   UpdateResenaDTO,
   ResenaFilters,
@@ -16,7 +16,7 @@ import {
 } from '../types';
 
 export class ResenaService {
-  
+
   /**
    * Crear reseña
    */
@@ -59,14 +59,14 @@ export class ResenaService {
       },
       include: {
         paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true } 
-            } 
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true }
+            }
           }
         },
         medico: {
-          include: { 
+          include: {
             usuario: { select: { nombre: true, apellido: true } },
             especialidad: true
           }
@@ -88,14 +88,14 @@ export class ResenaService {
       where: { id },
       include: {
         paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true } 
-            } 
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true }
+            }
           }
         },
         medico: {
-          include: { 
+          include: {
             usuario: { select: { nombre: true, apellido: true } },
             especialidad: true
           }
@@ -222,7 +222,7 @@ export class ResenaService {
     const { calificacionMin, calificacionMax, soloConComentario, fechaDesde, fechaHasta, page = 1, limit = 10 } = filtros;
     const skip = (page - 1) * limit;
 
-    const where: any = { 
+    const where: any = {
       idMedico,
       estado: EstadoResena.APROBADA // Solo mostrar aprobadas públicamente
     };
@@ -241,10 +241,10 @@ export class ResenaService {
         where,
         include: {
           paciente: {
-            include: { 
-              usuario: { 
-                select: { nombre: true, apellido: true } 
-              } 
+            include: {
+              usuario: {
+                select: { nombre: true, apellido: true }
+              }
             }
           }
         },
@@ -284,7 +284,7 @@ export class ResenaService {
         where: { idPaciente },
         include: {
           medico: {
-            include: { 
+            include: {
               usuario: { select: { nombre: true, apellido: true } },
               especialidad: true
             }
@@ -330,10 +330,10 @@ export class ResenaService {
         where: whereAprobadas,
         include: {
           paciente: {
-            include: { 
-              usuario: { 
-                select: { nombre: true, apellido: true } 
-              } 
+            include: {
+              usuario: {
+                select: { nombre: true, apellido: true }
+              }
             }
           }
         },
@@ -397,14 +397,14 @@ export class ResenaService {
       },
       include: {
         paciente: {
-          include: { 
-            usuario: { 
-              select: { nombre: true, apellido: true } 
-            } 
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true }
+            }
           }
         },
         medico: {
-          include: { 
+          include: {
             usuario: { select: { nombre: true, apellido: true } },
             especialidad: true
           }
@@ -428,14 +428,14 @@ export class ResenaService {
         where: { estado: EstadoResena.PENDIENTE },
         include: {
           paciente: {
-            include: { 
-              usuario: { 
-                select: { nombre: true, apellido: true } 
-              } 
+            include: {
+              usuario: {
+                select: { nombre: true, apellido: true }
+              }
             }
           },
           medico: {
-            include: { 
+            include: {
               usuario: { select: { nombre: true, apellido: true } },
               especialidad: true
             }
@@ -457,6 +457,60 @@ export class ResenaService {
         totalPages: Math.ceil(total / limit)
       }
     };
+  }
+  /**
+   * Responder a una reseña (Médico)
+   */
+  async responder(id: string, idUsuario: string, respuesta: string) {
+    const resena = await prisma.resena.findUnique({
+      where: { id },
+      include: { medico: true }
+    });
+
+    if (!resena) {
+      throw new NotFoundError('Reseña no encontrada');
+    }
+
+    // Verificar que el usuario sea el médico de la reseña
+    if (resena.medico.idUsuario !== idUsuario) {
+      throw new ForbiddenError('No tienes permiso para responder esta reseña');
+    }
+
+    const actualizada = await prisma.resena.update({
+      where: { id },
+      data: {
+        respuesta,
+        fechaRespuesta: new Date()
+      },
+      include: {
+        paciente: {
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true }
+            }
+          }
+        }
+      }
+    });
+
+    return actualizada;
+  }
+
+  /**
+   * Obtener reseñas del médico autenticado
+   */
+  async obtenerMias(idUsuario: string) {
+    // 1. Obtener ID del médico
+    const medico = await prisma.medico.findUnique({
+      where: { idUsuario }
+    });
+
+    if (!medico) {
+      throw new NotFoundError('Perfil de médico no encontrado');
+    }
+
+    // 2. Usar obtenerPorMedico
+    return this.obtenerPorMedico(medico.id, { limit: 100 }); // Traer todas o paginar si es necesario
   }
 }
 

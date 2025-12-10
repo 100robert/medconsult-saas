@@ -54,7 +54,7 @@ export class PagoService {
     }
 
     // Calcular comisión y monto médico
-    const comisionPorcentaje = 0.10; // 10% de comisión
+    const comisionPorcentaje = 0.30; // 30% de comisión de plataforma
     const comisionPlataforma = data.monto * comisionPorcentaje;
     const montoMedico = data.monto - comisionPlataforma;
 
@@ -426,6 +426,124 @@ export class PagoService {
         total: Number(p._sum.monto) || 0,
         cantidad: p._count
       }))
+    };
+  }
+
+  /**
+   * Obtener resumen de comisiones para Admin
+   */
+  async obtenerResumenComisiones(fechaDesde?: Date, fechaHasta?: Date) {
+    const where: any = { estado: EstadoPago.COMPLETADO };
+
+    if (fechaDesde || fechaHasta) {
+      where.fechaCreacion = {};
+      if (fechaDesde) where.fechaCreacion.gte = fechaDesde;
+      if (fechaHasta) where.fechaCreacion.lte = fechaHasta;
+    }
+
+    const [totales, porMes] = await Promise.all([
+      prisma.pago.aggregate({
+        where,
+        _sum: {
+          monto: true,
+          comisionPlataforma: true,
+          montoMedico: true,
+        },
+        _count: true,
+      }),
+      prisma.$queryRaw`
+        SELECT 
+          DATE_TRUNC('month', "fechaCreacion") as mes,
+          SUM("monto") as "totalBruto",
+          SUM("comisionPlataforma") as "totalComision",
+          SUM("montoMedico") as "totalMedicos",
+          COUNT(*)::int as "cantidad"
+        FROM "pagos"
+        WHERE "estado" = 'COMPLETADO'
+        ${fechaDesde ? prisma.$queryRaw`AND "fechaCreacion" >= ${fechaDesde}` : prisma.$queryRaw``}
+        ${fechaHasta ? prisma.$queryRaw`AND "fechaCreacion" <= ${fechaHasta}` : prisma.$queryRaw``}
+        GROUP BY DATE_TRUNC('month', "fechaCreacion")
+        ORDER BY mes DESC
+        LIMIT 12
+      `.catch(() => []) // Si falla el raw query, devolver array vacío
+    ]);
+
+    return {
+      totalBruto: Number(totales._sum.monto) || 0,
+      totalComisionPlataforma: Number(totales._sum.comisionPlataforma) || 0,
+      totalPagadoMedicos: Number(totales._sum.montoMedico) || 0,
+      cantidadTransacciones: totales._count,
+      porcentajeComision: 30, // 30% actual
+      porMes: Array.isArray(porMes) ? porMes : [],
+    };
+  }
+
+  /**
+   * Obtener ganancias del médico con desglose de comisiones
+   */
+  async obtenerGananciasMedico(idMedico: string, fechaDesde?: Date, fechaHasta?: Date) {
+    const where: any = {
+      idMedico,
+      estado: EstadoPago.COMPLETADO
+    };
+
+    if (fechaDesde || fechaHasta) {
+      where.fechaCreacion = {};
+      if (fechaDesde) where.fechaCreacion.gte = fechaDesde;
+      if (fechaHasta) where.fechaCreacion.lte = fechaHasta;
+    }
+
+    const [totales, pendientes, ultimosPagos] = await Promise.all([
+      prisma.pago.aggregate({
+        where,
+        _sum: {
+          monto: true,
+          comisionPlataforma: true,
+          montoMedico: true,
+        },
+        _count: true,
+      }),
+      prisma.pago.aggregate({
+        where: { idMedico, estado: EstadoPago.PENDIENTE },
+        _sum: { monto: true },
+        _count: true,
+      }),
+      prisma.pago.findMany({
+        where: { idMedico },
+        orderBy: { fechaCreacion: 'desc' },
+        take: 10,
+        include: {
+          cita: true,
+          paciente: {
+            include: {
+              usuario: { select: { nombre: true, apellido: true } }
+            }
+          }
+        }
+      })
+    ]);
+
+    return {
+      ingresosBrutos: Number(totales._sum.monto) || 0,
+      comisionRetenida: Number(totales._sum.comisionPlataforma) || 0,
+      ingresosNetos: Number(totales._sum.montoMedico) || 0,
+      cantidadConsultas: totales._count,
+      porcentajeComision: 30,
+      pendientes: {
+        monto: Number(pendientes._sum.monto) || 0,
+        cantidad: pendientes._count,
+      },
+      ultimosPagos: ultimosPagos.map(p => ({
+        id: p.id,
+        fecha: p.fechaCreacion,
+        montoBruto: Number(p.monto),
+        comision: Number(p.comisionPlataforma),
+        montoNeto: Number(p.montoMedico),
+        paciente: p.paciente?.usuario
+          ? `${p.paciente.usuario.nombre} ${p.paciente.usuario.apellido}`
+          : 'Paciente',
+        estado: p.estado,
+      })),
     };
   }
 

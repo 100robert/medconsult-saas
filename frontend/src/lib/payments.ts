@@ -113,3 +113,70 @@ export async function cancelarPago(id: string, motivo: string): Promise<Payment>
     const response = await api.post<{ success: boolean; data: Payment }>(`/pagos/${id}/cancelar`, { motivo });
     return response.data.data;
 }
+
+// ============================================
+// GANANCIAS (MÉDICO)
+// ============================================
+
+export interface GananciasMedico {
+    ingresosBrutos: number;
+    comisionRetenida: number;
+    ingresosNetos: number;
+    cantidadConsultas: number;
+    porcentajeComision: number;
+    pendientes: {
+        monto: number;
+        cantidad: number;
+    };
+    ultimosPagos: {
+        id: string;
+        fecha: string;
+        montoBruto: number;
+        comision: number;
+        montoNeto: number;
+        paciente: string;
+        estado: string;
+    }[];
+}
+
+// Obtener mis ganancias (médico autenticado)
+export async function getMisGanancias(): Promise<GananciasMedico | null> {
+    try {
+        const response = await api.get<{ success: boolean; data: GananciasMedico }>('/pagos/me/ganancias');
+        return response.data.data;
+    } catch (error) {
+        console.error('Error al obtener mis ganancias:', error);
+        return null;
+    }
+}
+
+// ============================================
+// COMISIONES (ADMIN)
+// ============================================
+
+export interface ComisionesPlataforma {
+    totalBruto: number;
+    totalComisionPlataforma: number;
+    totalPagadoMedicos: number;
+    cantidadTransacciones: number;
+    porcentajeComision: number;
+    porMes: {
+        mes: string;
+        totalBruto: number;
+        totalComision: number;
+        totalMedicos: number;
+        cantidad: number;
+    }[];
+}
+
+// Obtener resumen de comisiones (solo admin)
+export async function getComisionesPlataforma(): Promise<ComisionesPlataforma | null> {
+    try {
+        const response = await api.get<{ success: boolean; data: ComisionesPlataforma }>('/pagos/admin/comisiones');
+        return response.data.data;
+    } catch (error) {
+        console.error('Error al obtener comisiones:', error);
+        return null;
+    }
+}
+

@@ -226,7 +226,7 @@ export class AuthService {
     // 5. Comparar contraseña
     console.log('🔑 Comparando contraseña...');
     console.log('   Hash almacenado (primeros 30 chars):', usuario.hashContrasena.substring(0, 30));
-    
+
     let contrasenaValida = false;
     try {
       contrasenaValida = await comparePassword(
@@ -551,27 +551,27 @@ export class AuthService {
       message: 'Email verificado exitosamente',
     };
   }
-// ==========================================
-// MÉTODO: LOGOUT
-// ==========================================
-async logout(refreshToken: string): Promise<MessageResponse> {
-  // Buscar y revocar el token
-  const token = await prisma.refreshToken.findUnique({
-    where: { token: refreshToken },
-  });
-
-  if (token) {
-    await prisma.refreshToken.update({
+  // ==========================================
+  // MÉTODO: LOGOUT
+  // ==========================================
+  async logout(refreshToken: string): Promise<MessageResponse> {
+    // Buscar y revocar el token
+    const token = await prisma.refreshToken.findUnique({
       where: { token: refreshToken },
-      data: { esRevocado: true },
     });
-  }
 
-  return {
-    success: true,
-    message: 'Sesión cerrada exitosamente',
-  };
-}
+    if (token) {
+      await prisma.refreshToken.update({
+        where: { token: refreshToken },
+        data: { esRevocado: true },
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Sesión cerrada exitosamente',
+    };
+  }
 
   // ==========================================
   // MÉTODO: CREAR USUARIO POR ADMIN
@@ -590,7 +590,19 @@ async logout(refreshToken: string): Promise<MessageResponse> {
     rol: 'PACIENTE' | 'MEDICO' | 'ADMIN';
     correoVerificado?: boolean;
     activo?: boolean;
-  }): Promise<{ success: boolean; message: string; data: { usuario: UserData } }> {
+    // Campos específicos para médico
+    numeroLicencia?: string;
+    idEspecialidad?: string;
+    precioPorConsulta?: number;
+    moneda?: string;
+    duracionConsulta?: number;
+    aniosExperiencia?: number;
+    biografia?: string;
+    educacion?: string;
+    certificaciones?: string;
+    subespecialidades?: string;
+    idiomas?: string[];
+  }): Promise<{ success: boolean; message: string; data: { usuario: UserData; medico?: any } }> {
     // 1. Verificar si el email ya está registrado
     const existeUsuario = await prisma.usuario.findUnique({
       where: { correo: data.correo },
@@ -600,38 +612,112 @@ async logout(refreshToken: string): Promise<MessageResponse> {
       throw new ConflictError('El correo ya está registrado');
     }
 
-    // 2. Hashear contraseña
+    // 2. Validaciones específicas para médico
+    if (data.rol === 'MEDICO') {
+      if (!data.numeroLicencia || !data.idEspecialidad || data.precioPorConsulta === undefined) {
+        throw new ValidationError('Para crear un médico se requiere: número de licencia, especialidad y precio por consulta');
+      }
+
+      // Verificar que la especialidad existe
+      const especialidad = await prisma.especialidad.findUnique({
+        where: { id: data.idEspecialidad },
+      });
+
+      if (!especialidad) {
+        throw new NotFoundError('La especialidad especificada no existe');
+      }
+
+      // Verificar que el número de licencia no esté en uso
+      const licenciaExiste = await prisma.medico.findUnique({
+        where: { numeroLicencia: data.numeroLicencia },
+      });
+
+      if (licenciaExiste) {
+        throw new ConflictError('El número de licencia ya está registrado');
+      }
+    }
+
+    // 3. Hashear contraseña
     const hashContrasena = await hashPassword(data.contrasena);
 
-    // 3. Crear usuario en la base de datos
-    const usuario = await prisma.usuario.create({
-      data: {
-        correo: data.correo,
-        hashContrasena,
-        nombre: data.nombre,
-        apellido: data.apellido,
-        telefono: data.telefono || null,
-        rol: data.rol,
-        correoVerificado: data.correoVerificado ?? true, // Admin puede pre-verificar
-        activo: data.activo ?? true,
-        tokenVerificacion: null, // No necesita verificación si admin lo crea
-      },
+    // 4. Crear usuario y entidad relacionada en una transacción
+    const resultado = await prisma.$transaction(async (tx) => {
+      // Crear usuario base
+      const usuario = await tx.usuario.create({
+        data: {
+          correo: data.correo,
+          hashContrasena,
+          nombre: data.nombre,
+          apellido: data.apellido,
+          telefono: data.telefono || null,
+          rol: data.rol,
+          correoVerificado: data.correoVerificado ?? true,
+          activo: data.activo ?? true,
+          tokenVerificacion: null,
+        },
+      });
+
+      let medico = null;
+      let paciente = null;
+
+      // Crear entidad según el rol
+      if (data.rol === 'MEDICO') {
+        medico = await tx.medico.create({
+          data: {
+            idUsuario: usuario.id,
+            numeroLicencia: data.numeroLicencia!,
+            idEspecialidad: data.idEspecialidad!,
+            precioPorConsulta: data.precioPorConsulta!,
+            moneda: data.moneda || 'PEN',
+            duracionConsulta: data.duracionConsulta || 30,
+            aniosExperiencia: data.aniosExperiencia || 0,
+            biografia: data.biografia || null,
+            educacion: data.educacion || null,
+            certificaciones: data.certificaciones || null,
+            subespecialidades: data.subespecialidades || null,
+            idiomas: data.idiomas || ['Español'],
+            estado: 'VERIFICADO', // Admin crea médicos ya verificados
+            aceptaNuevosPacientes: true,
+          },
+          include: {
+            especialidad: true,
+          },
+        });
+      } else if (data.rol === 'PACIENTE') {
+        paciente = await tx.paciente.create({
+          data: {
+            idUsuario: usuario.id,
+            esPro: false,
+          },
+        });
+      }
+
+      return { usuario, medico, paciente };
     });
 
-    // 4. Retornar datos del usuario creado (sin tokens, debe hacer login)
+    // 5. Retornar datos del usuario creado
     return {
       success: true,
       message: `Usuario ${data.rol} creado exitosamente. El usuario debe iniciar sesión con sus credenciales.`,
       data: {
         usuario: {
-          id: usuario.id,
-          correo: usuario.correo,
-          nombre: usuario.nombre,
-          apellido: usuario.apellido,
-          rol: usuario.rol,
-          correoVerificado: usuario.correoVerificado,
-          activo: usuario.activo,
+          id: resultado.usuario.id,
+          correo: resultado.usuario.correo,
+          nombre: resultado.usuario.nombre,
+          apellido: resultado.usuario.apellido,
+          rol: resultado.usuario.rol,
+          correoVerificado: resultado.usuario.correoVerificado,
+          activo: resultado.usuario.activo,
         },
+        ...(resultado.medico && {
+          medico: {
+            id: resultado.medico.id,
+            numeroLicencia: resultado.medico.numeroLicencia,
+            especialidad: resultado.medico.especialidad,
+            precioPorConsulta: resultado.medico.precioPorConsulta,
+            estado: resultado.medico.estado,
+          },
+        }),
       },
     };
   }
@@ -895,6 +981,118 @@ async logout(refreshToken: string): Promise<MessageResponse> {
       usuariosActivos,
       usuariosInactivos,
     };
+  }
+
+  // ==========================================
+  // MÉTODO: ACTUALIZAR USUARIO (ADMIN)
+  // ==========================================
+
+  async updateUser(userId: string, data: {
+    nombre?: string;
+    apellido?: string;
+    correo?: string;
+    telefono?: string | null;
+    rol?: 'ADMIN' | 'MEDICO' | 'PACIENTE';
+    activo?: boolean;
+    correoVerificado?: boolean;
+  }): Promise<UserData> {
+    // Verificar que el usuario existe
+    const existingUser = await prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // Si se cambia el correo, verificar que no exista otro usuario con ese correo
+    if (data.correo && data.correo !== existingUser.correo) {
+      const correoExiste = await prisma.usuario.findUnique({
+        where: { correo: data.correo },
+      });
+      if (correoExiste) {
+        throw new Error('El correo ya está en uso por otro usuario');
+      }
+    }
+
+    const usuario = await prisma.usuario.update({
+      where: { id: userId },
+      data: {
+        ...(data.nombre && { nombre: data.nombre }),
+        ...(data.apellido && { apellido: data.apellido }),
+        ...(data.correo && { correo: data.correo }),
+        ...(data.telefono !== undefined && { telefono: data.telefono }),
+        ...(data.rol && { rol: data.rol }),
+        ...(data.activo !== undefined && { activo: data.activo }),
+        ...(data.correoVerificado !== undefined && { correoVerificado: data.correoVerificado }),
+      },
+      select: {
+        id: true,
+        correo: true,
+        nombre: true,
+        apellido: true,
+        rol: true,
+        activo: true,
+        correoVerificado: true,
+        telefono: true,
+        fechaCreacion: true,
+        fechaActualizacion: true,
+      },
+    });
+
+    return {
+      id: usuario.id,
+      correo: usuario.correo,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      rol: usuario.rol,
+      activo: usuario.activo,
+      correoVerificado: usuario.correoVerificado,
+      telefono: usuario.telefono || undefined,
+    };
+  }
+
+  // ==========================================
+  // MÉTODO: ELIMINAR USUARIO (ADMIN)
+  // ==========================================
+
+  async deleteUser(userId: string): Promise<void> {
+    // Verificar que el usuario existe
+    const existingUser = await prisma.usuario.findUnique({
+      where: { id: userId },
+      include: {
+        medico: true,
+        paciente: true,
+      },
+    });
+
+    if (!existingUser) {
+      throw new Error('Usuario no encontrado');
+    }
+
+    // Eliminar en cascada según el rol
+    // Primero eliminamos los registros relacionados
+    if (existingUser.medico) {
+      await prisma.medico.delete({
+        where: { id: existingUser.medico.id },
+      });
+    }
+
+    if (existingUser.paciente) {
+      await prisma.paciente.delete({
+        where: { id: existingUser.paciente.id },
+      });
+    }
+
+    // Eliminar tokens de refresco
+    await prisma.refreshToken.deleteMany({
+      where: { idUsuario: userId },
+    });
+
+    // Finalmente eliminar el usuario
+    await prisma.usuario.delete({
+      where: { id: userId },
+    });
   }
 }
 

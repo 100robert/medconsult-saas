@@ -193,6 +193,77 @@ export class PagoController {
       next(error);
     }
   }
+
+  /**
+   * GET /pagos/admin/comisiones
+   * Obtener resumen de comisiones de la plataforma (solo Admin)
+   */
+  async obtenerComisionesAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+      const fechaDesde = req.query.desde ? new Date(req.query.desde as string) : undefined;
+      const fechaHasta = req.query.hasta ? new Date(req.query.hasta as string) : undefined;
+
+      const resumen = await pagoService.obtenerResumenComisiones(fechaDesde, fechaHasta);
+
+      res.json({
+        success: true,
+        data: resumen
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /pagos/medico/ganancias/:idMedico
+   * Obtener desglose de ganancias del médico
+   */
+  async obtenerGananciasMedico(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { idMedico } = req.params;
+      const fechaDesde = req.query.desde ? new Date(req.query.desde as string) : undefined;
+      const fechaHasta = req.query.hasta ? new Date(req.query.hasta as string) : undefined;
+
+      const ganancias = await pagoService.obtenerGananciasMedico(idMedico, fechaDesde, fechaHasta);
+
+      res.json({
+        success: true,
+        data: ganancias
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /pagos/me/ganancias
+   * Obtener ganancias del médico autenticado
+   */
+  async obtenerMisGanancias(req: Request, res: Response, next: NextFunction) {
+    try {
+      // El idMedico viene del token JWT
+      const idMedico = (req as any).user?.medicoId;
+
+      if (!idMedico) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se encontró información del médico'
+        });
+      }
+
+      const fechaDesde = req.query.desde ? new Date(req.query.desde as string) : undefined;
+      const fechaHasta = req.query.hasta ? new Date(req.query.hasta as string) : undefined;
+
+      const ganancias = await pagoService.obtenerGananciasMedico(idMedico, fechaDesde, fechaHasta);
+
+      return res.json({
+        success: true,
+        data: ganancias
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
 }
 
 export const pagoController = new PagoController();

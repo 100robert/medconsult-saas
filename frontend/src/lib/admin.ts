@@ -185,7 +185,11 @@ export interface Especialidad {
 export async function getEspecialidades(): Promise<Especialidad[]> {
   try {
     const response = await api.get<any>('/especialidades');
-    return response.data.data?.especialidades || response.data.especialidades || response.data || [];
+    // La respuesta es { success: true, data: [...] }
+    // data es directamente el array de especialidades
+    const data = response.data?.data;
+    // Asegurar que siempre retorne un array
+    return Array.isArray(data) ? data : [];
   } catch (error: any) {
     console.error('Error al obtener especialidades:', error);
     return [];
@@ -209,5 +213,113 @@ export async function deleteEspecialidad(id: string): Promise<boolean> {
   } catch (error: any) {
     console.error('Error al eliminar especialidad:', error);
     return false;
+  }
+}
+
+// ============ CREAR USUARIO ============
+
+export interface CreateUserData {
+  nombre: string;
+  apellido: string;
+  correo: string;
+  contrasena: string;
+  rol: 'PACIENTE' | 'MEDICO' | 'ADMIN';
+  telefono?: string;
+  correoVerificado?: boolean;
+  activo?: boolean;
+  // Campos específicos para médico
+  numeroLicencia?: string;
+  idEspecialidad?: string;
+  precioPorConsulta?: number;
+  moneda?: string;
+  duracionConsulta?: number;
+  aniosExperiencia?: number;
+  biografia?: string;
+  educacion?: string;
+  certificaciones?: string;
+  subespecialidades?: string;
+  idiomas?: string[];
+}
+
+export async function createUser(data: CreateUserData): Promise<{ success: boolean; user?: User; error?: string; errors?: Array<{campo: string; mensaje: string}> }> {
+  try {
+    const response = await api.post<any>('/auth/admin/create-user', data);
+    return { 
+      success: true, 
+      user: response.data.data?.usuario || response.data.usuario || response.data 
+    };
+  } catch (error: any) {
+    console.error('Error al crear usuario:', error.response?.data);
+    
+    // Si hay errores de validación detallados
+    const validationErrors = error.response?.data?.errors;
+    if (validationErrors && Array.isArray(validationErrors)) {
+      // Formatear errores para mostrar
+      const formattedErrors = validationErrors.map((e: any) => ({
+        campo: e.campo || e.path?.join('.') || 'desconocido',
+        mensaje: e.mensaje || e.message || 'Error de validación'
+      }));
+      
+      // Crear mensaje legible
+      const errorMessage = formattedErrors.map((e: any) => `${e.campo}: ${e.mensaje}`).join('\n');
+      
+      return { 
+        success: false, 
+        error: errorMessage,
+        errors: formattedErrors
+      };
+    }
+    
+    const errorMessage = error.response?.data?.mensaje || error.response?.data?.message || 'Error al crear usuario';
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function deleteUser(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await api.delete(`/auth/admin/users/${id}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error al eliminar usuario:', error);
+    const errorMessage = error.response?.data?.mensaje || error.response?.data?.message || 'Error al eliminar usuario';
+    return { success: false, error: errorMessage };
+  }
+}
+
+// ============ ACTUALIZAR USUARIO ============
+
+export interface UpdateUserData {
+  nombre?: string;
+  apellido?: string;
+  correo?: string;
+  telefono?: string;
+  rol?: 'PACIENTE' | 'MEDICO' | 'ADMIN';
+  activo?: boolean;
+  correoVerificado?: boolean;
+}
+
+export async function updateUser(id: string, data: UpdateUserData): Promise<{ success: boolean; user?: User; error?: string; errors?: Array<{campo: string; mensaje: string}> }> {
+  try {
+    const response = await api.patch<any>(`/auth/admin/users/${id}`, data);
+    return { 
+      success: true, 
+      user: response.data.data?.usuario || response.data.usuario || response.data 
+    };
+  } catch (error: any) {
+    console.error('Error al actualizar usuario:', error.response?.data);
+    
+    // Si hay errores de validación detallados
+    const validationErrors = error.response?.data?.errors;
+    if (validationErrors && Array.isArray(validationErrors)) {
+      const formattedErrors = validationErrors.map((e: any) => ({
+        campo: e.campo || e.path?.join('.') || 'desconocido',
+        mensaje: e.mensaje || e.message || 'Error de validación'
+      }));
+      const errorMessage = formattedErrors.map((e: any) => `${e.campo}: ${e.mensaje}`).join('\n');
+      return { success: false, error: errorMessage, errors: formattedErrors };
+    }
+    
+    const errorMessage = error.response?.data?.mensaje || error.response?.data?.message || 'Error al actualizar usuario';
+    return { success: false, error: errorMessage };
   }
 }

@@ -16,11 +16,13 @@ import {
   CreditCard,
   Banknote,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  Percent,
+  Wallet
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
-import { getMisPagos, type Payment } from '@/lib/payments';
+import { getMisPagos, getMisGanancias, type Payment, type GananciasMedico } from '@/lib/payments';
 
 export default function PaymentsPage() {
   const { user } = useAuthStore();
@@ -31,6 +33,9 @@ export default function PaymentsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Estado para ganancias del médico
+  const [ganancias, setGanancias] = useState<GananciasMedico | null>(null);
 
   const [stats, setStats] = useState({
     totalIngresos: 0,
@@ -80,11 +85,16 @@ export default function PaymentsPage() {
             concepto: 'Consulta General',
             creadoEn: '', actualizadoEn: ''
           },
-          // ... más datos simulados si se desea
         ];
       } else {
         // Cargar datos reales de la API
         data = await getMisPagos(user);
+
+        // Si es médico, también cargar el desglose de ganancias
+        if (user.rol === 'MEDICO') {
+          const gananciasMedico = await getMisGanancias();
+          setGanancias(gananciasMedico);
+        }
       }
 
       setPayments(data);
@@ -259,6 +269,55 @@ export default function PaymentsPage() {
           </div>
         </div>
       </div>
+
+      {/* Desglose de Ganancias - Solo para Médicos */}
+      {user?.rol === 'MEDICO' && ganancias && (
+        <div className="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-xl p-6 text-white">
+          <div className="flex items-center gap-2 mb-4">
+            <Wallet className="w-6 h-6" />
+            <h2 className="text-xl font-bold">Desglose de Ganancias</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Ingresos Brutos */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <p className="text-white/80 text-sm mb-1">Ingresos Brutos</p>
+              <p className="text-2xl font-bold">S/. {ganancias.ingresosBrutos.toLocaleString()}</p>
+              <p className="text-xs text-white/60 mt-1">Total cobrado a pacientes</p>
+            </div>
+
+            {/* Comisión Plataforma */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Percent className="w-4 h-4 text-amber-300" />
+                <p className="text-white/80 text-sm">Comisión Plataforma</p>
+              </div>
+              <p className="text-2xl font-bold text-amber-300">- S/. {ganancias.comisionRetenida.toLocaleString()}</p>
+              <p className="text-xs text-white/60 mt-1">{ganancias.porcentajeComision}% del total</p>
+            </div>
+
+            {/* Ingresos Netos */}
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
+              <p className="text-white/80 text-sm mb-1">Ingresos Netos</p>
+              <p className="text-3xl font-bold text-emerald-200">S/. {ganancias.ingresosNetos.toLocaleString()}</p>
+              <p className="text-xs text-white/60 mt-1">Lo que recibes</p>
+            </div>
+
+            {/* Consultas Realizadas */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+              <p className="text-white/80 text-sm mb-1">Consultas Realizadas</p>
+              <p className="text-2xl font-bold">{ganancias.cantidadConsultas}</p>
+              <p className="text-xs text-white/60 mt-1">
+                Pendientes: {ganancias.pendientes.cantidad} (S/. {ganancias.pendientes.monto.toLocaleString()})
+              </p>
+            </div>
+          </div>
+
+          <p className="text-xs text-white/60 mt-4 text-center">
+            💡 MedConsult retiene un {ganancias.porcentajeComision}% de comisión por cada consulta completada
+          </p>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">

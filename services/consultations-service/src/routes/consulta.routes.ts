@@ -21,6 +21,12 @@ router.post('/',
   consultaController.crear
 );
 
+// Obtener consulta por ID de cita (para que pacientes puedan unirse)
+router.get('/cita/:idCita',
+  authMiddleware.verifyToken,
+  consultaController.obtenerPorIdCita
+);
+
 // Obtener consulta por ID
 router.get('/:id',
   authMiddleware.verifyToken,

@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Calendar, Clock, Video, MapPin, User, Search, Filter, Plus, MoreVertical, ChevronRight, CalendarDays, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui';
 import { getMisCitas, cancelarCita, type Appointment, type Medico } from '@/lib/appointments';
+import { toast } from 'sonner';
+import api from '@/lib/api';
 
 function getSpecialtyName(medico?: Medico): string {
   if (!medico?.especialidad) return 'Consulta General';
@@ -67,11 +70,13 @@ const estadoLabels = {
 
 export default function AppointmentsPage() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [joiningConsultation, setJoiningConsultation] = useState<string | null>(null);
 
   // Cargar citas del backend
   useEffect(() => {
@@ -106,6 +111,33 @@ export default function AppointmentsPage() {
       );
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error al cancelar la cita');
+    }
+  };
+
+  // Función para unirse a la videoconsulta
+  const handleJoinConsultation = async (citaId: string) => {
+    try {
+      setJoiningConsultation(citaId);
+
+      // Buscar si ya existe una consulta para esta cita
+      const response = await api.get(`/consultas/cita/${citaId}`);
+      const consulta = response.data.data || response.data;
+
+      if (consulta && consulta.id) {
+        toast.success('Conectando a la sala de videoconsulta...');
+        router.push(`/dashboard/consultations/${consulta.id}`);
+      } else {
+        toast.error('El médico aún no ha iniciado la consulta');
+      }
+    } catch (error: any) {
+      console.error('Error uniéndose a consulta:', error);
+      if (error.response?.status === 404) {
+        toast.error('El médico aún no ha iniciado la consulta. Por favor espera.');
+      } else {
+        toast.error('Error al conectar con la consulta');
+      }
+    } finally {
+      setJoiningConsultation(null);
     }
   };
 
@@ -322,8 +354,24 @@ export default function AppointmentsPage() {
                               {estadoLabels[appointment.estado]}
                             </span>
                             {appointment.estado === 'CONFIRMADA' && ((appointment.tipo as string) === 'VIDEOCONSULTA' || (appointment.tipo as string) === 'VIRTUAL') && (
-                              <Button variant="primary" size="sm" className="shadow-lg">
-                                Unirse
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                className="shadow-lg"
+                                onClick={() => handleJoinConsultation(appointment.id)}
+                                disabled={joiningConsultation === appointment.id}
+                              >
+                                {joiningConsultation === appointment.id ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                    Conectando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Video className="w-4 h-4 mr-2" />
+                                    Unirse
+                                  </>
+                                )}
                               </Button>
                             )}
                             {(appointment.estado === 'PROGRAMADA' || appointment.estado === 'PENDIENTE') && (

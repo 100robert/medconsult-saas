@@ -4,7 +4,7 @@
 
 import { prisma } from '../config/database';
 import { EstadoConsulta, EstadoCita, TipoConsulta } from '@prisma/client';
-import { 
+import {
   CreateConsultaDTO,
   UpdateConsultaDTO,
   FinalizarConsultaDTO,
@@ -14,7 +14,7 @@ import {
 } from '../types';
 
 export class ConsultaService {
-  
+
   /**
    * Crear consulta a partir de una cita
    */
@@ -51,7 +51,7 @@ export class ConsultaService {
               include: { usuario: { select: { correo: true, nombre: true, apellido: true } } }
             },
             medico: {
-              include: { 
+              include: {
                 usuario: { select: { correo: true, nombre: true, apellido: true } },
                 especialidad: true
               }
@@ -78,7 +78,7 @@ export class ConsultaService {
               include: { usuario: { select: { correo: true, nombre: true, apellido: true } } }
             },
             medico: {
-              include: { 
+              include: {
                 usuario: { select: { correo: true, nombre: true, apellido: true } },
                 especialidad: true
               }
@@ -91,6 +91,38 @@ export class ConsultaService {
 
     if (!consulta) {
       throw new NotFoundError('Consulta no encontrada');
+    }
+
+    return consulta;
+  }
+
+  /**
+   * Obtener consulta por ID de Cita
+   * Usado para que los pacientes puedan unirse a la sala de videollamada
+   */
+  async obtenerPorIdCita(idCita: string) {
+    const consulta = await prisma.consulta.findUnique({
+      where: { idCita },
+      include: {
+        cita: {
+          include: {
+            paciente: {
+              include: { usuario: { select: { correo: true, nombre: true, apellido: true } } }
+            },
+            medico: {
+              include: {
+                usuario: { select: { correo: true, nombre: true, apellido: true } },
+                especialidad: true
+              }
+            }
+          }
+        },
+        recetas: true,
+      }
+    });
+
+    if (!consulta) {
+      throw new NotFoundError('No hay una consulta activa para esta cita. El médico aún no ha iniciado la consulta.');
     }
 
     return consulta;
@@ -281,8 +313,8 @@ export class ConsultaService {
         include: {
           cita: {
             include: {
-              medico: { 
-                include: { 
+              medico: {
+                include: {
                   usuario: { select: { correo: true, nombre: true, apellido: true } },
                   especialidad: true
                 }
@@ -337,22 +369,22 @@ export class ConsultaService {
         where: { idUsuario },
         select: { id: true }
       });
-      
+
       if (!medico) {
         return { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
       }
-      
+
       where.cita = { idMedico: medico.id };
     } else {
       const paciente = await prisma.paciente.findUnique({
         where: { idUsuario },
         select: { id: true }
       });
-      
+
       if (!paciente) {
         return { data: [], pagination: { page, limit, total: 0, totalPages: 0 } };
       }
-      
+
       where.cita = { idPaciente: paciente.id };
     }
 
@@ -369,11 +401,11 @@ export class ConsultaService {
         include: {
           cita: {
             include: {
-              paciente: { 
-                include: { usuario: { select: { correo: true, nombre: true, apellido: true, imagenPerfil: true } } } 
+              paciente: {
+                include: { usuario: { select: { correo: true, nombre: true, apellido: true, imagenPerfil: true } } }
               },
-              medico: { 
-                include: { 
+              medico: {
+                include: {
                   usuario: { select: { correo: true, nombre: true, apellido: true, imagenPerfil: true } },
                   especialidad: true
                 }

@@ -5,7 +5,9 @@
 import rateLimit from 'express-rate-limit';
 
 const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'); // 15 minutos
-const RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100');
+const isDevelopment = process.env.NODE_ENV !== 'production';
+// En desarrollo: 500 requests, en producción: 100
+const RATE_LIMIT_MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || (isDevelopment ? '500' : '100'));
 
 /**
  * Rate limiter general para todas las rutas
@@ -30,7 +32,6 @@ export const generalLimiter = rateLimit({
  * En desarrollo: 100 intentos para pruebas
  * En producción: 10 intentos
  */
-const isDevelopment = process.env.NODE_ENV !== 'production';
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos

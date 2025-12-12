@@ -56,6 +56,15 @@ class ConsultaController {
     }
   }
 
+  async obtenerPorIdCita(req: Request, res: Response, next: NextFunction) {
+    try {
+      const consulta = await consultaService.obtenerPorIdCita(req.params.idCita);
+      res.json({ success: true, data: consulta });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async actualizar(req: Request, res: Response, next: NextFunction) {
     try {
       const consulta = await consultaService.actualizar(req.params.id, req.body);

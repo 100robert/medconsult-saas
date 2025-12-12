@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Clock,
   Plus,
@@ -11,7 +11,8 @@ import {
   X,
   AlertCircle,
   Info,
-  Loader2
+  Loader2,
+  CheckCircle
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
@@ -64,12 +65,113 @@ export default function SchedulePage() {
   const router = useRouter();
   const [schedule, setSchedule] = useState<WeekSchedule>(emptySchedule);
   const [duracionCita, setDuracionCita] = useState(30);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [medicoId, setMedicoId] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Ref para el timeout del auto-save
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isFirstLoad = useRef(true);
+
+  // Función para guardar en el backend
+  const saveToBackend = useCallback(async (scheduleToSave: WeekSchedule) => {
+    if (!medicoId) {
+      console.error('❌ No hay medicoId para guardar');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      // Convertir el schedule del frontend al formato del backend
+      const horarios: Array<{
+        diaSemana: string;
+        horaInicio: string;
+        horaFin: string;
+        activo: boolean;
+      }> = [];
+
+      // Mapeo de frontend key a backend key
+      const frontendToBackendDay: { [key: string]: string } = {
+        'lunes': 'LUNES',
+        'martes': 'MARTES',
+        'miercoles': 'MIERCOLES',
+        'jueves': 'JUEVES',
+        'viernes': 'VIERNES',
+        'sabado': 'SABADO',
+        'domingo': 'DOMINGO',
+      };
+
+      // Procesar cada día
+      Object.entries(scheduleToSave).forEach(([day, daySchedule]) => {
+        if (daySchedule.activo && daySchedule.slots.length > 0) {
+          daySchedule.slots.forEach(slot => {
+            horarios.push({
+              diaSemana: frontendToBackendDay[day],
+              horaInicio: slot.inicio,
+              horaFin: slot.fin,
+              activo: true
+            });
+          });
+        }
+      });
+
+      console.log('📤 Auto-guardando horarios:', horarios);
+
+      // Enviar al backend
+      const response = await api.post('/disponibilidades/multiples', {
+        idMedico: medicoId,
+        horarios,
+        reemplazarExistentes: true
+      });
+
+      console.log('✅ Guardado exitoso:', response.data);
+      setLastSaved(new Date());
+      setHasChanges(false);
+
+    } catch (err: any) {
+      console.error('Error al guardar:', err);
+      const errorMsg = err.response?.data?.message || 'Error al guardar el horario';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setSaving(false);
+    }
+  }, [medicoId]);
+
+  // Auto-save cuando cambia el schedule (con debounce)
+  useEffect(() => {
+    // No guardar en la primera carga
+    if (isFirstLoad.current) {
+      return;
+    }
+
+    // No guardar si no hay medicoId o no hay cambios
+    if (!medicoId || !hasChanges) {
+      return;
+    }
+
+    // Cancelar el timeout anterior si existe
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Programar el guardado después de 1 segundo de inactividad
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToBackend(schedule);
+    }, 1000);
+
+    // Cleanup
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [schedule, medicoId, hasChanges, saveToBackend]);
 
   // Cargar datos reales del backend
   useEffect(() => {
@@ -120,13 +222,11 @@ export default function SchedulePage() {
 
         // Procesar disponibilidades del backend
         disponibilidades.forEach((disp: any) => {
-          // El backend puede enviar diaSemana como string o número
           let frontendDay: string;
 
           if (typeof disp.diaSemana === 'string') {
             frontendDay = backendToFrontendDay[disp.diaSemana] || disp.diaSemana.toLowerCase();
           } else {
-            // Si es número (0-6), convertir
             const daysArray = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
             frontendDay = daysArray[disp.diaSemana] || 'lunes';
           }
@@ -143,6 +243,11 @@ export default function SchedulePage() {
         setSchedule(newSchedule);
         console.log('📅 Schedule convertido:', newSchedule);
 
+        // Marcar que ya terminó la primera carga
+        setTimeout(() => {
+          isFirstLoad.current = false;
+        }, 500);
+
       } catch (err: any) {
         console.error('Error cargando disponibilidad:', err);
         setError('Error al cargar la disponibilidad. Por favor, recarga la página.');
@@ -155,14 +260,19 @@ export default function SchedulePage() {
   }, [user, router]);
 
   const toggleDay = (day: string) => {
-    setSchedule(prev => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        activo: !prev[day].activo,
-        slots: prev[day].activo ? [] : [{ inicio: '09:00', fin: '17:00' }]
-      }
-    }));
+    console.log('🔄 Toggle día:', day, '- Estado actual:', schedule[day].activo);
+    setSchedule(prev => {
+      const newSchedule = {
+        ...prev,
+        [day]: {
+          ...prev[day],
+          activo: !prev[day].activo,
+          slots: prev[day].activo ? [] : [{ inicio: '09:00', fin: '17:00' }]
+        }
+      };
+      return newSchedule;
+    });
+    setHasChanges(true);
   };
 
   const addSlot = (day: string) => {
@@ -173,6 +283,7 @@ export default function SchedulePage() {
         slots: [...prev[day].slots, { inicio: '09:00', fin: '17:00' }]
       }
     }));
+    setHasChanges(true);
   };
 
   const removeSlot = (day: string, index: number) => {
@@ -183,6 +294,7 @@ export default function SchedulePage() {
         slots: prev[day].slots.filter((_, i) => i !== index)
       }
     }));
+    setHasChanges(true);
   };
 
   const updateSlot = (day: string, index: number, field: 'inicio' | 'fin', value: string) => {
@@ -195,76 +307,7 @@ export default function SchedulePage() {
         )
       }
     }));
-  };
-
-  const handleSave = async () => {
-    if (!medicoId) {
-      toast.error('No se encontró el ID del médico');
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-
-    try {
-      // Convertir el schedule del frontend al formato del backend
-      const disponibilidades: Array<{
-        idMedico: string;
-        diaSemana: string;
-        horaInicio: string;
-        horaFin: string;
-        activo: boolean;
-      }> = [];
-
-      // Mapeo de frontend key a backend key
-      const frontendToBackendDay: { [key: string]: string } = {
-        'lunes': 'LUNES',
-        'martes': 'MARTES',
-        'miercoles': 'MIERCOLES',
-        'jueves': 'JUEVES',
-        'viernes': 'VIERNES',
-        'sabado': 'SABADO',
-        'domingo': 'DOMINGO',
-      };
-
-      // Procesar cada día
-      Object.entries(schedule).forEach(([day, daySchedule]) => {
-        if (daySchedule.activo && daySchedule.slots.length > 0) {
-          daySchedule.slots.forEach(slot => {
-            disponibilidades.push({
-              idMedico: medicoId,
-              diaSemana: frontendToBackendDay[day],
-              horaInicio: slot.inicio,
-              horaFin: slot.fin,
-              activo: true
-            });
-          });
-        }
-      });
-
-      console.log('📤 Enviando horarios al backend:', disponibilidades);
-
-      // Enviar al backend usando el endpoint de múltiples disponibilidades
-      const response = await api.post('/disponibilidades/multiples', {
-        idMedico: medicoId,
-        horarios: disponibilidades, // El backend espera 'horarios' no 'disponibilidades'
-        reemplazarExistentes: true // Indica que debe reemplazar las disponibilidades existentes
-      });
-
-      console.log('✅ Respuesta del backend:', response.data);
-
-      setSaved(true);
-      toast.success('¡Horario guardado correctamente!');
-      setTimeout(() => setSaved(false), 3000);
-
-    } catch (err: any) {
-      console.error('Error al guardar:', err);
-      const errorMsg = err.response?.data?.message || 'Error al guardar el horario';
-      setError(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setSaving(false);
-    }
+    setHasChanges(true);
   };
 
   if (loadingData) {
@@ -286,28 +329,25 @@ export default function SchedulePage() {
           <h1 className="text-2xl font-bold text-gray-900">Mi Horario</h1>
           <p className="text-gray-500 mt-1">Configura tu disponibilidad para recibir citas</p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50"
-        >
+
+        {/* Status Indicator */}
+        <div className="flex items-center gap-2">
           {saving ? (
-            <>
+            <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Guardando...
-            </>
-          ) : saved ? (
-            <>
-              <Check className="w-4 h-4" />
-              ¡Guardado!
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              Guardar Cambios
-            </>
-          )}
-        </button>
+              <span className="text-sm font-medium">Guardando...</span>
+            </div>
+          ) : lastSaved ? (
+            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1.5 rounded-full">
+              <CheckCircle className="w-4 h-4" />
+              <span className="text-sm font-medium">Guardado</span>
+            </div>
+          ) : hasChanges ? (
+            <div className="flex items-center gap-2 text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+              <span className="text-sm">Cambios pendientes...</span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       {/* Error Banner */}
@@ -326,7 +366,7 @@ export default function SchedulePage() {
         <div>
           <p className="text-sm text-blue-800">
             Los pacientes podrán agendar citas dentro de los horarios que configures aquí.
-            <strong> Los cambios se guardan en tiempo real en el sistema.</strong>
+            <strong> Los cambios se guardan automáticamente.</strong>
           </p>
         </div>
       </div>
@@ -364,8 +404,9 @@ export default function SchedulePage() {
                 <div className="flex items-center gap-3 sm:w-40">
                   <button
                     onClick={() => toggleDay(key)}
+                    disabled={saving}
                     className={`w-12 h-6 rounded-full transition-colors relative ${schedule[key].activo ? 'bg-teal-600' : 'bg-gray-300'
-                      }`}
+                      } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <span
                       className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${schedule[key].activo ? 'left-7' : 'left-1'
@@ -385,7 +426,8 @@ export default function SchedulePage() {
                         <select
                           value={slot.inicio}
                           onChange={(e) => updateSlot(key, index, 'inicio', e.target.value)}
-                          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          disabled={saving}
+                          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:opacity-50"
                         >
                           {horasDisponibles.map(hora => (
                             <option key={hora} value={hora}>{hora}</option>
@@ -395,7 +437,8 @@ export default function SchedulePage() {
                         <select
                           value={slot.fin}
                           onChange={(e) => updateSlot(key, index, 'fin', e.target.value)}
-                          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          disabled={saving}
+                          className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent disabled:opacity-50"
                         >
                           {horasDisponibles.map(hora => (
                             <option key={hora} value={hora}>{hora}</option>
@@ -403,7 +446,8 @@ export default function SchedulePage() {
                         </select>
                         <button
                           onClick={() => removeSlot(key, index)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          disabled={saving}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -411,7 +455,8 @@ export default function SchedulePage() {
                     ))}
                     <button
                       onClick={() => addSlot(key)}
-                      className="flex items-center gap-1 text-sm text-teal-600 hover:text-teal-700 font-medium"
+                      disabled={saving}
+                      className="flex items-center gap-1 text-sm text-teal-600 hover:text-teal-700 font-medium disabled:opacity-50"
                     >
                       <Plus className="w-4 h-4" />
                       Agregar bloque horario

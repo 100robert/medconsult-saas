@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { getMedicoStats, MedicoStats, confirmarCita, getMiPerfilMedico } from '@/lib/medico';
 import { getMisCitas, Appointment } from '@/lib/appointments';
 import { toast } from 'sonner';
+import api from '@/lib/api';
 
 interface TodayAppointment {
   id: string;
@@ -129,6 +130,10 @@ export default function DoctorDashboardPage() {
 
       // 5. Mapear citas próximas para la vista (mostrar próximas 5, no solo hoy)
       const citasParaMostrar = citasProximas.length > 0 ? citasProximas : citasHoy;
+
+      // Debug: ver tipos de citas
+      console.log('🔍 MÉDICO DEBUG: Tipos de citas:', citasParaMostrar.map(c => ({ id: c.id, tipo: c.tipo })));
+
       const citasMapeadas: TodayAppointment[] = citasParaMostrar.slice(0, 10).map(c => ({
         id: c.id,
         paciente: {
@@ -145,7 +150,7 @@ export default function DoctorDashboardPage() {
       // Ordenar por fecha más próxima
       citasMapeadas.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
 
-      console.log('🔍 MÉDICO DEBUG: Citas mapeadas finales:', citasMapeadas.length);
+      console.log('🔍 MÉDICO DEBUG: Citas mapeadas finales:', citasMapeadas);
       setTodayAppointments(citasMapeadas);
 
     } catch (error) {
@@ -174,8 +179,30 @@ export default function DoctorDashboardPage() {
     }
   };
 
-  const handleIniciarConsulta = (id: string) => {
-    router.push(`/dashboard/consultations/${id}`);
+  const handleIniciarConsulta = async (citaId: string) => {
+    try {
+      // Crear la consulta asociada a la cita
+      const response = await api.post('/consultas', {
+        idCita: citaId
+      });
+
+      const consulta = response.data.data || response.data;
+
+      if (consulta && consulta.id) {
+        toast.success('Iniciando video consulta...');
+        router.push(`/dashboard/consultations/${consulta.id}`);
+      } else {
+        toast.error('Error al iniciar la consulta');
+      }
+    } catch (error: any) {
+      console.error('Error iniciando consulta:', error);
+      // Si la consulta ya existe, el backend podría devolverla
+      if (error.response?.data?.data?.id) {
+        router.push(`/dashboard/consultations/${error.response.data.data.id}`);
+      } else {
+        toast.error(error.response?.data?.message || 'Error al iniciar la consulta');
+      }
+    }
   };
 
   const getEstadoConfig = (estado: string) => {

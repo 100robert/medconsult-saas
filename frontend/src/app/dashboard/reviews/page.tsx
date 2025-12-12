@@ -219,7 +219,7 @@ export default function ReviewsPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center text-white font-medium">
                   {review.paciente ? (
-                    `${review.paciente.nombre[0]}${review.paciente.apellido[0]}`
+                    `${review.paciente.nombre?.[0] || 'P'}${review.paciente.apellido?.[0] || 'A'}`
                   ) : (
                     'AN'
                   )}

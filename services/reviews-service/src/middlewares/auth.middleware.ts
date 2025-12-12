@@ -15,31 +15,45 @@ export class AuthMiddleware {
    */
   verifyToken(req: Request, res: Response, next: NextFunction): void {
     try {
+      console.log('🔐 verifyToken - Headers:', req.headers.authorization ? 'Token presente' : 'Sin token');
       const authHeader = req.headers.authorization;
 
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        throw new UnauthorizedError('Token no proporcionado');
+        console.log('❌ verifyToken - No hay Authorization header válido');
+        res.status(401).json({ success: false, error: 'Token no proporcionado' });
+        return;
       }
 
       const token = authHeader.split(' ')[1];
-      
+
       if (!token) {
-        throw new UnauthorizedError('Token no proporcionado');
+        console.log('❌ verifyToken - Token vacío');
+        res.status(401).json({ success: false, error: 'Token no proporcionado' });
+        return;
       }
 
+      console.log('🔐 verifyToken - Token recibido (primeros 20 chars):', token.substring(0, 20) + '...');
+      console.log('🔐 verifyToken - JWT_SECRET usado (primeros 20 chars):', JWT_SECRET.substring(0, 20) + '...');
+
       const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      console.log('✅ verifyToken - Token decodificado:', JSON.stringify(decoded));
+
       req.user = decoded;
       next();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ verifyToken - Error:', error.name, error.message);
+
       if (error instanceof jwt.JsonWebTokenError) {
-        next(new UnauthorizedError('Token inválido'));
+        res.status(401).json({ success: false, error: 'Token inválido' });
         return;
       }
       if (error instanceof jwt.TokenExpiredError) {
-        next(new UnauthorizedError('Token expirado'));
+        res.status(401).json({ success: false, error: 'Token expirado' });
         return;
       }
-      next(error);
+
+      // Error genérico - devolver 401 en lugar de 500
+      res.status(401).json({ success: false, error: 'Error de autenticación: ' + error.message });
     }
   }
 

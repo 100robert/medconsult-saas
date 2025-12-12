@@ -4,14 +4,18 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Star, Shield, Zap, CreditCard, Sparkles, Lock, AlertCircle } from 'lucide-react';
 import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Input, Alert } from '@/components/ui';
+import { activatePro } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
 
 
 // funcion de pago simulada
 export default function SubscriptionPage() {
     const router = useRouter();
+    const { user, setUser } = useAuthStore();
     const [isLoading, setIsLoading] = useState(false);
     const [showPaymentForm, setShowPaymentForm] = useState(false);
     const [paymentError, setPaymentError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
 
     const [paymentData, setPaymentData] = useState({
         cardName: '',
@@ -22,7 +26,7 @@ export default function SubscriptionPage() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        
+
         // Formateo especial para número de tarjeta
         if (name === 'cardNumber') {
             // Remover espacios y caracteres no numéricos
@@ -34,7 +38,7 @@ export default function SubscriptionPage() {
             setPaymentData(prev => ({ ...prev, [name]: formatted }));
             return;
         }
-        
+
         // Formateo para expiración (MM/YY)
         if (name === 'expiry') {
             const cleaned = value.replace(/\D/g, '');
@@ -46,14 +50,14 @@ export default function SubscriptionPage() {
             }
             return;
         }
-        
+
         // Formateo para CVC (solo números)
         if (name === 'cvc') {
             const cleaned = value.replace(/\D/g, '').substring(0, 4);
             setPaymentData(prev => ({ ...prev, [name]: cleaned }));
             return;
         }
-        
+
         setPaymentData(prev => ({ ...prev, [name]: value }));
     };
 
@@ -73,13 +77,38 @@ export default function SubscriptionPage() {
             return;
         }
 
-        // Simulación de proceso de pago
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        try {
+            // Simular procesamiento del pago (en producción sería Stripe/PayPal)
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
-        setIsLoading(false);
-        // Simulación exitosa
-        alert('¡Suscripción a MedConsult Pro activada con éxito! Pagos automáticos configurados.');
-        router.push('/dashboard');
+            // Llamar al API real para activar Pro
+            const result = await activatePro();
+
+            if (result.success) {
+                // Actualizar el estado del usuario en el store
+                if (user) {
+                    setUser({ ...user, isPro: true });
+                }
+
+                // Guardar también en localStorage para persistencia
+                localStorage.setItem('medconsult_pro', 'true');
+                localStorage.setItem('medconsult_pro_date', new Date().toISOString());
+
+                setSuccess(true);
+
+                // Redirigir después de 2 segundos
+                setTimeout(() => {
+                    router.push('/dashboard');
+                }, 2000);
+            } else {
+                setPaymentError('Error al activar la suscripción. Intenta de nuevo.');
+            }
+        } catch (error: any) {
+            console.error('Error activando Pro:', error);
+            setPaymentError(error.response?.data?.message || 'Error al procesar el pago. Intenta de nuevo.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const features = [

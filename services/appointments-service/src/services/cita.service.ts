@@ -3,7 +3,7 @@
 // ============================================
 
 import { prisma } from '../config/database';
-import { EstadoCita, CanceladaPor, Prisma } from '@prisma/client';
+import { EstadoCita, CanceladaPor, Prisma } from '.prisma/client';
 import {
   CreateCitaDTO,
   UpdateCitaDTO,
@@ -215,7 +215,7 @@ export class CitaService {
       }
     });
 
-    return cita;
+    return this._formatCitaResponse(cita);
   }
 
   /**
@@ -251,7 +251,7 @@ export class CitaService {
       throw new NotFoundError('Cita no encontrada');
     }
 
-    return cita;
+    return this._formatCitaResponse(cita);
   }
 
   /**
@@ -340,22 +340,7 @@ export class CitaService {
 
 
     // Mapear resultados para incluir campos formateados que espera el frontend
-    const citasFormateadas = citas.map(cita => {
-      const fecha = cita.fechaHoraCita.toISOString().split('T')[0];
-      const horaInicio = cita.fechaHoraCita.toISOString().split('T')[1].substring(0, 5);
-
-      // Calcular hora fin (30 min después)
-      const fechaFin = new Date(cita.fechaHoraCita);
-      fechaFin.setMinutes(fechaFin.getMinutes() + 30);
-      const horaFin = fechaFin.toISOString().split('T')[1].substring(0, 5);
-
-      return {
-        ...cita,
-        fecha,
-        horaInicio,
-        horaFin
-      };
-    });
+    const citasFormateadas = citas.map(cita => this._formatCitaResponse(cita));
 
     return {
       citas: citasFormateadas,
@@ -646,7 +631,181 @@ export class CitaService {
       }
     });
 
-    return citas;
+    return citas.map(c => this._formatCitaResponse(c));
+  }
+  /**
+   * Obtener pacientes únicos de un médico con estadísticas
+   */
+  async obtenerPacientesPorMedico(idMedico: string) {
+    // 1. Obtener IDs de pacientes únicos y sus estadísticas básicas (total citas, última cita)
+    const statsPacientes = await prisma.cita.groupBy({
+      by: ['idPaciente'],
+      where: {
+        idMedico,
+        estado: { not: 'CANCELADA' }
+      },
+      _count: {
+        id: true
+      },
+      _max: {
+        fechaHoraCita: true
+      },
+      orderBy: {
+        _max: {
+          fechaHoraCita: 'desc'
+        }
+      }
+    });
+
+    // 2. Obtener detalles de cada paciente
+    // Usamos Promise.all para enriquecer los datos
+    const pacientesEnriquecidos = await Promise.all(
+      statsPacientes.map(async (stat) => {
+        const paciente = await prisma.paciente.findUnique({
+          where: { id: stat.idPaciente },
+          include: {
+            usuario: {
+              select: {
+                nombre: true,
+                apellido: true,
+                correo: true, // Email
+                telefono: true,
+                imagenPerfil: true,
+                genero: true,
+                fechaNacimiento: true,
+              }
+            }
+          }
+        });
+
+        if (!paciente) return null;
+
+        // Calcular próxima cita si existe
+        const proximaCita = await prisma.cita.findFirst({
+          where: {
+            idMedico,
+            idPaciente: stat.idPaciente,
+            estado: { in: ['PROGRAMADA', 'CONFIRMADA'] },
+            fechaHoraCita: { gt: new Date() }
+          },
+          orderBy: { fechaHoraCita: 'asc' },
+          select: { fechaHoraCita: true }
+        });
+
+        return {
+          id: paciente.id,
+          nombre: paciente.usuario.nombre,
+          apellido: paciente.usuario.apellido,
+          email: paciente.usuario.correo,
+          telefono: paciente.usuario.telefono || paciente.telefonoEmergencia, // Fallback
+          fechaNacimiento: paciente.usuario.fechaNacimiento || paciente.fechaNacimiento,
+          genero: paciente.usuario.genero || paciente.genero,
+          ultimaConsulta: stat._max.fechaHoraCita,
+          totalConsultas: stat._count.id,
+          proximaCita: proximaCita?.fechaHoraCita || null,
+          imagenPerfil: paciente.usuario.imagenPerfil
+        };
+      })
+    );
+
+    // Filtrar nulos y retornar
+    return pacientesEnriquecidos.filter(p => p !== null);
+  }
+  /**
+   * Obtener detalle de paciente con próxima cita
+   */
+  async obtenerDetallePaciente(idPaciente: string) {
+    const paciente = await prisma.paciente.findUnique({
+      where: { id: idPaciente },
+      include: {
+        usuario: {
+          select: {
+            nombre: true,
+            apellido: true,
+            correo: true,
+            telefono: true,
+            imagenPerfil: true,
+            genero: true,
+            fechaNacimiento: true,
+          }
+        }
+      }
+    });
+
+    if (!paciente) {
+      throw new NotFoundError('Paciente no encontrado');
+    }
+
+    // Calcular próxima cita
+    const proximaCita = await prisma.cita.findFirst({
+      where: {
+        idPaciente: idPaciente,
+        estado: { in: ['PROGRAMADA', 'CONFIRMADA'] },
+        fechaHoraCita: { gt: new Date() }
+      },
+      orderBy: { fechaHoraCita: 'asc' },
+      select: { fechaHoraCita: true }
+    });
+
+    return {
+      id: paciente.id,
+      nombre: paciente.usuario.nombre,
+      apellido: paciente.usuario.apellido,
+      email: paciente.usuario.correo,
+      telefono: paciente.usuario.telefono || paciente.telefonoEmergencia,
+      fechaNacimiento: paciente.usuario.fechaNacimiento || paciente.fechaNacimiento,
+      genero: paciente.usuario.genero || paciente.genero,
+      proximaCita: proximaCita?.fechaHoraCita || null,
+      imagenPerfil: paciente.usuario.imagenPerfil
+    };
+  }
+
+
+  // Helper para formatear cita y aplanar estructuras
+  private _formatCitaResponse(cita: any): any {
+    const fecha = cita.fechaHoraCita instanceof Date
+      ? cita.fechaHoraCita.toISOString().split('T')[0]
+      : new Date(cita.fechaHoraCita).toISOString().split('T')[0];
+
+    const horaInicio = cita.fechaHoraCita instanceof Date
+      ? cita.fechaHoraCita.toISOString().split('T')[1].substring(0, 5)
+      : new Date(cita.fechaHoraCita).toISOString().split('T')[1].substring(0, 5);
+
+    // Calcular hora fin (30 min después)
+    const fechaFin = new Date(cita.fechaHoraCita);
+    fechaFin.setMinutes(fechaFin.getMinutes() + 30);
+    const horaFin = fechaFin.toISOString().split('T')[1].substring(0, 5);
+
+    const citaObj: any = {
+      ...cita,
+      fecha,
+      horaInicio,
+      horaFin
+    };
+
+    // Aplanar datos del paciente si existen
+    if (citaObj.paciente && citaObj.paciente.usuario) {
+      citaObj.paciente = {
+        ...citaObj.paciente,
+        nombre: citaObj.paciente.usuario.nombre,
+        apellido: citaObj.paciente.usuario.apellido,
+        imagenPerfil: citaObj.paciente.usuario.imagenPerfil,
+        correo: citaObj.paciente.usuario.correo
+      };
+    }
+
+    // Aplanar datos del médico si existen
+    if (citaObj.medico && citaObj.medico.usuario) {
+      citaObj.medico = {
+        ...citaObj.medico,
+        nombre: citaObj.medico.usuario.nombre,
+        apellido: citaObj.medico.usuario.apellido,
+        imagenPerfil: citaObj.medico.usuario.imagenPerfil,
+        especialidad: citaObj.medico.especialidad
+      };
+    }
+
+    return citaObj;
   }
 }
 

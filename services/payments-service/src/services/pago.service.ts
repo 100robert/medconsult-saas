@@ -79,7 +79,8 @@ export class PagoService {
           moneda: data.moneda || 'USD',
           metodoPago: data.metodoPago || MetodoPago.TARJETA,
           idTransaccion,
-          estado: EstadoPago.PENDIENTE,
+          estado: EstadoPago.COMPLETADO, // Pago se completa inmediatamente al crear la cita
+          fechaProcesamiento: new Date(), // Fecha del procesamiento del pago
         },
         include: {
           cita: true,
@@ -289,47 +290,59 @@ export class PagoService {
    * Obtener pagos de un paciente
    */
   async obtenerPorPaciente(idPaciente: string, filtros: PagoFilters = {}) {
-    const { estado, metodoPago, fechaDesde, fechaHasta, page = 1, limit = 10 } = filtros;
-    const skip = (page - 1) * limit;
+    console.log('💳 obtenerPorPaciente - Iniciando para paciente:', idPaciente);
 
-    const where: any = { idPaciente };
+    try {
+      const { estado, metodoPago, fechaDesde, fechaHasta, page = 1, limit = 10 } = filtros;
+      const skip = (page - 1) * limit;
 
-    if (estado) where.estado = estado;
-    if (metodoPago) where.metodoPago = metodoPago;
-    if (fechaDesde || fechaHasta) {
-      where.fechaCreacion = {};
-      if (fechaDesde) where.fechaCreacion.gte = fechaDesde;
-      if (fechaHasta) where.fechaCreacion.lte = fechaHasta;
-    }
+      const where: any = { idPaciente };
 
-    const [pagos, total] = await Promise.all([
-      prisma.pago.findMany({
-        where,
-        include: {
-          cita: true,
-          medico: {
-            include: {
-              usuario: { select: { nombre: true, apellido: true } },
-              especialidad: true
-            }
-          }
-        },
-        orderBy: { fechaCreacion: 'desc' },
-        skip,
-        take: limit,
-      }),
-      prisma.pago.count({ where })
-    ]);
-
-    return {
-      data: pagos,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit)
+      if (estado) where.estado = estado;
+      if (metodoPago) where.metodoPago = metodoPago;
+      if (fechaDesde || fechaHasta) {
+        where.fechaCreacion = {};
+        if (fechaDesde) where.fechaCreacion.gte = fechaDesde;
+        if (fechaHasta) where.fechaCreacion.lte = fechaHasta;
       }
-    };
+
+      console.log('💳 obtenerPorPaciente - Query where:', JSON.stringify(where));
+
+      const [pagos, total] = await Promise.all([
+        prisma.pago.findMany({
+          where,
+          include: {
+            cita: true,
+            medico: {
+              include: {
+                usuario: { select: { nombre: true, apellido: true } },
+                especialidad: true
+              }
+            }
+          },
+          orderBy: { fechaCreacion: 'desc' },
+          skip,
+          take: limit,
+        }),
+        prisma.pago.count({ where })
+      ]);
+
+      console.log('💳 obtenerPorPaciente - Pagos encontrados:', pagos.length, 'Total:', total);
+
+      return {
+        data: pagos,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error: any) {
+      console.error('❌ Error en obtenerPorPaciente:', error.message);
+      console.error('❌ Stack:', error.stack);
+      throw error;
+    }
   }
 
   /**

@@ -3,15 +3,15 @@
 // ============================================
 
 import { prisma } from '../config/database';
-import { 
-  CreatePacienteDTO, 
-  UpdatePacienteDTO, 
+import {
+  CreatePacienteDTO,
+  UpdatePacienteDTO,
   NotFoundError,
-  ConflictError 
+  ConflictError
 } from '../types';
 
 export class PacienteService {
-  
+
   /**
    * Crear perfil de paciente
    */
@@ -84,9 +84,10 @@ export class PacienteService {
 
   /**
    * Obtener paciente por ID de usuario
+   * Si no existe, crea automáticamente el perfil de paciente
    */
   async obtenerPorUsuarioId(idUsuario: string) {
-    const paciente = await prisma.paciente.findUnique({
+    let paciente = await prisma.paciente.findUnique({
       where: { idUsuario },
       include: {
         usuario: {
@@ -101,8 +102,38 @@ export class PacienteService {
       }
     });
 
+    // Si el paciente no existe, crear perfil automáticamente
     if (!paciente) {
-      throw new NotFoundError('Paciente no encontrado');
+      console.log('⚠️ Paciente no encontrado, creando perfil automáticamente para usuario:', idUsuario);
+
+      // Verificar que el usuario existe
+      const usuario = await prisma.usuario.findUnique({
+        where: { id: idUsuario }
+      });
+
+      if (!usuario) {
+        throw new NotFoundError('Usuario no encontrado');
+      }
+
+      // Crear perfil de paciente automáticamente
+      paciente = await prisma.paciente.create({
+        data: {
+          idUsuario: idUsuario,
+        },
+        include: {
+          usuario: {
+            select: {
+              nombre: true,
+              apellido: true,
+              correo: true,
+              telefono: true,
+              imagenPerfil: true,
+            }
+          }
+        }
+      });
+
+      console.log('✅ Perfil de paciente creado automáticamente:', paciente.id);
     }
 
     return paciente;
@@ -231,6 +262,54 @@ export class PacienteService {
 
     return paciente;
   }
+
+  /**
+   * Activar suscripción Pro para un paciente
+   */
+  async activarPro(idUsuario: string) {
+    // Buscar paciente por ID de usuario
+    let paciente = await prisma.paciente.findUnique({
+      where: { idUsuario }
+    });
+
+    // Si no existe, crear el perfil
+    if (!paciente) {
+      paciente = await prisma.paciente.create({
+        data: { idUsuario }
+      });
+    }
+
+    // Actualizar a Pro
+    const pacienteActualizado = await prisma.paciente.update({
+      where: { id: paciente.id },
+      data: { esPro: true },
+      include: {
+        usuario: {
+          select: {
+            nombre: true,
+            apellido: true,
+            correo: true,
+          }
+        }
+      }
+    });
+
+    console.log('✅ Paciente actualizado a Pro:', pacienteActualizado.id);
+    return pacienteActualizado;
+  }
+
+  /**
+   * Verificar si un paciente es Pro
+   */
+  async esPro(idUsuario: string): Promise<boolean> {
+    const paciente = await prisma.paciente.findUnique({
+      where: { idUsuario },
+      select: { esPro: true }
+    });
+
+    return paciente?.esPro || false;
+  }
 }
 
 export const pacienteService = new PacienteService();
+

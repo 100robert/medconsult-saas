@@ -27,6 +27,7 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { checkProStatus } from '@/lib/auth';
 
 interface Notification {
   id: string;
@@ -50,6 +51,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -60,6 +62,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       });
     }
   }, [isAuthenticated, fetchProfile, router]);
+
+  // Check Pro Status for Patients
+  useEffect(() => {
+    if (user?.rol === 'PACIENTE') {
+      checkProStatus().then(status => setIsPro(status));
+    }
+  }, [user]);
 
   // Cargar notificaciones según el rol
   useEffect(() => {
@@ -145,7 +154,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       ...baseItems,
       { href: '/dashboard/appointments', label: 'Mis Citas', icon: Calendar },
       { href: '/dashboard/doctors', label: 'Buscar Médicos', icon: Stethoscope },
-      { href: '/dashboard/consultations', label: 'Mis Consultas', icon: FileText },
+      //{ href: '/dashboard/consultations', label: 'Mis Consultas', icon: FileText },
       { href: '/dashboard/payments', label: 'Mis Pagos', icon: CreditCard },
       { href: '/dashboard/settings', label: 'Configuración', icon: Settings },
     ];
@@ -234,8 +243,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={`group flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${isActive
-                    ? 'bg-teal-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'bg-teal-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
               >
                 <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`} />
@@ -248,8 +257,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           })}
         </nav>
 
-        {/* Pro Card - Solo para PACIENTE */}
-        {user?.rol === 'PACIENTE' && (
+        {/* Pro Card - Solo para PACIENTE y NO PRO */}
+        {user?.rol === 'PACIENTE' && !isPro && (
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <div className="bg-teal-600 rounded-xl p-4 text-white">
               <div className="flex items-center gap-2 mb-2">
@@ -359,10 +368,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             >
                               <div className="flex gap-3">
                                 <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${notification.icon === 'calendar' ? 'bg-teal-100' :
-                                    notification.icon === 'credit' ? 'bg-emerald-100' :
-                                      notification.icon === 'alert' ? 'bg-amber-100' :
-                                        notification.icon === 'user' ? 'bg-blue-100' :
-                                          'bg-green-100'
+                                  notification.icon === 'credit' ? 'bg-emerald-100' :
+                                    notification.icon === 'alert' ? 'bg-amber-100' :
+                                      notification.icon === 'user' ? 'bg-blue-100' :
+                                        'bg-green-100'
                                   }`}>
                                   {getNotificationIcon(notification.icon)}
                                 </div>

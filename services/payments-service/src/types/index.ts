@@ -12,6 +12,8 @@ export interface JWTPayload {
   userId: string;
   email: string;
   rol: RolUsuario;
+  medicoId?: string;
+  pacienteId?: string;
   iat?: number;
   exp?: number;
 }

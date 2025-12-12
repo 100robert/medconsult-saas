@@ -10,14 +10,22 @@ const router = Router();
 
 // ========== RUTAS PÚBLICAS ==========
 // Obtener slots disponibles de un médico (para agendar citas)
-router.get('/medico/:idMedico/slots', 
+router.get('/medico/:idMedico/slots',
   disponibilidadController.obtenerSlots
 );
 
 // ========== RUTAS PROTEGIDAS ==========
 
+// Obtener MIS disponibilidades (para el médico autenticado)
+// IMPORTANTE: Esta ruta debe ir ANTES de /medico/:idMedico para evitar conflictos
+router.get('/me',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['MEDICO']),
+  disponibilidadController.obtenerMiDisponibilidad
+);
+
 // Obtener disponibilidades de un médico
-router.get('/medico/:idMedico', 
+router.get('/medico/:idMedico',
   authMiddleware.verifyToken,
   disponibilidadController.obtenerPorMedico
 );

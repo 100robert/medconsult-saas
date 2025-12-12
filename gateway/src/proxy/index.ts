@@ -24,7 +24,7 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
       const expressReq = req as any;
       const baseUrl = expressReq.baseUrl || '';
       const originalUrl = expressReq.originalUrl || req.url || '';
-      
+
       // Si baseUrl está disponible y contiene el prefijo del servicio
       if (baseUrl) {
         // baseUrl es /api/auth, necesitamos solo /auth
@@ -39,7 +39,7 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
         console.log(`📝 PathRewrite: baseUrl=${baseUrl}, path=${path}, newPath=${newPath}`);
         return newPath;
       }
-      
+
       // Fallback: intentar extraer de originalUrl
       // originalUrl es /api/auth/login, necesitamos /auth/login
       if (originalUrl.startsWith('/api/')) {
@@ -47,7 +47,7 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
         console.log(`📝 PathRewrite (fallback): originalUrl=${originalUrl}, newPath=${servicePath}`);
         return servicePath;
       }
-      
+
       // Último recurso: usar el pathPrefix pasado como parámetro
       // Verificar si el path ya contiene el pathPrefix para evitar duplicación
       if (pathPrefix && !path.startsWith(pathPrefix)) {
@@ -55,19 +55,19 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
         console.log(`📝 PathRewrite (default): pathPrefix=${pathPrefix}, path=${path}, newPath=${newPath}`);
         return newPath;
       }
-      
+
       console.log(`📝 PathRewrite (sin cambios): path=${path}`);
       return path;
     },
     on: {
       proxyReq: (proxyReq: ClientRequest, req: IncomingMessage, res: ServerResponse) => {
         const expressReq = req as any;
-        
+
         // Pasar headers de autenticación
         if (req.headers.authorization) {
           proxyReq.setHeader('Authorization', req.headers.authorization);
         }
-        
+
         // Pasar información del usuario si existe (del gateway o del token)
         if (expressReq.user) {
           // El JWT puede tener userId directamente o como id
@@ -106,7 +106,7 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
       },
       error: (err, req, res) => {
         console.error(`❌ Proxy Error [${serviceName}]:`, err.message);
-        
+
         const serverRes = res as ServerResponse;
         if (serverRes && !serverRes.headersSent) {
           serverRes.writeHead(503, { 'Content-Type': 'application/json' });

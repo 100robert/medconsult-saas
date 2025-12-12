@@ -75,7 +75,10 @@ export const services: Record<string, ServiceConfig> = {
 export const publicRoutes = [
   '/auth/login',
   '/auth/registro',
+  '/auth/register',
   '/auth/refresh',
+  '/auth/refresh-token', // <-- IMPORTANTE: El frontend usa esta ruta
+  '/auth/logout', // Permitir logout incluso con token expirado
   '/auth/forgot-password',
   '/health',
   '/resenas/publicas',

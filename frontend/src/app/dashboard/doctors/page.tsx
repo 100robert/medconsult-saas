@@ -6,6 +6,10 @@ import Link from 'next/link';
 import { Search, Star, Calendar, Clock, Video, MapPin, ChevronRight, Filter, Sparkles, Heart, Award, GraduationCap, Loader2 } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
 import { buscarMedicos, getEspecialidades, Doctor, Especialidad } from '@/lib/doctors';
+import { ReviewModal } from '@/components/reviews/ReviewModal';
+import { DoctorReviewsModal } from '@/components/reviews/DoctorReviewsModal';
+import { createReview } from '@/lib/reviews';
+import { getMisCitas } from '@/lib/appointments';
 
 export default function DoctorsPage() {
   const router = useRouter();
@@ -14,6 +18,12 @@ export default function DoctorsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEspecialidad, setSelectedEspecialidad] = useState('Todas');
+
+  // Review Logic States
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isDoctorDetailsOpen, setIsDoctorDetailsOpen] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  const [reviewAppointmentId, setReviewAppointmentId] = useState<string | null>(null);
 
   // Cargar médicos y especialidades al inicio
   useEffect(() => {
@@ -39,7 +49,7 @@ export default function DoctorsPage() {
   const filteredDoctors = doctors.filter((doctor) => {
     const nombreCompleto = `${doctor.usuario.nombre} ${doctor.usuario.apellido}`.toLowerCase();
     const especialidadNombre = doctor.especialidad?.nombre?.toLowerCase() || '';
-    
+
     const matchesSearch =
       nombreCompleto.includes(searchTerm.toLowerCase()) ||
       especialidadNombre.includes(searchTerm.toLowerCase());
@@ -60,6 +70,55 @@ export default function DoctorsPage() {
       'bg-rose-600',
     ];
     return colors[index % colors.length];
+  };
+
+  const handleRateClick = async (doctor: Doctor) => {
+    try {
+      const citas = await getMisCitas();
+      // Buscar una cita completada con este médico
+      const citaCompletada = citas.find(c =>
+        c.idMedico === doctor.id && c.estado === 'COMPLETADA'
+      );
+
+      if (citaCompletada) {
+        setSelectedDoctor(doctor);
+        setReviewAppointmentId(citaCompletada.id);
+        setIsReviewModalOpen(true);
+        setIsDoctorDetailsOpen(false); // Close details if open
+      } else {
+        alert('Solo puedes calificar a médicos con los que hayas completado una cita.');
+      }
+    } catch (error) {
+      console.error('Error verificando citas:', error);
+      alert('Ocurrió un error al verificar tus citas. Inténtalo de nuevo.');
+    }
+  };
+
+  const handleViewReviews = (doctor: Doctor) => {
+    setSelectedDoctor(doctor);
+    setIsDoctorDetailsOpen(true);
+  };
+
+  const handleSubmitReview = async (data: { rating: number; comment: string }) => {
+    if (!selectedDoctor || !reviewAppointmentId) return;
+
+    try {
+      await createReview({
+        idMedico: selectedDoctor.id,
+        idCita: reviewAppointmentId,
+        calificacion: data.rating,
+        comentario: data.comment,
+        anonima: false
+      });
+
+      alert('¡Gracias por tu reseña!');
+      setIsReviewModalOpen(false);
+      // Opcional: Recargar médicos para actualizar el promedio si el backend lo recalcula al instante
+      // por ahora solo cerramos
+    } catch (error: any) {
+      console.error('Error enviando reseña:', error);
+      alert(error.response?.data?.message || 'Error al enviar la reseña. Tal vez ya calificaste esta cita.');
+    }
   };
 
   // Lista de especialidades para el filtro
@@ -129,11 +188,10 @@ export default function DoctorsPage() {
             <button
               key={esp}
               onClick={() => setSelectedEspecialidad(esp)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                selectedEspecialidad === esp
-                  ? 'bg-teal-600 text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedEspecialidad === esp
+                ? 'bg-teal-600 text-white shadow-lg'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                }`}
             >
               {esp}
             </button>
@@ -161,8 +219,8 @@ export default function DoctorsPage() {
       {/* Doctors Grid */}
       <div className="grid gap-4">
         {filteredDoctors.map((doctor, index) => (
-          <div 
-            key={doctor.id} 
+          <div
+            key={doctor.id}
             className="group bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-gray-200 transition-all duration-300 overflow-hidden"
           >
             <div className="p-6">
@@ -181,9 +239,9 @@ export default function DoctorsPage() {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1">
+                  <div className="flex-1 cursor-pointer" onClick={() => handleViewReviews(doctor)}>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-xl font-bold text-gray-900">
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-teal-600 transition-colors">
                         Dr. {doctor.usuario.nombre} {doctor.usuario.apellido}
                       </h3>
                       {doctor.estado === 'VERIFICADO' && (
@@ -193,14 +251,15 @@ export default function DoctorsPage() {
                       )}
                     </div>
                     <p className="text-teal-600 font-semibold mt-1">{doctor.especialidad?.nombre || 'Medicina General'}</p>
-                    
+
                     {/* Badges */}
                     <div className="flex items-center gap-3 mt-3 flex-wrap">
                       <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
                         <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                         <span className="font-bold text-gray-900">{Number(doctor.calificacionPromedio).toFixed(1)}</span>
-                        <span className="text-gray-500 text-sm">({doctor.totalResenas})</span>
+                        <span className="text-gray-500 text-sm">({doctor.totalResenas} reseñas)</span>
                       </div>
+
                       <div className="flex items-center gap-1 text-gray-500 text-sm">
                         <GraduationCap className="w-4 h-4" />
                         <span>{doctor.aniosExperiencia} años exp.</span>
@@ -212,7 +271,7 @@ export default function DoctorsPage() {
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Availability */}
                     <div className="flex items-center gap-2 mt-3 text-sm">
                       <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
@@ -235,8 +294,8 @@ export default function DoctorsPage() {
                       <Heart className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
                     </button>
                     <Link href={`/dashboard/appointments/new?doctorId=${doctor.id}`}>
-                      <Button 
-                        variant="primary" 
+                      <Button
+                        variant="primary"
                         className="shadow-lg"
                         rightIcon={<ChevronRight className="w-4 h-4" />}
                       >
@@ -247,7 +306,7 @@ export default function DoctorsPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Hover accent */}
             <div className="h-1 bg-teal-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
           </div>
@@ -264,8 +323,8 @@ export default function DoctorsPage() {
           <p className="text-gray-500 mt-2 max-w-sm mx-auto">
             Intenta con otros términos de búsqueda o cambia los filtros seleccionados
           </p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="mt-6"
             onClick={() => {
               setSearchTerm('');
@@ -276,6 +335,22 @@ export default function DoctorsPage() {
           </Button>
         </div>
       )}
+
+      {/* Reviews List Modal */}
+      <DoctorReviewsModal
+        isOpen={isDoctorDetailsOpen}
+        onClose={() => setIsDoctorDetailsOpen(false)}
+        doctor={selectedDoctor}
+        onRateClick={() => selectedDoctor && handleRateClick(selectedDoctor)}
+      />
+
+      {/* Rate Form Modal */}
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        onSubmit={handleSubmitReview}
+        doctorName={selectedDoctor ? `Dr. ${selectedDoctor.usuario.nombre} ${selectedDoctor.usuario.apellido}` : ''}
+      />
     </div>
   );
 }

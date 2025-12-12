@@ -31,16 +31,26 @@ declare global {
  */
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const path = req.path;
+  const fullUrl = req.originalUrl;
+
+  console.log(`🔐 [AUTH] Procesando: ${req.method} ${fullUrl}`);
 
   // Si es una ruta pública, continuar sin verificar
   if (isPublicRoute(path)) {
+    console.log(`🔐 [AUTH] Ruta pública, saltando verificación: ${path}`);
     return next();
   }
 
   // Obtener el token del header
   const authHeader = req.headers.authorization;
+  console.log(`🔐 [AUTH] Header Authorization presente: ${!!authHeader}`);
+  if (authHeader) {
+    console.log(`🔐 [AUTH] Longitud del header: ${authHeader.length}`);
+    console.log(`🔐 [AUTH] Primeros 20 caracteres: ${authHeader.substring(0, 20)}...`);
+  }
 
   if (!authHeader) {
+    console.log(`❌ [AUTH] NO_TOKEN - Header Authorization no encontrado`);
     res.status(401).json({
       success: false,
       message: 'Token de autenticación requerido',
@@ -52,6 +62,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   // Verificar formato Bearer
   const parts = authHeader.split(' ');
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    console.log(`❌ [AUTH] INVALID_FORMAT - Formato incorrecto: parts=${parts.length}, prefix=${parts[0]}`);
     res.status(401).json({
       success: false,
       message: 'Formato de token inválido. Use: Bearer <token>',
@@ -61,11 +72,16 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
   }
 
   const token = parts[1];
+  console.log(`🔐 [AUTH] Token extraído, longitud: ${token.length}`);
+  console.log(`🔐 [AUTH] Token (primeros 50 chars): ${token.substring(0, 50)}...`);
+  console.log(`🔐 [AUTH] JWT_SECRET usado: ${JWT_SECRET.substring(0, 20)}...`);
 
   try {
     // Verificar y decodificar el token
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    
+    console.log(`✅ [AUTH] Token verificado exitosamente`);
+    console.log(`✅ [AUTH] Decoded payload:`, JSON.stringify(decoded, null, 2));
+
     // Normalizar el payload (el JWT puede usar 'correo' o 'email')
     req.user = {
       userId: decoded.userId || decoded.id,
@@ -75,11 +91,17 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
       iat: decoded.iat,
       exp: decoded.exp,
     };
-    
+
+    console.log(`✅ [AUTH] Usuario asignado a req.user:`, JSON.stringify(req.user, null, 2));
+
     // Continuar al siguiente middleware
     next();
-  } catch (error) {
+  } catch (error: any) {
+    console.log(`❌ [AUTH] Error al verificar token:`, error.message);
+    console.log(`❌ [AUTH] Tipo de error:`, error.constructor.name);
+
     if (error instanceof jwt.TokenExpiredError) {
+      console.log(`❌ [AUTH] TOKEN_EXPIRED - Token expiró en: ${error.expiredAt}`);
       res.status(401).json({
         success: false,
         message: 'Token expirado',
@@ -87,8 +109,9 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
       });
       return;
     }
-    
+
     if (error instanceof jwt.JsonWebTokenError) {
+      console.log(`❌ [AUTH] INVALID_TOKEN - JWT Error: ${error.message}`);
       res.status(401).json({
         success: false,
         message: 'Token inválido',
@@ -97,6 +120,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
       return;
     }
 
+    console.log(`❌ [AUTH] AUTH_ERROR - Error no manejado:`, error);
     res.status(500).json({
       success: false,
       message: 'Error al verificar token',

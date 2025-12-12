@@ -5,7 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { JWTPayload, UnauthorizedError, ForbiddenError } from '../types';
-import { RolUsuario } from '@prisma/client';
+import { RolUsuario } from '.prisma/client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key-change-in-production-abc123xyz';
 

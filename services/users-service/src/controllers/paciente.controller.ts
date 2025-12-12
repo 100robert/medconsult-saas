@@ -141,6 +141,45 @@ export class PacienteController {
       next(error);
     }
   }
+
+  /**
+   * POST /pacientes/me/pro
+   * Activar suscripción Pro
+   */
+  async activarPro(req: Request, res: Response, next: NextFunction) {
+    try {
+      const paciente = await pacienteService.activarPro(req.user!.userId);
+
+      res.json({
+        success: true,
+        message: '¡Bienvenido a MedConsult Pro!',
+        data: {
+          esPro: true,
+          paciente
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /pacientes/me/es-pro
+   * Verificar si el paciente es Pro
+   */
+  async verificarPro(req: Request, res: Response, next: NextFunction) {
+    try {
+      const esPro = await pacienteService.esPro(req.user!.userId);
+
+      res.json({
+        success: true,
+        data: { esPro }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const pacienteController = new PacienteController();
+

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Filter, 
+import {
+  Search,
+  Filter,
   User,
   Calendar,
   FileText,
@@ -17,24 +17,12 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
-interface Patient {
-  id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono?: string;
-  fechaNacimiento?: string;
-  genero?: string;
-  ultimaConsulta?: string;
-  totalConsultas: number;
-  proximaCita?: string;
-}
+import { getMiPerfilMedico, getMisPacientes, type Paciente } from '@/lib/medico';
 
 export default function PatientsPage() {
   const { user } = useAuthStore();
   const router = useRouter();
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -43,75 +31,23 @@ export default function PatientsPage() {
       router.push('/dashboard');
       return;
     }
-    fetchPatients();
+    fetchData();
   }, [user, router]);
 
-  const fetchPatients = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockPatients: Patient[] = [
-        {
-          id: '1',
-          nombre: 'María',
-          apellido: 'González',
-          email: 'maria@email.com',
-          telefono: '+54 11 1234-5678',
-          fechaNacimiento: '1985-03-15',
-          genero: 'FEMENINO',
-          ultimaConsulta: '2025-11-28',
-          totalConsultas: 8,
-          proximaCita: '2025-12-10'
-        },
-        {
-          id: '2',
-          nombre: 'Juan',
-          apellido: 'Pérez',
-          email: 'juan@email.com',
-          telefono: '+54 11 2345-6789',
-          fechaNacimiento: '1990-07-22',
-          genero: 'MASCULINO',
-          ultimaConsulta: '2025-11-20',
-          totalConsultas: 3,
-        },
-        {
-          id: '3',
-          nombre: 'Ana',
-          apellido: 'Rodríguez',
-          email: 'ana@email.com',
-          telefono: '+54 11 3456-7890',
-          fechaNacimiento: '1978-11-08',
-          genero: 'FEMENINO',
-          ultimaConsulta: '2025-12-01',
-          totalConsultas: 12,
-          proximaCita: '2025-12-15'
-        },
-        {
-          id: '4',
-          nombre: 'Carlos',
-          apellido: 'López',
-          email: 'carlos@email.com',
-          telefono: '+54 11 4567-8901',
-          fechaNacimiento: '1995-02-28',
-          genero: 'MASCULINO',
-          ultimaConsulta: '2025-10-15',
-          totalConsultas: 2,
-        },
-        {
-          id: '5',
-          nombre: 'Laura',
-          apellido: 'Fernández',
-          email: 'laura@email.com',
-          fechaNacimiento: '1988-09-10',
-          genero: 'FEMENINO',
-          ultimaConsulta: '2025-11-30',
-          totalConsultas: 5,
-          proximaCita: '2025-12-08'
-        },
-      ];
-      
-      setPatients(mockPatients);
+
+      // 1. Obtener ID del médico
+      const perfil = await getMiPerfilMedico();
+      if (!perfil) {
+        console.error('No se pudo obtener el perfil del médico');
+        return;
+      }
+
+      // 2. Obtener pacientes
+      const data = await getMisPacientes(perfil.id);
+      setPatients(data);
     } catch (error) {
       console.error('Error al cargar pacientes:', error);
     } finally {
@@ -121,13 +57,14 @@ export default function PatientsPage() {
 
   const filteredPatients = patients.filter(p => {
     const searchLower = searchTerm.toLowerCase();
-    return searchTerm === '' || 
-      p.nombre.toLowerCase().includes(searchLower) ||
-      p.apellido.toLowerCase().includes(searchLower) ||
+    const nombreCompleto = `${p.nombre} ${p.apellido}`.toLowerCase();
+    return searchTerm === '' ||
+      nombreCompleto.includes(searchLower) ||
       p.email.toLowerCase().includes(searchLower);
   });
 
-  const calculateAge = (birthDate: string) => {
+  const calculateAge = (birthDate?: string) => {
+    if (!birthDate) return null;
     const today = new Date();
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
@@ -173,7 +110,7 @@ export default function PatientsPage() {
       {/* Patients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredPatients.map((patient) => (
-          <div 
+          <div
             key={patient.id}
             className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow"
           >

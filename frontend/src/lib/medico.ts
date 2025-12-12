@@ -153,10 +153,10 @@ export async function actualizarDisponibilidad(id: string, data: Partial<Disponi
 
 // ============ PACIENTES DEL MÉDICO ============
 
-export async function getMisPacientes(): Promise<Paciente[]> {
+export async function getMisPacientes(idMedico: string): Promise<Paciente[]> {
   try {
-    const response = await api.get<any>('/medicos/me/pacientes');
-    return response.data.data?.pacientes || response.data.pacientes || [];
+    const response = await api.get<any>(`/citas/medico/${idMedico}/pacientes`);
+    return response.data.data?.pacientes || response.data.data || [];
   } catch (error: any) {
     console.error('Error al obtener mis pacientes:', error);
     return [];
@@ -165,10 +165,19 @@ export async function getMisPacientes(): Promise<Paciente[]> {
 
 export async function getPacienteById(id: string): Promise<Paciente | null> {
   try {
-    const response = await api.get<any>(`/pacientes/${id}`);
-    return response.data.data?.paciente || response.data.paciente || null;
+    console.log(`🔍 [getPacienteById] Solicitando paciente con ID: ${id} (vía Appointments Service)`);
+    // Usamos el servicio de citas (appointments-service) para obtener detalles + próxima cita
+    // Esto resuelve el error 404 del users-service si existe desincronización de bases de datos
+    const response = await api.get<any>(`/citas/paciente/${id}/detalle`);
+    console.log('✅ [getPacienteById] Respuesta recibida:', response.data);
+
+    // El backend retorna { success: true, data: { ...paciente } }
+    const data = response.data.data || null;
+    if (!data) console.warn('⚠️ [getPacienteById] Data es null o undefined');
+
+    return data;
   } catch (error: any) {
-    console.error('Error al obtener paciente:', error);
+    console.error(`❌ [getPacienteById] Error al obtener paciente ${id}:`, error.response?.status, error.response?.data);
     return null;
   }
 }
@@ -207,9 +216,26 @@ export async function getMedicoStats(): Promise<MedicoStats> {
 export async function getMisResenas(): Promise<Review[]> {
   try {
     const response = await api.get<any>('/resenas/medico/me');
-    return response.data.data?.resenas || response.data.resenas || [];
+    // Manejar diferentes estructuras de respuesta para robustez
+    const data = response.data;
+
+    // Si la respuesta es directamente el array
+    if (Array.isArray(data)) return data;
+
+    // Estructura común: { success: true, data: [...] }
+    if (Array.isArray(data.data)) return data.data;
+
+    // Estructura anidada antigua/alternativa: { data: { resenas: [...] } }
+    if (data.data?.resenas && Array.isArray(data.data.resenas)) return data.data.resenas;
+
+    // Estructura { resenas: [...] }
+    if (data.resenas && Array.isArray(data.resenas)) return data.resenas;
+
+    return [];
   } catch (error: any) {
     console.error('Error al obtener reseñas:', error);
+    // Retornamos array vacío para que la UI muestre el estado "sin reseñas" 
+    // en lugar de romperse o mostrar error.
     return [];
   }
 }

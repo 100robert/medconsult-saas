@@ -17,10 +17,7 @@ router.get('/buscar', (req, res, next) => {
   medicoController.buscar(req, res, next);
 });
 
-// Obtener médico por ID (perfil público)
-router.get('/:id', (req, res, next) => {
-  medicoController.obtenerPorId(req, res, next);
-});
+
 
 // ============================================
 // RUTAS PROTEGIDAS (requieren autenticación)
@@ -34,6 +31,11 @@ router.post('/', authenticate, authorize('MEDICO'), (req, res, next) => {
 // Obtener estadísticas
 router.get('/me/stats', authenticate, authorize('MEDICO'), (req, res, next) => {
   medicoController.obtenerEstadisticas(req, res, next);
+});
+
+// Obtener mi perfil (short alias)
+router.get('/me', authenticate, authorize('MEDICO'), (req, res, next) => {
+  medicoController.obtenerMiPerfil(req, res, next);
 });
 
 // Obtener mi perfil
@@ -63,6 +65,15 @@ router.patch('/:id/verificar', authenticate, authorize('ADMIN'), (req, res, next
 // Actualizar médico por ID
 router.put('/:id', authenticate, authorize('ADMIN'), (req, res, next) => {
   medicoController.actualizar(req, res, next);
+});
+
+// ============================================
+// RUTAS DINÁMICAS (AL FINAL)
+// ============================================
+
+// Obtener médico por ID (perfil público)
+router.get('/:id', (req, res, next) => {
+  medicoController.obtenerPorId(req, res, next);
 });
 
 export default router;

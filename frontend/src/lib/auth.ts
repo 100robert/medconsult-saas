@@ -89,13 +89,13 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
     correo: credentials.email,
     contrasena: credentials.password,
   };
-  
+
   const response = await api.post<BackendAuthResponse>('/auth/login', backendData);
-  
+
   // Guardar tokens en cookies
-  Cookies.set('accessToken', response.data.data.accessToken, { expires: 1 });
-  Cookies.set('refreshToken', response.data.data.refreshToken, { expires: 7 });
-  
+  Cookies.set('accessToken', response.data.data.accessToken, { expires: 1, path: '/' });
+  Cookies.set('refreshToken', response.data.data.refreshToken, { expires: 7, path: '/' });
+
   return {
     user: transformUser(response.data.data.usuario),
     accessToken: response.data.data.accessToken,
@@ -124,14 +124,14 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
     fechaNacimiento: data.fechaNacimiento || undefined,
     genero: data.genero || undefined,
   };
-  
+
   try {
     const response = await api.post<BackendAuthResponse>('/auth/register', backendData);
-    
+
     // Guardar tokens en cookies
-    Cookies.set('accessToken', response.data.data.accessToken, { expires: 1 });
-    Cookies.set('refreshToken', response.data.data.refreshToken, { expires: 7 });
-    
+    Cookies.set('accessToken', response.data.data.accessToken, { expires: 1, path: '/' });
+    Cookies.set('refreshToken', response.data.data.refreshToken, { expires: 7, path: '/' });
+
     return {
       user: transformUser(response.data.data.usuario),
       accessToken: response.data.data.accessToken,
@@ -150,7 +150,7 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
         const frontendField = fieldMap[err.campo] || err.campo;
         return `${frontendField}: ${err.mensaje}`;
       }).join(', ') || validationError.message;
-      
+
       const enhancedError = new Error(errorMessages);
       (enhancedError as any).response = error.response;
       throw enhancedError;
@@ -197,7 +197,7 @@ export async function updateProfile(data: Partial<User>): Promise<User> {
     genero: data.genero,
     imagenPerfil: data.imagenPerfil,
   };
-  
+
   const response = await api.put<BackendProfileResponse>('/auth/profile', backendData);
   return transformUser(response.data.data.usuario);
 }
@@ -216,3 +216,25 @@ export function isAuthenticated(): boolean {
 export function getAccessToken(): string | undefined {
   return Cookies.get('accessToken');
 }
+
+// ============ SUSCRIPCIÓN PRO ============
+
+// Activar suscripción Pro
+export async function activatePro(): Promise<{ success: boolean; message: string }> {
+  const response = await api.post<{ success: boolean; message: string; data: any }>('/pacientes/me/pro');
+  return {
+    success: response.data.success,
+    message: response.data.message,
+  };
+}
+
+// Verificar si el usuario es Pro
+export async function checkProStatus(): Promise<boolean> {
+  try {
+    const response = await api.get<{ success: boolean; data: { esPro: boolean } }>('/pacientes/me/es-pro');
+    return response.data.data.esPro;
+  } catch {
+    return false;
+  }
+}
+

@@ -4,7 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { citaService } from '../services/cita.service';
-import { EstadoCita } from '@prisma/client';
+import { EstadoCita } from '.prisma/client';
 import { prisma } from '../config/database';
 
 export class CitaController {
@@ -26,9 +26,10 @@ export class CitaController {
         });
       }
 
-      // Buscar el perfil de paciente del usuario
+      // Buscar el perfil de paciente del usuario (incluye esPro)
       const paciente = await prisma.paciente.findUnique({
-        where: { idUsuario }
+        where: { idUsuario },
+        select: { id: true, esPro: true }
       });
 
       if (!paciente) {
@@ -52,19 +53,17 @@ export class CitaController {
         });
       }
 
-      // Verificar si el usuario es Pro (simulación desde header del frontend)
-      const headerValue = req.headers['x-medconsult-pro'];
-      const isPro = headerValue === 'true';
+      // Leer el estado Pro directamente de la base de datos (NO del frontend)
+      const isPro = paciente.esPro === true;
 
-      console.log('🔍 CREAR CITA - Header recibido:', headerValue);
-      console.log('🔍 CREAR CITA - isPro calculado:', isPro);
       console.log('🔍 CREAR CITA - Paciente ID:', paciente.id);
+      console.log('🔍 CREAR CITA - isPro desde BD:', isPro);
 
       const cita = await citaService.crear({
         ...req.body,
         idPaciente: paciente.id,
         fechaHoraCita,
-        isPro, // Pasar flag de Pro al servicio
+        isPro, // Pasar flag de Pro al servicio (leído de BD)
       });
 
       return res.status(201).json({
@@ -278,6 +277,40 @@ export class CitaController {
         success: true,
         message: 'Notas actualizadas exitosamente',
         data: cita
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+  /**
+   * GET /citas/medico/:idMedico/pacientes
+   * Obtener pacientes únicos atendidos por un médico
+   */
+  async obtenerPacientes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { idMedico } = req.params;
+      const pacientes = await citaService.obtenerPacientesPorMedico(idMedico);
+
+      return res.json({
+        success: true,
+        data: pacientes
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+  /**
+   * GET /citas/paciente/:idPaciente/detalle
+   * Obtener detalle de paciente
+   */
+  async obtenerDetallePaciente(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { idPaciente } = req.params;
+      const paciente = await citaService.obtenerDetallePaciente(idPaciente);
+
+      return res.json({
+        success: true,
+        data: paciente
       });
     } catch (error) {
       return next(error);

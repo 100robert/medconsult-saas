@@ -3,7 +3,7 @@
 // ============================================
 
 import { prisma } from '../config/database';
-import { DiaSemana } from '@prisma/client';
+import { DiaSemana } from '.prisma/client';
 import {
   CreateDisponibilidadDTO,
   UpdateDisponibilidadDTO,
@@ -72,6 +72,43 @@ export class DisponibilidadService {
         console.error(`Error creando horario: ${error}`);
       }
     }
+
+    return creados;
+  }
+
+  /**
+   * Reemplazar todos los horarios de disponibilidad de un médico
+   * Elimina los existentes y crea los nuevos
+   */
+  async reemplazarHorarios(idMedico: string, horarios: Omit<CreateDisponibilidadDTO, 'idMedico'>[]) {
+    // 1. Eliminar todos los horarios existentes del médico
+    await prisma.disponibilidad.deleteMany({
+      where: { idMedico }
+    });
+
+    console.log(`🗑️ Eliminados horarios anteriores del médico ${idMedico}`);
+
+    // 2. Crear los nuevos horarios
+    const creados = [];
+
+    for (const horario of horarios) {
+      try {
+        const disponibilidad = await prisma.disponibilidad.create({
+          data: {
+            idMedico,
+            diaSemana: horario.diaSemana,
+            horaInicio: horario.horaInicio,
+            horaFin: horario.horaFin,
+            activo: horario.activo ?? true,
+          }
+        });
+        creados.push(disponibilidad);
+      } catch (error) {
+        console.error(`Error creando horario: ${error}`);
+      }
+    }
+
+    console.log(`✅ Creados ${creados.length} nuevos horarios para médico ${idMedico}`);
 
     return creados;
   }

@@ -5,27 +5,28 @@ import Link from 'next/link';
 import { FileText, Clock, CheckCircle2, XCircle, AlertCircle, Loader2, User, Calendar, Stethoscope, Pill, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { getMisConsultas, type Consulta } from '@/lib/consultations';
+import { useAuthStore } from '@/store/authStore';
 
 const estadoConfig = {
-  EN_PROGRESO: { 
-    bg: 'bg-blue-50', 
-    text: 'text-blue-700', 
+  EN_PROGRESO: {
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
     border: 'border-blue-200',
     icon: Clock,
     label: 'En Progreso',
     solidColor: 'bg-blue-500'
   },
-  COMPLETADA: { 
-    bg: 'bg-emerald-50', 
-    text: 'text-emerald-700', 
+  COMPLETADA: {
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-700',
     border: 'border-emerald-200',
     icon: CheckCircle2,
     label: 'Completada',
     solidColor: 'bg-emerald-500'
   },
-  CANCELADA: { 
-    bg: 'bg-red-50', 
-    text: 'text-red-700', 
+  CANCELADA: {
+    bg: 'bg-red-50',
+    text: 'text-red-700',
     border: 'border-red-200',
     icon: XCircle,
     label: 'Cancelada',
@@ -34,6 +35,7 @@ const estadoConfig = {
 };
 
 export default function ConsultationsPage() {
+  const { user } = useAuthStore();
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export default function ConsultationsPage() {
     async function fetchConsultas() {
       setLoading(true);
       setError(null);
-      
+
       try {
         const data = await getMisConsultas();
         setConsultas(data);
@@ -55,14 +57,9 @@ export default function ConsultationsPage() {
         setLoading(false);
       }
     }
-    
+
     fetchConsultas();
   }, []);
-
-  const filteredConsultas = consultas.filter((consulta) => {
-    if (filterStatus === 'all') return true;
-    return consulta.estado === filterStatus;
-  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -78,6 +75,11 @@ export default function ConsultationsPage() {
       minute: '2-digit'
     });
   };
+
+  const filteredConsultas = consultas.filter((consulta) => {
+    if (filterStatus === 'all') return true;
+    return consulta.estado === filterStatus;
+  });
 
   if (loading) {
     return (
@@ -108,11 +110,10 @@ export default function ConsultationsPage() {
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filterStatus === status
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterStatus === status
                 ? 'bg-teal-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             {status === 'all' ? 'Todas' : estadoConfig[status as keyof typeof estadoConfig]?.label || status}
           </button>
@@ -132,7 +133,19 @@ export default function ConsultationsPage() {
           {filteredConsultas.map((consulta) => {
             const config = estadoConfig[consulta.estado] || estadoConfig.EN_PROGRESO;
             const IconEstado = config.icon;
-            
+
+            // Determinar qué mostrar según el rol
+            const isMedico = user?.rol === 'MEDICO';
+            const titulo = isMedico
+              ? `${consulta.cita.paciente.usuario.nombre} ${consulta.cita.paciente.usuario.apellido}`
+              : `Dr. ${consulta.cita.medico.usuario.nombre} ${consulta.cita.medico.usuario.apellido}`;
+
+            const subtitulo = isMedico
+              ? 'Paciente'
+              : (consulta.cita.medico.especialidad?.nombre || 'Medicina General');
+
+            const AvatarIcon = isMedico ? User : Stethoscope;
+
             return (
               <div
                 key={consulta.id}
@@ -140,26 +153,29 @@ export default function ConsultationsPage() {
               >
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    {/* Avatar médico */}
-                    <div className="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center">
-                      <Stethoscope className="w-7 h-7 text-teal-600" />
+                    {/* Avatar */}
+                    <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${isMedico ? 'bg-blue-100' : 'bg-teal-100'
+                      }`}>
+                      <AvatarIcon className={`w-7 h-7 ${isMedico ? 'text-blue-600' : 'text-teal-600'
+                        }`} />
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-3 flex-wrap">
                         <h3 className="font-semibold text-gray-900">
-                          Dr. {consulta.cita.medico.usuario.nombre} {consulta.cita.medico.usuario.apellido}
+                          {titulo}
                         </h3>
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
                           <IconEstado className="w-3 h-3" />
                           {config.label}
                         </span>
                       </div>
-                      
-                      <p className="text-sm text-teal-600 font-medium mt-0.5">
-                        {consulta.cita.medico.especialidad?.nombre || 'Medicina General'}
+
+                      <p className={`text-sm font-medium mt-0.5 ${isMedico ? 'text-gray-500' : 'text-teal-600'
+                        }`}>
+                        {subtitulo}
                       </p>
-                      
+
                       <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />

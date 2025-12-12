@@ -1,6 +1,6 @@
 -- Crear usuario admin
 -- La contraseña es: Admin123! (hasheada con bcrypt)
-INSERT INTO "auth"."Usuario" (id, correo, contrasena, nombre, apellido, rol, "correoVerificado", activo, "fechaCreacion", "fechaActualizacion")
+INSERT INTO "Usuario" (id, correo, contrasena, nombre, apellido, rol, "correoVerificado", activo, "fechaCreacion", "fechaActualizacion")
 VALUES (
   gen_random_uuid(),
   'admin@medconsult.com',

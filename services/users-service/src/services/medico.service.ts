@@ -3,7 +3,7 @@
 // ============================================
 
 import { prisma } from '../config/database';
-import { Prisma, EstadoMedico } from '@prisma/client';
+import { Prisma, EstadoMedico } from '.prisma/client';
 import {
   CreateMedicoDTO,
   UpdateMedicoDTO,

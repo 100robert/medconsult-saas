@@ -192,7 +192,8 @@ export interface Slot {
 
 export async function getAvailableSlots(
   idMedico: string,
-  fecha: string
+  fecha: string,
+  fechaHasta?: string
 ): Promise<Slot[]> {
   try {
     const response = await api.get<BackendResponse<Slot[]>>(
@@ -200,7 +201,7 @@ export async function getAvailableSlots(
       {
         params: {
           desde: fecha,
-          hasta: fecha
+          hasta: fechaHasta || fecha
         }
       }
     );

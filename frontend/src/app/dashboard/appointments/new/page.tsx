@@ -7,7 +7,9 @@ import { ArrowLeft, Calendar, Clock, Video, MapPin, User, Check, Loader2, Credit
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Alert, Input } from '@/components/ui';
 import { buscarMedicos, Doctor as DoctorAPI } from '@/lib/doctors';
 import { createCita, getAvailableSlots, Slot } from '@/lib/appointments';
+import { getDisponibilidad, Disponibilidad } from '@/lib/medico';
 import { createPago } from '@/lib/payments';
+import { activatePro } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 
 interface Doctor {
@@ -35,6 +37,8 @@ function NewAppointmentContent() {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [verifyingSlot, setVerifyingSlot] = useState(false);
+  const [doctorDisponibilidad, setDoctorDisponibilidad] = useState<Disponibilidad[]>([]);
   const [appointmentType, setAppointmentType] = useState<'VIDEOCONSULTA' | 'PRESENCIAL'>('VIDEOCONSULTA');
   const [motivo, setMotivo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +68,7 @@ function NewAppointmentContent() {
 
   const handlePaymentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     // Formateo especial para número de tarjeta
     if (name === 'cardNumber') {
       // Remover espacios y caracteres no numéricos
@@ -76,7 +80,7 @@ function NewAppointmentContent() {
       setPaymentData(prev => ({ ...prev, [name]: formatted }));
       return;
     }
-    
+
     // Formateo para expiración (MM/YY)
     if (name === 'expiry') {
       const cleaned = value.replace(/\D/g, '');
@@ -88,14 +92,14 @@ function NewAppointmentContent() {
       }
       return;
     }
-    
+
     // Formateo para CVC (solo números)
     if (name === 'cvc') {
       const cleaned = value.replace(/\D/g, '').substring(0, 4);
       setPaymentData(prev => ({ ...prev, [name]: cleaned }));
       return;
     }
-    
+
     setPaymentData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -138,23 +142,39 @@ function NewAppointmentContent() {
     setProcessingProUpgrade(true);
     setError(null);
 
-    // Simular procesamiento de pago
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Simular procesamiento del pago
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Guardar estado Pro en localStorage (simulación)
-    localStorage.setItem('medconsult_pro', 'true');
-    localStorage.setItem('medconsult_pro_date', new Date().toISOString());
+      // Llamar al API real para activar Pro
+      const result = await activatePro();
 
-    setProcessingProUpgrade(false);
-    setProUpgradeSuccess(true);
+      if (result.success) {
+        // Guardar tambien en localStorage para persistencia
+        localStorage.setItem('medconsult_pro', 'true');
+        localStorage.setItem('medconsult_pro_date', new Date().toISOString());
 
-    // Después de 3 segundos, cerrar el modal y permitir agendar
-    setTimeout(() => {
-      setShowUpgradeModal(false);
-      setShowProPaymentForm(false);
-      setProUpgradeSuccess(false);
-    }, 3000);
+        setProcessingProUpgrade(false);
+        setProUpgradeSuccess(true);
+
+        // Después de 3 segundos, cerrar el modal y permitir agendar
+        setTimeout(() => {
+          setShowUpgradeModal(false);
+          setShowProPaymentForm(false);
+          setProUpgradeSuccess(false);
+        }, 3000);
+      } else {
+        setError('Error al activar Pro. Intenta de nuevo.');
+        setProcessingProUpgrade(false);
+      }
+    } catch (error: any) {
+      console.error('Error activando Pro:', error);
+      setError(error.response?.data?.message || 'Error al procesar el pago.');
+      setProcessingProUpgrade(false);
+    }
   };
+
+  const [cachedSlots, setCachedSlots] = useState<Slot[]>([]);
 
   // Cargar médicos desde la API
   useEffect(() => {
@@ -189,39 +209,176 @@ function NewAppointmentContent() {
     cargarMedicos();
   }, [doctorIdParam]);
 
-  // Cargar slots cuando se selecciona doctor y fecha
+  // Cargar TODOS los slots (45 días) cuando se selecciona doctor
   useEffect(() => {
-    async function cargarSlots() {
-      if (selectedDoctorId && selectedDate) {
+    async function cargarDisponibilidad() {
+      if (selectedDoctorId) {
         setLoadingSlots(true);
         try {
-          const slots = await getAvailableSlots(selectedDoctorId, selectedDate);
-          setAvailableSlots(slots);
+          const today = new Date();
+          const endDate = new Date(today);
+          endDate.setDate(today.getDate() + 45); // 45 días de rango para cubrir al menos 37 días hábiles
+
+          const todayStr = today.toISOString().split('T')[0];
+          const endDateStr = endDate.toISOString().split('T')[0];
+
+          const slots = await getAvailableSlots(selectedDoctorId, todayStr, endDateStr);
+          setCachedSlots(slots);
+          // Si ya hay fecha seleccionada, filtrar slots para esa fecha
+          if (selectedDate) {
+            setAvailableSlots(slots.filter(s => s.fecha === selectedDate));
+          }
         } catch (error) {
-          console.error('Error cargando slots:', error);
-          setAvailableSlots([]);
+          console.error('Error cargando disponibilidad:', error);
+          setCachedSlots([]);
         } finally {
           setLoadingSlots(false);
         }
       }
     }
 
-    if (step === 3) {
-      cargarSlots();
+    if (selectedDoctorId) {
+      cargarDisponibilidad();
     }
-  }, [selectedDoctorId, selectedDate, step]);
+  }, [selectedDoctorId]); // Solo recargar si cambia el médico
 
-  // Generate next 14 days for date selection
+  // Cargar la disponibilidad general del médico (horarios configurados)
+  useEffect(() => {
+    async function cargarDisponibilidadMedico() {
+      if (selectedDoctorId) {
+        try {
+          const disponibilidad = await getDisponibilidad(selectedDoctorId);
+          setDoctorDisponibilidad(disponibilidad);
+        } catch (error) {
+          console.error('Error cargando disponibilidad del médico:', error);
+        }
+      }
+    }
+    cargarDisponibilidadMedico();
+  }, [selectedDoctorId]);
+
+  // Actualizar slots disponibles cuando cambia la fecha seleccionada
+  // Ahora también refresca desde el servidor para obtener datos actualizados
+  useEffect(() => {
+    async function refreshSlotsForDate() {
+      if (selectedDate && selectedDoctorId) {
+        setLoadingSlots(true);
+        try {
+          // Obtener slots frescos del servidor para la fecha seleccionada
+          const freshSlots = await getAvailableSlots(selectedDoctorId, selectedDate, selectedDate);
+          setAvailableSlots(freshSlots);
+          // Actualizar el caché también
+          setCachedSlots(prev => {
+            const otherDates = prev.filter(s => s.fecha !== selectedDate);
+            return [...otherDates, ...freshSlots];
+          });
+        } catch (error) {
+          console.error('Error refrescando slots:', error);
+          // Fallback al caché si falla
+          const slotsDia = cachedSlots.filter(s => s.fecha === selectedDate);
+          setAvailableSlots(slotsDia);
+        } finally {
+          setLoadingSlots(false);
+        }
+      }
+    }
+    refreshSlotsForDate();
+  }, [selectedDate, selectedDoctorId]);
+
+  // Función para verificar si un slot sigue disponible antes de confirmar
+  const verifySlotAvailability = async (): Promise<boolean> => {
+    if (!selectedDoctorId || !selectedDate || !selectedTime) return false;
+
+    try {
+      const freshSlots = await getAvailableSlots(selectedDoctorId, selectedDate, selectedDate);
+      const slotStillAvailable = freshSlots.some(s =>
+        s.fecha === selectedDate && s.horaInicio === selectedTime
+      );
+      return slotStillAvailable;
+    } catch (error) {
+      console.error('Error verificando disponibilidad:', error);
+      return true; // En caso de error, intentamos de todas formas
+    }
+  };
+
+  // Obtener conteo de slots por fecha (para mostrar cuántos hay disponibles)
+  const getSlotCountForDate = (date: string): number => {
+    return cachedSlots.filter(s => s.fecha === date).length;
+  };
+
+  // Generar todos los slots posibles para una fecha basándose en la disponibilidad del médico
+  const generateAllSlotsForDate = (date: string): { horaInicio: string; horaFin: string; isAvailable: boolean }[] => {
+    const dateObj = new Date(date + 'T00:00:00');
+    const dayOfWeek = dateObj.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+
+    // Mapear número de día a nombre de día (como lo usa el backend)
+    const diasSemanaMap: { [key: number]: string } = {
+      0: 'DOMINGO',
+      1: 'LUNES',
+      2: 'MARTES',
+      3: 'MIERCOLES',
+      4: 'JUEVES',
+      5: 'VIERNES',
+      6: 'SABADO'
+    };
+    const diaSemanaStr = diasSemanaMap[dayOfWeek];
+
+    // Filtrar disponibilidades para este día de la semana
+    // La disponibilidad puede venir como número (0-6) o como string ('LUNES', etc.)
+    const disponibilidadesDia = doctorDisponibilidad.filter(d => {
+      if (typeof d.diaSemana === 'number') {
+        return d.diaSemana === dayOfWeek && d.activo;
+      }
+      return (d.diaSemana as any) === diaSemanaStr && d.activo;
+    });
+
+    const allSlots: { horaInicio: string; horaFin: string; isAvailable: boolean }[] = [];
+    const duracionConsulta = 30; // 30 minutos por defecto
+
+    // IMPORTANTE: Usar cachedSlots filtrado por la fecha específica, no availableSlots
+    // availableSlots puede estar desincronizado con la fecha que estamos generando
+    const slotsForThisDate = cachedSlots.filter(s => s.fecha === date);
+    const availableHoursSet = new Set(slotsForThisDate.map(s => s.horaInicio));
+
+    for (const disp of disponibilidadesDia) {
+      const [horaInicioH, horaInicioM] = disp.horaInicio.split(':').map(Number);
+      const [horaFinH, horaFinM] = disp.horaFin.split(':').map(Number);
+
+      let slotInicio = horaInicioH * 60 + horaInicioM;
+      const finMinutos = horaFinH * 60 + horaFinM;
+
+      while (slotInicio + duracionConsulta <= finMinutos) {
+        const slotHora = Math.floor(slotInicio / 60);
+        const slotMinuto = slotInicio % 60;
+        const horaInicioStr = `${String(slotHora).padStart(2, '0')}:${String(slotMinuto).padStart(2, '0')}`;
+        const horaFinStr = `${String(Math.floor((slotInicio + duracionConsulta) / 60)).padStart(2, '0')}:${String((slotInicio + duracionConsulta) % 60).padStart(2, '0')}`;
+
+        allSlots.push({
+          horaInicio: horaInicioStr,
+          horaFin: horaFinStr,
+          isAvailable: availableHoursSet.has(horaInicioStr)
+        });
+
+        slotInicio += duracionConsulta;
+      }
+    }
+
+    // Ordenar por hora
+    allSlots.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
+
+    return allSlots;
+  };
+
+  // Generate next 45 days for date selection (covers at least 37 working days)
   const getAvailableDates = () => {
     const dates = [];
     const today = new Date();
-    for (let i = 1; i <= 14; i++) {
+    for (let i = 1; i <= 45; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      // Skip weekends
-      if (date.getDay() !== 0 && date.getDay() !== 6) {
-        dates.push(date.toISOString().split('T')[0]);
-      }
+      // Incluir todos los días incluyendo fines de semana
+      // (el médico puede tener disponibilidad los sábados, por ejemplo)
+      dates.push(date.toISOString().split('T')[0]);
     }
     return dates;
   };
@@ -231,6 +388,22 @@ function NewAppointmentContent() {
   const handleBooking = async () => {
     if (!selectedDoctorId || !selectedDate || !selectedTime) {
       setError('Faltan datos para crear la cita');
+      return;
+    }
+
+    // Verificar que el slot sigue disponible antes de proceder
+    setVerifyingSlot(true);
+    setError(null);
+    const isStillAvailable = await verifySlotAvailability();
+    setVerifyingSlot(false);
+
+    if (!isStillAvailable) {
+      setError('¡Lo sentimos! Este horario ya fue reservado por otro paciente. Por favor, selecciona otra hora.');
+      // Refrescar los slots disponibles
+      const freshSlots = await getAvailableSlots(selectedDoctorId, selectedDate, selectedDate);
+      setAvailableSlots(freshSlots);
+      setSelectedTime('');
+      setStep(3); // Volver al paso de selección de hora
       return;
     }
 
@@ -307,6 +480,16 @@ function NewAppointmentContent() {
       if (errorMessage.includes('límite') || errorMessage.includes('plan gratuito') || errorMessage.includes('MedConsult Pro')) {
         setShowUpgradeModal(true);
         setError(null); // Limpiar error para no mostrar doble mensaje
+      } else if (errorMessage.toLowerCase().includes('horario') || errorMessage.toLowerCase().includes('ocupado') || errorMessage.toLowerCase().includes('existe')) {
+        // Si el error es por slot ocupado, mostrar mensaje claro y refrescar
+        setError('Este horario acaba de ser reservado por otro paciente. Por favor, selecciona otra hora disponible.');
+        // Refrescar los slots disponibles
+        if (selectedDoctorId && selectedDate) {
+          const freshSlots = await getAvailableSlots(selectedDoctorId, selectedDate, selectedDate);
+          setAvailableSlots(freshSlots);
+        }
+        setSelectedTime('');
+        setStep(3); // Volver al paso de selección de hora
       } else {
         setError(errorMessage || 'Error al agendar la cita. Intenta de nuevo.');
       }
@@ -314,6 +497,15 @@ function NewAppointmentContent() {
       setIsLoading(false);
     }
   };
+
+
+  // ... (render part later)
+
+  // Step 2 Render Helper
+  const isDateAvailable = (date: string) => {
+    return cachedSlots.some(s => s.fecha === date);
+  };
+
 
   // Modal de upgrade a Pro cuando se alcanza el límite
   if (showUpgradeModal) {
@@ -766,31 +958,70 @@ function NewAppointmentContent() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {availableDates.map((date) => {
-                const dateObj = new Date(date);
-                const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'short' });
-                const dayNum = dateObj.getDate();
-                const month = dateObj.toLocaleDateString('es-ES', { month: 'short' });
-                return (
-                  <button
-                    key={date}
-                    onClick={() => {
-                      setSelectedDate(date);
-                      setStep(3);
-                    }}
-                    className={`p-4 rounded-lg border-2 text-center transition-colors ${selectedDate === date
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                  >
-                    <p className="text-sm text-gray-500 capitalize">{dayName}</p>
-                    <p className="text-2xl font-bold text-gray-900">{dayNum}</p>
-                    <p className="text-sm text-gray-500 capitalize">{month}</p>
-                  </button>
-                );
-              })}
-            </div>
+            {loadingSlots ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+                <span className="ml-2 text-gray-600">Verificando disponibilidad...</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {availableDates.map((date) => {
+                  const dateObj = new Date(date);
+                  // Ajustar para mostrar la fecha correcta sin desfase de zona horaria al formatear
+                  const userTimezoneOffset = dateObj.getTimezoneOffset() * 60000;
+                  const adjustedDate = new Date(dateObj.getTime() + userTimezoneOffset);
+
+                  const dayName = adjustedDate.toLocaleDateString('es-ES', { weekday: 'short' });
+                  const dayNum = adjustedDate.getDate();
+                  const month = adjustedDate.toLocaleDateString('es-ES', { month: 'short' });
+
+                  const available = isDateAvailable(date);
+
+                  return (
+                    <button
+                      key={date}
+                      onClick={() => {
+                        if (available) {
+                          const slotsForTheDay = cachedSlots.filter(s => s.fecha === date);
+                          setAvailableSlots(slotsForTheDay);
+                          setSelectedDate(date);
+                          setStep(3);
+                        }
+                      }}
+                      disabled={!available}
+                      className={`p-4 rounded-lg border-2 text-center transition-all ${selectedDate === date
+                        ? 'border-teal-600 bg-teal-50 ring-2 ring-teal-200'
+                        : available
+                          ? 'border-emerald-200 bg-emerald-50 hover:border-emerald-400 hover:shadow-md cursor-pointer'
+                          : 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
+                        }`}
+                    >
+                      <p className={`text-sm font-semibold uppercase mb-1 ${available ? 'text-teal-700' : 'text-gray-400'
+                        }`}>
+                        {dayName}
+                      </p>
+                      <p className={`text-2xl font-bold ${available ? 'text-gray-900' : 'text-gray-400'
+                        }`}>
+                        {dayNum}
+                      </p>
+                      <p className={`text-sm ${available ? 'text-gray-600' : 'text-gray-400'
+                        }`}>
+                        {month}
+                      </p>
+                      {available ? (
+                        <span className="inline-block mt-2 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full font-medium">
+                          {getSlotCountForDate(date)} {getSlotCountForDate(date) === 1 ? 'horario' : 'horarios'}
+                        </span>
+                      ) : (
+                        <span className="inline-block mt-2 px-2 py-0.5 bg-gray-200 text-gray-500 text-xs rounded-full font-medium">
+                          Sin horarios
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div className="mt-6 flex justify-between">
               <Button variant="outline" onClick={() => setStep(1)}>
                 Atrás
@@ -819,33 +1050,77 @@ function NewAppointmentContent() {
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 <span className="ml-2 text-gray-600">Buscando horarios disponibles...</span>
               </div>
-            ) : availableSlots.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No hay horarios disponibles para esta fecha.</p>
-                <Button variant="ghost" onClick={() => setStep(2)}>
-                  Seleccionar otra fecha
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                {availableSlots.map((slot) => (
-                  <button
-                    key={slot.horaInicio}
-                    onClick={() => {
-                      setSelectedTime(slot.horaInicio);
-                      setStep(4);
-                    }}
-                    className={`p-3 rounded-lg border-2 text-center transition-colors ${selectedTime === slot.horaInicio
-                      ? 'border-blue-600 bg-blue-50 text-blue-600'
-                      : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                  >
-                    <Clock className="w-4 h-4 mx-auto mb-1" />
-                    <p className="font-medium">{slot.horaInicio}</p>
-                  </button>
-                ))}
-              </div>
-            )}
+            ) : (() => {
+              const allSlots = selectedDate ? generateAllSlotsForDate(selectedDate) : [];
+
+              if (allSlots.length === 0) {
+                return (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">No hay horarios configurados para esta fecha.</p>
+                    <Button variant="ghost" onClick={() => setStep(2)}>
+                      Seleccionar otra fecha
+                    </Button>
+                  </div>
+                );
+              }
+
+              const availableCount = allSlots.filter(s => s.isAvailable).length;
+              const occupiedCount = allSlots.filter(s => !s.isAvailable).length;
+
+              return (
+                <>
+                  {/* Leyenda */}
+                  <div className="flex items-center gap-4 mb-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-emerald-100 border-2 border-emerald-400"></div>
+                      <span className="text-gray-600">Disponible ({availableCount})</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-red-100 border-2 border-red-300"></div>
+                      <span className="text-gray-600">Ocupado ({occupiedCount})</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {allSlots.map((slot) => (
+                      <button
+                        key={slot.horaInicio}
+                        onClick={() => {
+                          if (slot.isAvailable) {
+                            setSelectedTime(slot.horaInicio);
+                            setStep(4);
+                          }
+                        }}
+                        disabled={!slot.isAvailable}
+                        className={`p-3 rounded-lg border-2 text-center transition-all ${selectedTime === slot.horaInicio
+                          ? 'border-blue-600 bg-blue-50 text-blue-600 ring-2 ring-blue-200'
+                          : slot.isAvailable
+                            ? 'border-emerald-300 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 cursor-pointer'
+                            : 'border-red-200 bg-red-50 cursor-not-allowed opacity-75'
+                          }`}
+                      >
+                        <Clock className={`w-4 h-4 mx-auto mb-1 ${slot.isAvailable ? 'text-emerald-600' : 'text-red-400'
+                          }`} />
+                        <p className={`font-medium ${slot.isAvailable ? 'text-gray-900' : 'text-red-500'
+                          }`}>{slot.horaInicio}</p>
+                        {!slot.isAvailable && (
+                          <p className="text-xs text-red-500 mt-1 font-medium">Ocupado</p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  {availableCount === 0 && (
+                    <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                      <p className="text-amber-700">Todos los horarios de este día están ocupados.</p>
+                      <Button variant="ghost" onClick={() => setStep(2)} className="mt-2">
+                        Seleccionar otra fecha
+                      </Button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
             <div className="mt-6 flex justify-between">
               <Button variant="outline" onClick={() => setStep(2)}>
                 Atrás
@@ -1033,7 +1308,7 @@ function NewAppointmentContent() {
                 </Button>
                 <Button
                   onClick={handleBooking}
-                  isLoading={isLoading}
+                  isLoading={isLoading || verifyingSlot}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {selectedDoctor && selectedDoctor.precio > 0

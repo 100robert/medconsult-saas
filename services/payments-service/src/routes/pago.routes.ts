@@ -48,18 +48,33 @@ router.get('/medico/ganancias/:idMedico',
   pagoController.obtenerGananciasMedico
 );
 
-// ========== RUTAS DE PAGOS ==========
+// ========== RUTAS POR PACIENTE/MÉDICO (DEBEN IR ANTES DE /:id) ==========
 
-// Obtener pago por ID
-router.get('/:id',
+// Obtener pagos de un paciente
+router.get('/paciente/:idPaciente',
   authMiddleware.verifyToken,
-  pagoController.obtenerPorId
+  pagoController.obtenerPorPaciente
+);
+
+// Obtener pagos de un médico
+router.get('/medico/:idMedico',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['MEDICO', 'ADMIN']),
+  pagoController.obtenerPorMedico
 );
 
 // Obtener pago por transacción
 router.get('/transaccion/:ref',
   authMiddleware.verifyToken,
   pagoController.obtenerPorTransaccion
+);
+
+// ========== RUTAS DINÁMICAS POR ID (AL FINAL) ==========
+
+// Obtener pago por ID
+router.get('/:id',
+  authMiddleware.verifyToken,
+  pagoController.obtenerPorId
 );
 
 // Procesar pago
@@ -81,17 +96,5 @@ router.post('/:id/cancelar',
   pagoController.cancelar
 );
 
-// Obtener pagos de un paciente
-router.get('/paciente/:idPaciente',
-  authMiddleware.verifyToken,
-  pagoController.obtenerPorPaciente
-);
-
-// Obtener pagos de un médico
-router.get('/medico/:idMedico',
-  authMiddleware.verifyToken,
-  authMiddleware.requireRoles(['MEDICO', 'ADMIN']),
-  pagoController.obtenerPorMedico
-);
-
 export default router;
+

@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Users, 
-  Stethoscope, 
-  Calendar, 
-  DollarSign, 
-  TrendingUp, 
+import {
+  Users,
+  Stethoscope,
+  Calendar,
+  TrendingUp,
   TrendingDown,
   Activity,
   UserCheck,
@@ -63,13 +62,13 @@ export default function AdminDashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      
+
       // Obtener estadísticas del backend
       const [statsData, usersResponse] = await Promise.all([
         getAdminStats(),
         getAllUsers({ limit: 5 })
       ]);
-      
+
       setStats({
         totalUsuarios: statsData.totalUsuarios || 0,
         totalMedicos: statsData.totalMedicos || 0,
@@ -172,11 +171,11 @@ export default function AdminDashboardPage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
           <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-emerald-500/20 rounded-full translate-y-1/2 blur-2xl" />
           <div className="absolute top-1/2 left-0 w-32 h-32 bg-blue-500/10 rounded-full -translate-x-1/2 blur-2xl" />
-          
+
           <div className="relative">
             <div className="flex items-center justify-between">
               <div>
-                <motion.div 
+                <motion.div
                   className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm mb-4"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -185,7 +184,7 @@ export default function AdminDashboardPage() {
                   <Shield className="w-4 h-4 text-teal-400" />
                   <span>Panel de Administración</span>
                 </motion.div>
-                <motion.h1 
+                <motion.h1
                   className="text-4xl font-bold mb-2"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -193,7 +192,7 @@ export default function AdminDashboardPage() {
                 >
                   {getGreeting()}, {user?.nombre || 'Admin'}!
                 </motion.h1>
-                <motion.p 
+                <motion.p
                   className="text-white/70 max-w-md text-lg"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -202,7 +201,7 @@ export default function AdminDashboardPage() {
                   Aquí tienes el resumen completo de la plataforma MedConsult.
                 </motion.p>
               </div>
-              <motion.div 
+              <motion.div
                 className="hidden md:block"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -215,7 +214,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Quick Stats in Banner */}
-            <motion.div 
+            <motion.div
               className="flex flex-wrap items-center gap-4 mt-8 pt-6 border-t border-white/10"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -238,27 +237,27 @@ export default function AdminDashboardPage() {
             </motion.div>
 
             {/* Quick Actions */}
-            <motion.div 
+            <motion.div
               className="flex flex-wrap gap-3 mt-6"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
             >
-              <button 
+              <button
                 onClick={() => router.push('/dashboard/users')}
                 className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-400 text-white rounded-xl transition-colors text-sm font-medium"
               >
                 <Users className="w-4 h-4" />
                 Gestionar Usuarios
               </button>
-              <button 
+              <button
                 onClick={() => router.push('/dashboard/reports')}
                 className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors text-sm font-medium backdrop-blur-sm"
               >
                 <FileText className="w-4 h-4" />
                 Ver Reportes
               </button>
-              <button 
+              <button
                 onClick={() => router.push('/dashboard/settings')}
                 className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors text-sm font-medium backdrop-blur-sm"
               >
@@ -348,7 +347,7 @@ export default function AdminDashboardPage() {
           </div>
           {pendingDoctors.length > 0 && (
             <div className="p-4 border-t border-gray-100">
-              <button 
+              <button
                 onClick={() => router.push('/dashboard/doctors?status=pending')}
                 className="text-teal-600 text-sm font-medium hover:text-teal-700"
               >
@@ -363,7 +362,7 @@ export default function AdminDashboardPage() {
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Usuarios Recientes</h2>
-              <button 
+              <button
                 onClick={() => router.push('/dashboard/users')}
                 className="text-teal-600 text-sm font-medium hover:text-teal-700"
               >
@@ -376,9 +375,8 @@ export default function AdminDashboardPage() {
               <div key={user.id} className="p-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      user.rol === 'MEDICO' ? 'bg-emerald-100' : 'bg-blue-100'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${user.rol === 'MEDICO' ? 'bg-emerald-100' : 'bg-blue-100'
+                      }`}>
                       {user.rol === 'MEDICO' ? (
                         <Stethoscope className="w-5 h-5 text-emerald-600" />
                       ) : (
@@ -390,13 +388,12 @@ export default function AdminDashboardPage() {
                       <p className="text-sm text-gray-500">{user.correo}</p>
                     </div>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                    user.rol === 'MEDICO' 
-                      ? 'bg-emerald-100 text-emerald-700' 
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${user.rol === 'MEDICO'
+                      ? 'bg-emerald-100 text-emerald-700'
                       : user.rol === 'ADMIN'
                         ? 'bg-purple-100 text-purple-700'
                         : 'bg-blue-100 text-blue-700'
-                  }`}>
+                    }`}>
                     {user.rol}
                   </span>
                 </div>

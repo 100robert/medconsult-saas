@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import {
   Search,
   Filter,
-  DollarSign,
   Calendar,
   CheckCircle,
   XCircle,
@@ -227,7 +226,9 @@ export default function PaymentsPage() {
         <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-green-100 rounded-xl">
-              <DollarSign className="w-5 h-5 text-green-600" />
+              <span className="flex items-center justify-center w-5 h-5 text-green-600 font-bold text-base">
+                S/
+              </span>
             </div>
             <div>
               <p className="text-xl font-bold text-gray-900">S/. {stats.totalIngresos.toLocaleString()}</p>
@@ -375,7 +376,9 @@ export default function PaymentsPage() {
                   return (
                     <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-4">
-                        <span className="font-mono text-sm text-gray-900">{payment.id}</span>
+                        <span className="font-mono text-sm text-gray-900" title={payment.id}>
+                          #{payment.id.slice(0, 8).toUpperCase()}
+                        </span>
                       </td>
                       {user?.rol !== 'MEDICO' && (
                         <td className="px-4 py-4">

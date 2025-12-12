@@ -32,6 +32,17 @@ router.get('/me/historial', authenticate, authorize('PACIENTE'), (req, res, next
   pacienteController.obtenerMiHistorial(req, res, next);
 });
 
+// Verificar si soy Pro
+router.get('/me/es-pro', authenticate, authorize('PACIENTE'), (req, res, next) => {
+  pacienteController.verificarPro(req, res, next);
+});
+
+// Activar suscripción Pro
+router.post('/me/pro', authenticate, authorize('PACIENTE'), (req, res, next) => {
+  pacienteController.activarPro(req, res, next);
+});
+
+
 // ============================================
 // RUTAS DE ADMIN
 // ============================================

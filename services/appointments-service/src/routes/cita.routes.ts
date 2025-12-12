@@ -33,11 +33,25 @@ router.get('/paciente/:idPaciente',
   citaController.obtenerPorPaciente
 );
 
+// Obtener detalle de paciente (incluye próxima cita)
+router.get('/paciente/:idPaciente/detalle',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['MEDICO', 'ADMIN']),
+  citaController.obtenerDetallePaciente
+);
+
 // Obtener citas del día para un médico
 router.get('/medico/:idMedico/hoy',
   authMiddleware.verifyToken,
   authMiddleware.requireRoles(['MEDICO', 'ADMIN']),
   citaController.obtenerCitasHoy
+);
+
+// Obtener pacientes únicos de un médico
+router.get('/medico/:idMedico/pacientes',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['MEDICO', 'ADMIN']),
+  citaController.obtenerPacientes
 );
 
 // Obtener citas de un médico

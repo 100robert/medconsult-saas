@@ -1,0 +1,22 @@
+# ============================================
+# PAYMENTS SERVICE - VARIABLES DE ENTORNO
+# ============================================
+
+# Servidor
+PORT=3005
+NODE_ENV=development
+
+# Base de datos
+DATABASE_URL="postgresql://postgres:123456@localhost:5432/medconsult_db?schema=public"
+
+# JWT (debe coincidir con auth-service)
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRES_IN=15m
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Configuración de pagos (placeholder para Stripe, PayPal, etc.)
+# STRIPE_SECRET_KEY=sk_test_xxxx
+# STRIPE_WEBHOOK_SECRET=whsec_xxxx
+

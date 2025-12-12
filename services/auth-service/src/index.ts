@@ -61,6 +61,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
   'http://localhost:5173',
 ];
 
+
+// esto hace que el backend pueda recibir peticiones de otros dominios
 app.use(
   cors({
     origin: (origin, callback) => {

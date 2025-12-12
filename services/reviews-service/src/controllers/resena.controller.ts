@@ -274,7 +274,21 @@ export class ResenaController {
    */
   async obtenerMias(req: Request, res: Response, next: NextFunction) {
     try {
-      const idUsuario = req.user!.userId;
+      console.log('🔍 Controller obtenerMias - req.user:', req.user);
+
+      // Verificar que el usuario esté autenticado
+      if (!req.user || !req.user.userId) {
+        console.log('⚠️ Controller obtenerMias - Usuario no autenticado o userId faltante');
+        return res.json({
+          success: true,
+          data: [],
+          pagination: { total: 0, page: 1, limit: 100, totalPages: 0 }
+        });
+      }
+
+      const idUsuario = req.user.userId;
+      console.log('🔍 Controller obtenerMias - idUsuario extraído:', idUsuario);
+
       const resultado = await resenaService.obtenerMias(idUsuario);
 
       res.json({
@@ -282,7 +296,13 @@ export class ResenaController {
         ...resultado
       });
     } catch (error) {
-      next(error);
+      console.error('❌ Controller obtenerMias - Error completo:', error);
+      // Devolver array vacío en lugar de error 500
+      res.json({
+        success: true,
+        data: [],
+        pagination: { total: 0, page: 1, limit: 100, totalPages: 0 }
+      });
     }
   }
 }

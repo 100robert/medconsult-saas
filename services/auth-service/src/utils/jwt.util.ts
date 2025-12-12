@@ -11,6 +11,10 @@ const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
 const JWT_REFRESH_EXPIRATION = process.env.JWT_REFRESH_EXPIRATION || '30d';
 
+// Log para debug - verificar que el secret coincide
+console.log(`🔐 [AUTH-SERVICE] JWT_SECRET usado (primeros 20 chars): ${JWT_SECRET.substring(0, 20)}...`);
+
+
 /**
  * Generar Access Token (JWT)
  */
@@ -18,7 +22,7 @@ export function generateAccessToken(payload: JWTPayload): string {
   const options: SignOptions = {
     expiresIn: JWT_EXPIRATION as any,
   };
-  
+
   return jwt.sign(payload, JWT_SECRET, options);
 }
 
@@ -29,7 +33,7 @@ export function generateRefreshToken(payload: RefreshTokenPayload): string {
   const options: SignOptions = {
     expiresIn: JWT_REFRESH_EXPIRATION as any,
   };
-  
+
   return jwt.sign(payload, JWT_REFRESH_SECRET, options);
 }
 

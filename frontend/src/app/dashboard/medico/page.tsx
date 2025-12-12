@@ -5,7 +5,7 @@ import {
   Calendar,
   Clock,
   Users,
-  DollarSign,
+  Banknote,
   TrendingUp,
   Video,
   MapPin,
@@ -339,7 +339,7 @@ export default function DoctorDashboardPage() {
               </div>
               <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="w-4 h-4 text-green-600" />
+                  <Banknote className="w-4 h-4 text-green-600" />
                   <span className="text-sm font-medium text-gray-700">Ingresos</span>
                 </div>
                 <span className="font-bold text-emerald-600">S/. {stats.ingresosMes}</span>

@@ -21,24 +21,36 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 
 app.use(helmet());
 
+// En desarrollo, permitir todas las solicitudes (el gateway maneja CORS)
+// En producción, se configuraría de forma más restrictiva
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-  'http://localhost:3000',
+  'http://localhost:3000',  // Gateway
+  'http://localhost:3010',  // Frontend
   'http://localhost:5173',
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('No permitido por CORS'));
+      // Permitir solicitudes sin origin (como las de server-to-server/curl/postman/gateway)
+      if (!origin) {
+        return callback(null, true);
       }
+      // Permitir orígenes en la lista
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      // En desarrollo, permitir localhost con cualquier puerto
+      if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
+        return callback(null, true);
+      }
+      // Rechazar otros orígenes
+      console.warn(`CORS: Origen no permitido: ${origin}`);
+      callback(new Error('No permitido por CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-User-Email', 'X-User-Role', 'X-Request-Id'],
   })
 );
 

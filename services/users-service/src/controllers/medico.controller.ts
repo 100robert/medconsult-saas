@@ -4,7 +4,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { medicoService } from '../services/medico.service';
-import { EstadoMedico } from '@prisma/client';
+import { EstadoMedico } from '.prisma/client';
 
 export class MedicoController {
 

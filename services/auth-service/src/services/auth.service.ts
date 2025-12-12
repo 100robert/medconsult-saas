@@ -262,11 +262,30 @@ export class AuthService {
 
     console.log('✅ Contraseña válida, generando tokens...');
 
-    // 5. Login exitoso - Generar tokens
+    // 5. Login exitoso - Obtener ID específico del rol
+    let medicoId: string | undefined;
+    let pacienteId: string | undefined;
+
+    if (usuario.rol === 'MEDICO') {
+      const medico = await prisma.medico.findUnique({
+        where: { idUsuario: usuario.id }
+      });
+      medicoId = medico?.id;
+      console.log('🩺 [LOGIN] Médico encontrado?', !!medico, 'ID:', medicoId);
+    } else if (usuario.rol === 'PACIENTE') {
+      const paciente = await prisma.paciente.findUnique({
+        where: { idUsuario: usuario.id }
+      });
+      pacienteId = paciente?.id;
+      console.log('👤 [LOGIN] Paciente encontrado?', !!paciente, 'ID:', pacienteId);
+    }
+
     const accessToken = generateAccessToken({
       userId: usuario.id,
       correo: usuario.correo,
       rol: usuario.rol,
+      medicoId,
+      pacienteId
     });
 
     const tokenId = generateRandomToken(16);
@@ -373,10 +392,27 @@ export class AuthService {
     }
 
     // 6. Generar nuevo access token
+    let medicoId: string | undefined;
+    let pacienteId: string | undefined;
+
+    if (tokenDB.usuario.rol === 'MEDICO') {
+      const medico = await prisma.medico.findUnique({
+        where: { idUsuario: tokenDB.usuario.id }
+      });
+      medicoId = medico?.id;
+    } else if (tokenDB.usuario.rol === 'PACIENTE') {
+      const paciente = await prisma.paciente.findUnique({
+        where: { idUsuario: tokenDB.usuario.id }
+      });
+      pacienteId = paciente?.id;
+    }
+
     const accessToken = generateAccessToken({
       userId: tokenDB.usuario.id,
       correo: tokenDB.usuario.correo,
       rol: tokenDB.usuario.rol,
+      medicoId,
+      pacienteId
     });
 
     // 7. Preparar respuesta

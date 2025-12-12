@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Mail, Phone, Calendar, Camera, Briefcase, DollarSign, Clock, Languages, FileText } from 'lucide-react';
+import { User, Mail, Phone, Calendar, Camera, Briefcase, Clock, Languages, FileText } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button, Input, Alert, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { updateProfile } from '@/lib/auth';
@@ -332,7 +332,9 @@ export default function ProfilePage() {
                 <Input
                   label="Precio por Consulta"
                   type="number"
-                  leftIcon={<DollarSign className="w-5 h-5" />}
+                  leftIcon={<span className="flex items-center justify-center w-5 h-5 text-green-600 font-bold text-base">
+                    S/
+                  </span>}
                   error={errorsMedico.precioPorConsulta?.message}
                   {...registerMedico('precioPorConsulta')}
                 />

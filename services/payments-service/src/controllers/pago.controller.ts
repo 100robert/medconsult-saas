@@ -242,9 +242,13 @@ export class PagoController {
   async obtenerMisGanancias(req: Request, res: Response, next: NextFunction) {
     try {
       // El idMedico viene del token JWT
-      const idMedico = (req as any).user?.medicoId;
+      const userPayload = (req as any).user;
+      console.log('💰 [PAGOS] Payload del usuario:', JSON.stringify(userPayload, null, 2));
+
+      const idMedico = userPayload?.medicoId;
 
       if (!idMedico) {
+        console.error('❌ [PAGOS] No se encontró medicoId en el token');
         return res.status(400).json({
           success: false,
           message: 'No se encontró información del médico'

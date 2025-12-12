@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { 
+import {
   BarChart3,
   TrendingUp,
   Download,
   Calendar,
-  DollarSign,
   Users,
   Stethoscope,
   Activity,
@@ -94,7 +93,9 @@ export default function ReportsPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-start justify-between">
             <div className="p-3 bg-green-100 rounded-xl">
-              <DollarSign className="w-6 h-6 text-green-600" />
+              <span className="flex items-center justify-center w-5 h-5 text-green-600 font-bold text-base">
+                S/
+              </span>
             </div>
             <div className={`flex items-center gap-1 text-sm font-medium ${reportData.ingresos.variacion >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {reportData.ingresos.variacion >= 0 ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
@@ -204,7 +205,7 @@ export default function ReportsPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-2 bg-gray-100 rounded-full max-w-[100px]">
-                          <div 
+                          <div
                             className="h-full bg-teal-500 rounded-full"
                             style={{ width: `${percentage}%` }}
                           />

@@ -51,19 +51,20 @@ async function getProfileId(role: string): Promise<string | null> {
 
 // Obtener mis pagos
 export async function getMisPagos(user: User): Promise<Payment[]> {
+    console.log('💳 getMisPagos - Iniciando con user:', user);
     try {
         if (user.rol === 'ADMIN') {
-            // Para admin, obtenemos todos (endpoint específico o resumen)
-            // Como no hay endpoint de "listar todos" simple en las rutas, usaremos resumen o una lista vacía por ahora
-            // O podemos intentar filtrar por fecha amplia.
-            // Revisando las rutas, no hay un 'GET /' para listar todo sin filtros.
-            // Usaremos un mock o una llamada segura.
-            // INTENTO: obtenerResumen puede devolver datos, o lo simularemos si no.
+            console.log('💳 getMisPagos - Usuario es ADMIN, retornando array vacío');
             return [];
         }
 
         const profileId = await getProfileId(user.rol);
-        if (!profileId) throw new Error('No se pudo identificar el perfil del usuario');
+        console.log('💳 getMisPagos - profileId obtenido:', profileId, 'rol:', user.rol);
+
+        if (!profileId) {
+            console.error('💳 getMisPagos - No se pudo obtener profileId');
+            throw new Error('No se pudo identificar el perfil del usuario');
+        }
 
         let endpoint = '';
         if (user.rol === 'PACIENTE') {
@@ -72,15 +73,57 @@ export async function getMisPagos(user: User): Promise<Payment[]> {
             endpoint = `/pagos/medico/${profileId}`;
         }
 
+        console.log('💳 getMisPagos - Llamando a endpoint:', endpoint);
         const response = await api.get<any>(endpoint);
+        console.log('💳 getMisPagos - Response completa:', response);
+        console.log('💳 getMisPagos - Response.data:', response.data);
+        console.log('💳 getMisPagos - Response.data.data:', response.data?.data);
 
-        // La respuesta del controller es { success: true, pagos: [], total: ... } (según '...resultado')
-        // O podría ser { success: true, data: [] }. Verifiquemos con cuidado.
-        // Asumiremos que devuelve { pagos: [...] } en la rta.
-        return response.data.data?.pagos || response.data.pagos || [];
+        // La respuesta del controller es { success: true, data: [...pagos], pagination: {...} }
+        const rawPagos = response.data?.data || [];
+        console.log('💳 getMisPagos - rawPagos length:', rawPagos.length);
 
-    } catch (error) {
-        console.error('Error al obtener mis pagos:', error);
+        if (rawPagos.length === 0) {
+            console.log('💳 getMisPagos - No hay pagos para este usuario');
+            return [];
+        }
+
+        // Mapear los datos del backend al formato esperado por el frontend
+        const mappedPagos = rawPagos.map((pago: any) => {
+            console.log('💳 getMisPagos - Mapeando pago:', pago.id, pago);
+            return {
+                id: pago.id,
+                idPaciente: pago.idPaciente,
+                idMedico: pago.idMedico,
+                idCita: pago.idCita,
+                monto: Number(pago.monto),
+                estado: pago.estado,
+                metodoPago: pago.metodoPago,
+                fecha: pago.fechaCreacion || pago.fechaProcesamiento || new Date().toISOString(),
+                concepto: pago.cita?.motivo || 'Consulta médica',
+                referencia: pago.idTransaccion,
+                paciente: pago.paciente?.usuario ? {
+                    nombre: pago.paciente.usuario.nombre,
+                    apellido: pago.paciente.usuario.apellido,
+                    email: pago.paciente.usuario.correo || ''
+                } : undefined,
+                medico: pago.medico?.usuario ? {
+                    nombre: pago.medico.usuario.nombre,
+                    apellido: pago.medico.usuario.apellido,
+                    especialidad: pago.medico.especialidad?.nombre || ''
+                } : undefined,
+                creadoEn: pago.fechaCreacion,
+                actualizadoEn: pago.fechaActualizacion
+            };
+        });
+
+        console.log('💳 getMisPagos - Pagos mapeados:', mappedPagos);
+        return mappedPagos;
+
+    } catch (error: any) {
+        console.error('💳 getMisPagos - ERROR:', error);
+        console.error('💳 getMisPagos - Error mensaje:', error?.message);
+        console.error('💳 getMisPagos - Error response:', error?.response?.data);
         return [];
     }
 }

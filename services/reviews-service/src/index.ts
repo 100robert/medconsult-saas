@@ -7,7 +7,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { checkDatabaseConnection, disconnectDatabase } from './config/database';
+import { checkDatabaseConnection, disconnectDatabase, prisma } from './config/database';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import resenaRoutes from './routes/resena.routes';
 
@@ -26,19 +26,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
   'http://localhost:5173',
 ];
 
+// CORS - Permitir todas las solicitudes (el gateway es el punto de entrada)
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('No permitido por CORS'));
-      }
-    },
+    origin: true, // Permitir todos los orígenes (las solicitudes vienen del gateway)
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id', 'X-User-Email', 'X-User-Role'],
   })
 );
 
@@ -79,6 +73,45 @@ app.get('/', (req, res) => {
 // ============================================
 // RUTAS
 // ============================================
+
+// DEBUG: Endpoint temporal para probar sin autenticación
+app.get('/debug/resenas/:idUsuario', async (req, res): Promise<void> => {
+  try {
+    const { idUsuario } = req.params;
+    console.log('🔍 DEBUG - Buscando reseñas para usuario:', idUsuario);
+
+    // Buscar médico por idUsuario
+    const medico = await prisma.medico.findUnique({
+      where: { idUsuario }
+    });
+
+    console.log('🔍 DEBUG - Médico encontrado:', medico ? medico.id : 'NO');
+
+    if (!medico) {
+      res.json({ success: true, data: [], message: 'Médico no encontrado' });
+      return;
+    }
+
+    // Buscar reseñas del médico
+    const resenas = await prisma.resena.findMany({
+      where: { idMedico: medico.id },
+      include: {
+        paciente: {
+          include: {
+            usuario: { select: { nombre: true, apellido: true } }
+          }
+        }
+      }
+    });
+
+    console.log('🔍 DEBUG - Reseñas encontradas:', resenas.length);
+
+    res.json({ success: true, data: resenas, total: resenas.length });
+  } catch (error: any) {
+    console.error('❌ DEBUG - Error:', error.message);
+    res.status(500).json({ success: false, error: error.message, stack: error.stack });
+  }
+});
 
 app.use('/resenas', resenaRoutes);
 

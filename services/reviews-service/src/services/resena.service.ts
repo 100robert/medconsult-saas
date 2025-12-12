@@ -498,19 +498,68 @@ export class ResenaService {
 
   /**
    * Obtener reseñas del médico autenticado
+   * Muestra TODAS las reseñas del médico sin filtrar por estado
    */
   async obtenerMias(idUsuario: string) {
+    console.log('🔍 obtenerMias - idUsuario recibido:', idUsuario);
+
     // 1. Obtener ID del médico
     const medico = await prisma.medico.findUnique({
       where: { idUsuario }
     });
 
+    console.log('🔍 obtenerMias - médico encontrado:', medico ? medico.id : 'NO ENCONTRADO');
+
+    // Si no hay médico, devolver array vacío en lugar de error
     if (!medico) {
-      throw new NotFoundError('Perfil de médico no encontrado');
+      console.log('⚠️ obtenerMias - No se encontró perfil de médico para este usuario');
+      return {
+        data: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 100,
+          totalPages: 0
+        }
+      };
     }
 
-    // 2. Usar obtenerPorMedico
-    return this.obtenerPorMedico(medico.id, { limit: 100 }); // Traer todas o paginar si es necesario
+    // 2. Obtener TODAS las reseñas del médico sin filtrar por estado
+    const [resenas, total] = await Promise.all([
+      prisma.resena.findMany({
+        where: { idMedico: medico.id }, // Sin filtrar por estado
+        include: {
+          paciente: {
+            include: {
+              usuario: {
+                select: { nombre: true, apellido: true }
+              }
+            }
+          }
+        },
+        orderBy: { fechaCreacion: 'desc' },
+        take: 100,
+      }),
+      prisma.resena.count({ where: { idMedico: medico.id } })
+    ]);
+
+    console.log('🔍 obtenerMias - total reseñas encontradas:', total);
+
+    // Ocultar nombre del paciente si es anónima
+    const resenasFormateadas = resenas.map(r => ({
+      ...r,
+      paciente: r.anonima ? null : r.paciente
+    }));
+
+    return {
+      data: resenasFormateadas,
+      pagination: {
+        total,
+        page: 1,
+        limit: 100,
+        totalPages: 1
+      }
+    };
   }
 }
 

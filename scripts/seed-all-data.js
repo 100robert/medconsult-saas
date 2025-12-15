@@ -210,6 +210,7 @@ async function main() {
         idMedico: medicos[Math.floor(Math.random() * medicos.length)].id,
         fechaHoraCita: fechaCita,
         estado: estado,
+        tipo: ['VIDEOCONSULTA', 'PRESENCIAL'][Math.floor(Math.random() * 2)],
         motivo: motivos[Math.floor(Math.random() * motivos.length)],
         notas: estado === 'COMPLETADA' ? 'Consulta realizada satisfactoriamente' : null,
       }
@@ -293,7 +294,7 @@ async function main() {
     'Tratamiento efectivo.',
     'Muy satisfecho con la consulta.',
   ];
-  
+
   let resenasCount = 0;
   for (const cita of citasCompletadas.slice(0, 20)) {
     await prisma.resena.create({

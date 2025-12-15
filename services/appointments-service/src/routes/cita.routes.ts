@@ -4,6 +4,8 @@
 
 import { Router } from 'express';
 import { citaController } from '../controllers/cita.controller';
+import { cancelacionController } from '../controllers/cancelacion.controller';
+import { noShowController } from '../controllers/noshow.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -25,6 +27,13 @@ router.post('/',
 router.get('/mis-citas',
   authMiddleware.verifyToken,
   citaController.obtenerMisCitas
+);
+
+// Procesar no-shows automáticamente (solo admin/sistema)
+router.post('/procesar-noshows',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['ADMIN']),
+  cancelacionController.procesarNoShows
 );
 
 // Obtener citas de un paciente
@@ -62,6 +71,12 @@ router.get('/medico/:idMedico',
 );
 
 // ========== RUTA GENÉRICA AL FINAL ==========
+// Obtener información de reembolso antes de cancelar
+router.get('/:id/info-cancelacion',
+  authMiddleware.verifyToken,
+  cancelacionController.obtenerInfoCancelacion
+);
+
 // Obtener cita por ID (debe ir después de las rutas específicas)
 router.get('/:id',
   authMiddleware.verifyToken,
@@ -75,10 +90,10 @@ router.patch('/:id/confirmar',
   citaController.confirmar
 );
 
-// Cancelar cita (pacientes, médicos y admins)
+// Cancelar cita con cálculo automático de reembolso (pacientes, médicos y admins)
 router.patch('/:id/cancelar',
   authMiddleware.verifyToken,
-  citaController.cancelar
+  cancelacionController.cancelarCita
 );
 
 // Completar cita (médicos)
@@ -93,6 +108,33 @@ router.put('/:id/notas',
   authMiddleware.verifyToken,
   authMiddleware.requireRoles(['MEDICO', 'ADMIN']),
   citaController.actualizarNotas
+);
+
+// ========== RUTAS DE NO-SHOW ==========
+
+// Registrar conexión a sala de videollamada
+router.post('/:id/registrar-conexion',
+  authMiddleware.verifyToken,
+  noShowController.registrarConexion
+);
+
+// Reportar que la otra parte no se presentó
+router.post('/:id/reportar-noshow',
+  authMiddleware.verifyToken,
+  noShowController.reportarNoShow
+);
+
+// Obtener estado de conexión de una cita
+router.get('/:id/estado-conexion',
+  authMiddleware.verifyToken,
+  noShowController.obtenerEstadoConexion
+);
+
+// Procesar no-shows automáticamente (solo admin)
+router.post('/procesar-noshows',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['ADMIN']),
+  noShowController.procesarNoShows
 );
 
 export default router;

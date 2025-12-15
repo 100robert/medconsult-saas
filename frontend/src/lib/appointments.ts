@@ -211,3 +211,66 @@ export async function getAvailableSlots(
     return [];
   }
 }
+
+// ============ NO-SHOW / CONEXIÓN ============
+
+export interface EstadoConexion {
+  id: string;
+  medicoConectado: boolean;
+  pacienteConectado: boolean;
+  horaConexionMedico?: string;
+  horaConexionPaciente?: string;
+  reportadoPor?: string;
+  noShowProcesado: boolean;
+  estado: string;
+  fechaHoraCita: string;
+  puedeReportarNoShow: boolean;
+  minutosTranscurridos: number;
+  minutosRestantesParaReportar: number;
+}
+
+/**
+ * Registrar conexión a sala de videollamada
+ * Llamar cuando el usuario entra a la sala
+ */
+export async function registrarConexion(idCita: string): Promise<boolean> {
+  try {
+    const response = await api.post(`/citas/${idCita}/registrar-conexion`);
+    console.log('📡 Conexión registrada:', response.data);
+    return response.data.success;
+  } catch (error: any) {
+    console.error('Error registrando conexión:', error);
+    return false;
+  }
+}
+
+/**
+ * Reportar que la otra parte no se presentó
+ */
+export async function reportarNoShow(idCita: string): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await api.post(`/citas/${idCita}/reportar-noshow`);
+    return {
+      success: response.data.success,
+      message: response.data.message
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Error al reportar no-show'
+    };
+  }
+}
+
+/**
+ * Obtener estado de conexión de una cita
+ */
+export async function obtenerEstadoConexion(idCita: string): Promise<EstadoConexion | null> {
+  try {
+    const response = await api.get(`/citas/${idCita}/estado-conexion`);
+    return response.data.data;
+  } catch (error: any) {
+    console.error('Error obteniendo estado de conexión:', error);
+    return null;
+  }
+}

@@ -96,3 +96,45 @@ export async function getEstadisticasConsultas(): Promise<{
   const response = await api.get<{ success: boolean; data: any }>('/consultas/estadisticas/resumen');
   return response.data.data;
 }
+
+// ============================================
+// HISTORIAL DE ATENCIONES (para médicos)
+// ============================================
+
+export interface PacienteAtendido {
+  id: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string;
+  fechaNacimiento?: string;
+  genero?: string;
+  ultimaConsulta: string;
+  totalConsultas: number;
+  proximaCita?: string;
+  imagenPerfil?: string;
+}
+
+// Obtener pacientes atendidos por el médico (para historial)
+export async function getMisPacientes(idMedico: string): Promise<PacienteAtendido[]> {
+  try {
+    const response = await api.get<{ success: boolean; data: PacienteAtendido[] }>(
+      `/citas/medico/${idMedico}/pacientes`
+    );
+    return response.data.data || [];
+  } catch (error: any) {
+    console.error('Error al obtener pacientes:', error?.message || error);
+    return [];
+  }
+}
+
+// Obtener historial de consultas de un paciente específico
+export async function getHistorialPaciente(idPaciente: string): Promise<Consulta[]> {
+  try {
+    const response = await api.get<ConsultasResponse>(`/consultas/paciente/${idPaciente}`);
+    return response.data.data || [];
+  } catch (error: any) {
+    console.error('Error al obtener historial del paciente:', error?.message || error);
+    return [];
+  }
+}

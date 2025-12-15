@@ -78,6 +78,8 @@ enum EstadoCita {
   CONFIRMADA
   COMPLETADA
   CANCELADA
+  NO_SHOW_PACIENTE
+  NO_SHOW_MEDICO
 }
 
 enum CanceladaPor {
@@ -347,23 +349,32 @@ model FechaNoDisponible {
 }
 
 model Cita {
-  id                 String          @id @default(uuid()) @db.Uuid
-  idPaciente         String          @db.Uuid
-  paciente           Paciente        @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
-  idMedico           String          @db.Uuid
-  medico             Medico          @relation(fields: [idMedico], references: [id], onDelete: Cascade)
-  idDisponibilidad   String?         @db.Uuid
-  disponibilidad     Disponibilidad? @relation(fields: [idDisponibilidad], references: [id])
-  fechaHoraCita      DateTime
-  estado             EstadoCita      @default(PROGRAMADA)
-  tipo               TipoCita        @default(VIDEOCONSULTA)
-  motivo             String?         @db.Text
-  notas              String?         @db.Text
-  razonCancelacion   String?         @db.Text
-  fechaCancelacion   DateTime?
-  canceladaPor       CanceladaPor?
-  fechaCreacion      DateTime        @default(now())
-  fechaActualizacion DateTime        @updatedAt
+  id               String          @id @default(uuid()) @db.Uuid
+  idPaciente       String          @db.Uuid
+  paciente         Paciente        @relation(fields: [idPaciente], references: [id], onDelete: Cascade)
+  idMedico         String          @db.Uuid
+  medico           Medico          @relation(fields: [idMedico], references: [id], onDelete: Cascade)
+  idDisponibilidad String?         @db.Uuid
+  disponibilidad   Disponibilidad? @relation(fields: [idDisponibilidad], references: [id])
+  fechaHoraCita    DateTime
+  estado           EstadoCita      @default(PROGRAMADA)
+  tipo             TipoCita        @default(VIDEOCONSULTA)
+  motivo           String?         @db.Text
+  notas            String?         @db.Text
+  razonCancelacion String?         @db.Text
+  fechaCancelacion DateTime?
+  canceladaPor     CanceladaPor?
+
+  // Campos para tracking de conexión (No-Show detection)
+  medicoConectado      Boolean       @default(false)
+  pacienteConectado    Boolean       @default(false)
+  horaConexionMedico   DateTime?
+  horaConexionPaciente DateTime?
+  reportadoPor         CanceladaPor? // Quien reportó el no-show
+  noShowProcesado      Boolean       @default(false) // Si ya se procesó el no-show
+
+  fechaCreacion      DateTime @default(now())
+  fechaActualizacion DateTime @updatedAt
 
   // Relaciones
   consulta Consulta?
@@ -443,25 +454,26 @@ model Receta {
 // ============================================
 
 model Pago {
-  id                 String     @id @default(uuid()) @db.Uuid
-  idCita             String     @unique @db.Uuid
-  cita               Cita       @relation(fields: [idCita], references: [id], onDelete: Cascade)
-  idPaciente         String     @db.Uuid
-  paciente           Paciente   @relation(fields: [idPaciente], references: [id])
-  idMedico           String     @db.Uuid
-  medico             Medico     @relation(fields: [idMedico], references: [id])
-  monto              Decimal    @db.Decimal(10, 2)
-  comisionPlataforma Decimal    @db.Decimal(10, 2)
-  montoMedico        Decimal    @db.Decimal(10, 2)
-  moneda             String     @default("USD") @db.VarChar(3)
-  metodoPago         MetodoPago
-  idTransaccion      String     @db.VarChar(255)
-  estado             EstadoPago @default(PENDIENTE)
-  montoReembolsado   Decimal    @default(0) @db.Decimal(10, 2)
-  razonReembolso     String?    @db.Text
-  fechaProcesamiento DateTime?
-  fechaCreacion      DateTime   @default(now())
-  fechaActualizacion DateTime   @updatedAt
+  id                  String     @id @default(uuid()) @db.Uuid
+  idCita              String     @unique @db.Uuid
+  cita                Cita       @relation(fields: [idCita], references: [id], onDelete: Cascade)
+  idPaciente          String     @db.Uuid
+  paciente            Paciente   @relation(fields: [idPaciente], references: [id])
+  idMedico            String     @db.Uuid
+  medico              Medico     @relation(fields: [idMedico], references: [id])
+  monto               Decimal    @db.Decimal(10, 2)
+  comisionPlataforma  Decimal    @db.Decimal(10, 2)
+  montoMedico         Decimal    @db.Decimal(10, 2)
+  moneda              String     @default("USD") @db.VarChar(3)
+  metodoPago          MetodoPago
+  idTransaccion       String     @db.VarChar(255)
+  estado              EstadoPago @default(PENDIENTE)
+  montoReembolsado    Decimal    @default(0) @db.Decimal(10, 2)
+  porcentajeReembolso Int? // 0, 50, 95, 100
+  razonReembolso      String?    @db.Text
+  fechaProcesamiento  DateTime?
+  fechaCreacion       DateTime   @default(now())
+  fechaActualizacion  DateTime   @updatedAt
 
   @@index([idPaciente])
   @@index([idMedico])

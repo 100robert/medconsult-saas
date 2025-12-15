@@ -63,6 +63,14 @@ function createProxyOptions(serviceUrl: string, serviceName: string, pathPrefix:
       proxyReq: (proxyReq: ClientRequest, req: IncomingMessage, res: ServerResponse) => {
         const expressReq = req as any;
 
+        // Si Express ya parseó el body (req.body existe), debemos reenviarlo
+        if (expressReq.body && Object.keys(expressReq.body).length > 0) {
+          const bodyData = JSON.stringify(expressReq.body);
+          proxyReq.setHeader('Content-Type', 'application/json');
+          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+          proxyReq.write(bodyData);
+        }
+
         // Pasar headers de autenticación
         if (req.headers.authorization) {
           proxyReq.setHeader('Authorization', req.headers.authorization);

@@ -114,7 +114,25 @@ export async function updateMiPerfilMedico(data: Partial<Medico>): Promise<Medic
 export async function getDisponibilidad(idMedico: string): Promise<Disponibilidad[]> {
   try {
     const response = await api.get<any>(`/disponibilidades/medico/${idMedico}`);
-    return response.data.data?.disponibilidades || response.data.disponibilidades || [];
+    console.log('📅 [getDisponibilidad] Response:', response.data);
+
+    // El backend retorna { success: true, data: [...] }
+    // donde data es directamente el array de disponibilidades
+    const data = response.data.data;
+
+    // Manejar diferentes formatos de respuesta
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (data?.disponibilidades && Array.isArray(data.disponibilidades)) {
+      return data.disponibilidades;
+    }
+    if (Array.isArray(response.data.disponibilidades)) {
+      return response.data.disponibilidades;
+    }
+
+    console.warn('⚠️ [getDisponibilidad] Formato inesperado:', response.data);
+    return [];
   } catch (error: any) {
     console.error('Error al obtener disponibilidad:', error);
     return [];

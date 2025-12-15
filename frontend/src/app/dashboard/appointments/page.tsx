@@ -3,12 +3,20 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, Video, MapPin, User, Search, Filter, Plus, MoreVertical, ChevronRight, CalendarDays, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Calendar, Clock, Video, MapPin, User, Search, Filter, Plus, MoreVertical, ChevronRight, CalendarDays, CheckCircle2, XCircle, AlertCircle, Loader2, X, DollarSign } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui';
 import { getMisCitas, cancelarCita, type Appointment, type Medico } from '@/lib/appointments';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+
+// Interfaz para info de reembolso
+interface RefundInfo {
+  porcentajeReembolso: number;
+  montoReembolso: number;
+  descripcion: string;
+  horasRestantes: number;
+}
 
 function getSpecialtyName(medico?: Medico): string {
   if (!medico?.especialidad) return 'Consulta General';
@@ -78,6 +86,13 @@ export default function AppointmentsPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [joiningConsultation, setJoiningConsultation] = useState<string | null>(null);
 
+  // Estado para modal de cancelación
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancellingAppointment, setCancellingAppointment] = useState<Appointment | null>(null);
+  const [refundInfo, setRefundInfo] = useState<RefundInfo | null>(null);
+  const [loadingRefundInfo, setLoadingRefundInfo] = useState(false);
+  const [cancellingInProgress, setCancellingInProgress] = useState(false);
+
   // Cargar citas del backend
   useEffect(() => {
     async function fetchAppointments() {
@@ -99,18 +114,75 @@ export default function AppointmentsPage() {
     fetchAppointments();
   }, []);
 
-  // Función para cancelar cita
-  const handleCancelAppointment = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas cancelar esta cita?')) return;
+  // Abrir modal de cancelación y calcular info de reembolso localmente
+  const openCancelModal = (appointment: Appointment) => {
+    setCancellingAppointment(appointment);
+    setCancelModalOpen(true);
+    setLoadingRefundInfo(false);
 
+    // Calcular reembolso localmente (mismas reglas que el backend)
+    const fechaCita = new Date(appointment.fecha);
+    const ahora = new Date();
+    const horasRestantes = (fechaCita.getTime() - ahora.getTime()) / (1000 * 60 * 60);
+
+    let porcentaje = 0;
+    let descripcion = '';
+
+    if (horasRestantes >= 24) {
+      porcentaje = 95;
+      descripcion = 'Reembolso completo (95% - menos 5% tarifa de procesamiento)';
+    } else if (horasRestantes >= 2) {
+      porcentaje = 50;
+      descripcion = 'Reembolso parcial (50% - cancelación con menos de 24 horas)';
+    } else {
+      porcentaje = 0;
+      descripcion = 'Sin reembolso (cancelación con menos de 2 horas de anticipación)';
+    }
+
+    setRefundInfo({
+      porcentajeReembolso: porcentaje,
+      montoReembolso: 0, // No tenemos el monto desde el frontend
+      descripcion: descripcion,
+      horasRestantes: Math.max(0, horasRestantes)
+    });
+  };
+
+  // Cerrar modal de cancelación
+  const closeCancelModal = () => {
+    setCancelModalOpen(false);
+    setCancellingAppointment(null);
+    setRefundInfo(null);
+  };
+
+  // Confirmar cancelación
+  const confirmCancellation = async () => {
+    if (!cancellingAppointment) return;
+
+    setCancellingInProgress(true);
     try {
-      await cancelarCita(id);
+      const response = await api.patch(`/citas/${cancellingAppointment.id}/cancelar`, {
+        motivo: 'Cancelado por el usuario'
+      });
+
+      const data = response.data.data;
+
       // Actualizar la lista local
       setAppointments(prev =>
-        prev.map(apt => apt.id === id ? { ...apt, estado: 'CANCELADA' } : apt)
+        prev.map(apt => apt.id === cancellingAppointment.id ? { ...apt, estado: 'CANCELADA' } : apt)
       );
+
+      // Mostrar info de reembolso
+      if (data?.reembolso?.porcentaje > 0) {
+        toast.success(`Cita cancelada. Recibirás un reembolso del ${data.reembolso.porcentaje}%`);
+      } else {
+        toast.info('Cita cancelada. No aplica reembolso por el tiempo de cancelación.');
+      }
+
+      closeCancelModal();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al cancelar la cita');
+      toast.error(err.response?.data?.message || 'Error al cancelar la cita');
+    } finally {
+      setCancellingInProgress(false);
     }
   };
 
@@ -376,11 +448,10 @@ export default function AppointmentsPage() {
                             )}
                             {(appointment.estado === 'PROGRAMADA' || appointment.estado === 'PENDIENTE') && (
                               <button
-                                onClick={() => handleCancelAppointment(appointment.id)}
-                                className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition-colors"
-                                title="Cancelar cita"
+                                onClick={() => openCancelModal(appointment)}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
                               >
-                                <XCircle className="w-5 h-5" />
+                                Cancelar cita
                               </button>
                             )}
                           </div>
@@ -471,6 +542,100 @@ export default function AppointmentsPage() {
           )}
         </>
       )}
+
+      {/* Modal de Cancelación */}
+      {cancelModalOpen && cancellingAppointment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Cancelar Cita</h3>
+              <button
+                onClick={closeCancelModal}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-amber-800 text-sm">
+                  ¿Estás seguro de que deseas cancelar esta cita?
+                </p>
+              </div>
+
+              {/* Info de la cita */}
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Médico:</span> Dr. {cancellingAppointment.medico?.usuario?.nombre || cancellingAppointment.medico?.nombre} {cancellingAppointment.medico?.usuario?.apellido || cancellingAppointment.medico?.apellido}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Fecha:</span> {new Date(cancellingAppointment.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Hora:</span> {cancellingAppointment.horaInicio}
+                </p>
+              </div>
+
+              {/* Info de reembolso */}
+              {loadingRefundInfo ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+                  <span className="ml-2 text-gray-500">Calculando reembolso...</span>
+                </div>
+              ) : refundInfo && (
+                <div className={`rounded-xl p-4 ${refundInfo.porcentajeReembolso > 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className={`w-5 h-5 ${refundInfo.porcentajeReembolso > 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+                    <span className={`font-semibold ${refundInfo.porcentajeReembolso > 0 ? 'text-emerald-800' : 'text-red-800'}`}>
+                      Reembolso: {refundInfo.porcentajeReembolso}%
+                    </span>
+                  </div>
+                  <p className={`text-sm ${refundInfo.porcentajeReembolso > 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    {refundInfo.descripcion}
+                  </p>
+                  {refundInfo.montoReembolso > 0 && (
+                    <p className="text-sm text-emerald-700 mt-1">
+                      <span className="font-medium">Monto a reembolsar:</span> S/ {refundInfo.montoReembolso.toFixed(2)}
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    Tiempo restante: {Math.floor(refundInfo.horasRestantes)} horas
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-5 border-t bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={closeCancelModal}
+                disabled={cancellingInProgress}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors font-medium"
+              >
+                Volver
+              </button>
+              <button
+                onClick={confirmCancellation}
+                disabled={cancellingInProgress || loadingRefundInfo}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium disabled:opacity-50 flex items-center justify-center"
+              >
+                {cancellingInProgress ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Cancelando...
+                  </>
+                ) : (
+                  'Confirmar Cancelación'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

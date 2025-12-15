@@ -18,9 +18,11 @@ import {
     Loader2,
     CheckCircle2,
     AlertCircle,
+    AlertTriangle,
     Pill,
     ClipboardList
 } from 'lucide-react';
+import { registrarConexion, reportarNoShow, obtenerEstadoConexion, type EstadoConexion } from '@/lib/appointments';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -96,6 +98,11 @@ export default function VideoConsultationPage() {
     // Timer
     const [elapsedTime, setElapsedTime] = useState(0);
 
+    // Estados de No-Show
+    const [estadoConexion, setEstadoConexion] = useState<EstadoConexion | null>(null);
+    const [reportingNoShow, setReportingNoShow] = useState(false);
+    const [conexionRegistrada, setConexionRegistrada] = useState(false);
+
     const isMedico = user?.rol === 'MEDICO';
 
     // Cargar datos de la consulta
@@ -104,7 +111,23 @@ export default function VideoConsultationPage() {
             try {
                 setLoading(true);
                 const response = await api.get(`/consultas/${id}`);
-                setConsulta(response.data.data || response.data);
+                const consultaData = response.data.data || response.data;
+                setConsulta(consultaData);
+
+                // Registrar conexión para tracking de no-show
+                if (consultaData?.cita?.id && !conexionRegistrada) {
+                    const registrado = await registrarConexion(consultaData.cita.id);
+                    if (registrado) {
+                        setConexionRegistrada(true);
+                        toast.success('Conexión registrada');
+                    }
+
+                    // Obtener estado de conexión
+                    const estado = await obtenerEstadoConexion(consultaData.cita.id);
+                    if (estado) {
+                        setEstadoConexion(estado);
+                    }
+                }
 
                 // Simular conexión después de cargar
                 setTimeout(() => {
@@ -123,7 +146,7 @@ export default function VideoConsultationPage() {
         if (id) {
             loadConsulta();
         }
-    }, [id]);
+    }, [id, conexionRegistrada]);
 
     // Iniciar video local
     useEffect(() => {
@@ -221,29 +244,31 @@ export default function VideoConsultationPage() {
             try {
                 if (diagnosis) {
                     // Si hay diagnóstico, guardar notas y finalizar
-                    await api.put(`/consultas/${id}`, {
+                    await api.post(`/consultas/${id}/finalizar`, {
                         diagnostico: diagnosis,
                         tratamiento: treatment,
-                        notas: notes,
-                        estado: 'COMPLETADA'
+                        notas: notes
                     });
                     toast.success('Consulta finalizada y notas guardadas');
                 } else {
                     // Confirmar si quiere finalizar sin diagnóstico
                     const confirmar = confirm('¿Desea finalizar la consulta sin agregar diagnóstico?');
                     if (confirmar) {
-                        await api.put(`/consultas/${id}`, {
-                            estado: 'COMPLETADA'
-                        });
+                        await api.post(`/consultas/${id}/finalizar`, {});
                         toast.success('Consulta finalizada');
                     } else {
                         return; // No salir si cancela
                     }
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error('Error finalizando consulta:', err);
-                toast.error('Error al finalizar la consulta');
-                return;
+                // Si ya está completada (409), simplemente salir
+                if (err.response?.status === 409) {
+                    toast.info('La consulta ya fue finalizada previamente');
+                } else {
+                    toast.error('Error al finalizar la consulta');
+                    return;
+                }
             }
         } else {
             // El paciente solo sale de la sala
@@ -251,6 +276,37 @@ export default function VideoConsultationPage() {
         }
 
         router.push('/dashboard/consultations');
+    };
+
+    // Reportar No-Show
+    const handleReportNoShow = async () => {
+        if (!consulta?.cita?.id) {
+            toast.error('No se puede reportar sin información de la cita');
+            return;
+        }
+
+        const confirmacion = confirm(
+            isMedico
+                ? '¿Confirmas que el paciente no se presentó a la consulta?'
+                : '¿Confirmas que el médico no se presentó a la consulta?'
+        );
+
+        if (!confirmacion) return;
+
+        setReportingNoShow(true);
+        try {
+            const resultado = await reportarNoShow(consulta.cita.id);
+            if (resultado.success) {
+                toast.success(resultado.message);
+                router.push('/dashboard/consultations');
+            } else {
+                toast.error(resultado.message);
+            }
+        } catch (err) {
+            toast.error('Error al reportar no-show');
+        } finally {
+            setReportingNoShow(false);
+        }
     };
 
     // Función separada para que el paciente solo salga
@@ -534,6 +590,22 @@ export default function VideoConsultationPage() {
                                 }`}
                         >
                             <ClipboardList className="w-6 h-6 text-white" />
+                        </button>
+                    )}
+
+                    {/* Report No-Show Button */}
+                    {estadoConexion?.puedeReportarNoShow && (
+                        <button
+                            onClick={handleReportNoShow}
+                            disabled={reportingNoShow}
+                            className="w-14 h-14 rounded-full bg-orange-600 hover:bg-orange-700 flex items-center justify-center transition-colors disabled:opacity-50"
+                            title={isMedico ? 'Reportar que el paciente no se presentó' : 'Reportar que el médico no se presentó'}
+                        >
+                            {reportingNoShow ? (
+                                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                            ) : (
+                                <AlertTriangle className="w-6 h-6 text-white" />
+                            )}
                         </button>
                     )}
 

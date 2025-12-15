@@ -178,13 +178,15 @@ export class CitaService {
     }
 
     // Crear la cita usando connect para las relaciones
+    // REGLA DE NEGOCIO: Las citas se crean automáticamente como CONFIRMADAS
+    // porque el pago se procesa ANTES de crear la cita. Si llega aquí, ya está pagada.
     const citaData: any = {
       paciente: { connect: { id: data.idPaciente } },
       medico: { connect: { id: data.idMedico } },
       fechaHoraCita: data.fechaHoraCita,
       motivo: data.motivo,
       tipo: data.tipo, // <-- Nuevo campo tipo
-      estado: 'PROGRAMADA',
+      estado: 'CONFIRMADA', // Automáticamente confirmada (pago ya procesado)
     };
 
     // Solo conectar disponibilidad si existe
@@ -456,6 +458,8 @@ export class CitaService {
 
   /**
    * Confirmar cita
+   * NOTA: Este método es ahora idempotente - si la cita ya está confirmada, simplemente retorna éxito.
+   * Con el nuevo flujo, las citas se crean automáticamente como CONFIRMADAS después del pago.
    */
   async confirmar(id: string, notas?: string) {
     const cita = await prisma.cita.findUnique({
@@ -466,6 +470,18 @@ export class CitaService {
       throw new NotFoundError('Cita no encontrada');
     }
 
+    // Si ya está confirmada, retornar la cita sin error (idempotente)
+    if (cita.estado === 'CONFIRMADA') {
+      return prisma.cita.findUnique({
+        where: { id },
+        include: {
+          paciente: { include: { usuario: { select: { nombre: true, apellido: true, correo: true } } } },
+          medico: { include: { usuario: { select: { nombre: true, apellido: true } }, especialidad: { select: { nombre: true } } } }
+        }
+      });
+    }
+
+    // Solo se puede confirmar desde PROGRAMADA (por compatibilidad con citas existentes)
     if (cita.estado !== 'PROGRAMADA') {
       throw new ValidationError(`No se puede confirmar una cita con estado ${cita.estado}`);
     }

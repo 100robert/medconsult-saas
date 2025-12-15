@@ -1,0 +1,28 @@
+­ƒî▒ Iniciando seed de datos...
+
+­ƒº╣ Limpiando datos anteriores...
+ÔØî Error: PrismaClientInitializationError: 
+Invalid `prisma.registroAuditoria.deleteMany()` invocation in
+C:\Users\USUARIO\OneDrive\Escritorio\medconsult-saas\scripts\seed-all-data.js:11:34
+
+   8 
+   9 // Limpiar datos existentes (excepto admin)
+  10 console.log('­ƒº╣ Limpiando datos anteriores...');
+ÔåÆ 11 await prisma.registroAuditoria.deleteMany(
+error: Environment variable not found: DATABASE_URL.
+  -->  schema.prisma:39
+   | 
+38 |   provider = "postgresql"
+39 |   url      = env("DATABASE_URL")
+   | 
+
+Validation Error Count: 1
+    at ei.handleRequestError (C:\Users\USUARIO\OneDrive\Escritorio\medconsult-saas\services\auth-service\node_modules\.prisma\client\runtime\library.js:125:7568)
+    at ei.handleAndLogRequestError (C:\Users\USUARIO\OneDrive\Escritorio\medconsult-saas\services\auth-service\node_modules\.prisma\client\runtime\library.js:125:6593)
+    at ei.request (C:\Users\USUARIO\OneDrive\Escritorio\medconsult-saas\services\auth-service\node_modules\.prisma\client\runtime\library.js:125:6300)
+    at async a (C:\Users\USUARIO\OneDrive\Escritorio\medconsult-saas\services\auth-service\node_modules\.prisma\client\runtime\library.js:134:9551)
+    at async main (C:\Users\USUARIO\OneDrive\Escritorio\medconsult-saas\scripts\seed-all-data.js:11:3) {
+  clientVersion: '6.19.0',
+  errorCode: undefined,
+  retryable: undefined
+}

@@ -316,6 +316,24 @@ export class CitaController {
       return next(error);
     }
   }
+
+  /**
+   * GET /citas/admin/recent
+   * Obtener citas recientes para el dashboard de admin
+   */
+  async obtenerCitasRecientes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const citas = await citaService.obtenerCitasRecientes(limit);
+
+      return res.json({
+        success: true,
+        data: citas
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
 }
 
 export const citaController = new CitaController();

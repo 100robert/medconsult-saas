@@ -583,6 +583,40 @@ export class PagoService {
     // Simular 95% de éxito
     return Math.random() > 0.05;
   }
+
+  /**
+   * Obtener pagos recientes (Admin Dashboard)
+   */
+  async obtenerPagosRecientes(limit: number) {
+    const pagos = await prisma.pago.findMany({
+      take: limit,
+      orderBy: { fechaCreacion: 'desc' },
+      include: {
+        cita: true,
+        paciente: {
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true }
+            }
+          }
+        },
+        medico: {
+          include: {
+            usuario: { select: { nombre: true, apellido: true } },
+            especialidad: true
+          }
+        }
+      }
+    });
+
+    return pagos.map(p => ({
+      ...p,
+      monto: Number(p.monto),
+      comisionPlataforma: Number(p.comisionPlataforma),
+      montoMedico: Number(p.montoMedico),
+      montoReembolsado: Number(p.montoReembolsado)
+    }));
+  }
 }
 
 export const pagoService = new PagoService();

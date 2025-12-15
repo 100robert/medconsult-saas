@@ -708,6 +708,36 @@ export class CitaService {
           select: { fechaHoraCita: true }
         });
 
+        // Obtener última consulta con diagnóstico
+        const ultimaConsulta = await prisma.consulta.findFirst({
+          where: {
+            cita: {
+              idMedico,
+              idPaciente: stat.idPaciente,
+            },
+            estado: 'COMPLETADA'
+          },
+          orderBy: { fechaInicio: 'desc' },
+          select: {
+            diagnostico: true,
+            tratamiento: true,
+            fechaInicio: true
+          }
+        });
+
+        // Contar recetas activas
+        const recetasActivas = await prisma.receta.count({
+          where: {
+            idPaciente: stat.idPaciente,
+            idMedico,
+            estado: 'ACTIVA',
+            OR: [
+              { fechaVencimiento: null },
+              { fechaVencimiento: { gte: new Date() } }
+            ]
+          }
+        });
+
         return {
           id: paciente.id,
           nombre: paciente.usuario.nombre,
@@ -719,7 +749,11 @@ export class CitaService {
           ultimaConsulta: stat._max.fechaHoraCita,
           totalConsultas: stat._count.id,
           proximaCita: proximaCita?.fechaHoraCita || null,
-          imagenPerfil: paciente.usuario.imagenPerfil
+          imagenPerfil: paciente.usuario.imagenPerfil,
+          // Nuevos campos
+          ultimoDiagnostico: ultimaConsulta?.diagnostico || null,
+          ultimoTratamiento: ultimaConsulta?.tratamiento || null,
+          recetasActivas: recetasActivas,
         };
       })
     );
@@ -763,6 +797,25 @@ export class CitaService {
       select: { fechaHoraCita: true }
     });
 
+    // Obtener recetas activas del paciente
+    const recetasActivas = await prisma.receta.findMany({
+      where: {
+        idPaciente,
+        estado: 'ACTIVA',
+        OR: [
+          { fechaVencimiento: null },
+          { fechaVencimiento: { gte: new Date() } }
+        ]
+      },
+      select: {
+        id: true,
+        medicamentos: true,
+        instrucciones: true,
+        fechaVencimiento: true,
+        fechaEmision: true
+      }
+    });
+
     return {
       id: paciente.id,
       nombre: paciente.usuario.nombre,
@@ -771,10 +824,44 @@ export class CitaService {
       telefono: paciente.usuario.telefono || paciente.telefonoEmergencia,
       fechaNacimiento: paciente.usuario.fechaNacimiento || paciente.fechaNacimiento,
       genero: paciente.usuario.genero || paciente.genero,
+      imagenPerfil: paciente.usuario.imagenPerfil,
       proximaCita: proximaCita?.fechaHoraCita || null,
-      imagenPerfil: paciente.usuario.imagenPerfil
+      recetasActivas
     };
   }
+
+  /**
+   * Obtener citas recientes (Admin Dashboard)
+   */
+  async obtenerCitasRecientes(limit: number) {
+    const citas = await prisma.cita.findMany({
+      take: limit,
+      orderBy: { fechaCreacion: 'desc' }, // Ordenar por fecha de creación (feed de actividad)
+      include: {
+        paciente: {
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true, imagenPerfil: true }
+            }
+          }
+        },
+        medico: {
+          include: {
+            usuario: {
+              select: { nombre: true, apellido: true }
+            },
+            especialidad: {
+              select: { nombre: true }
+            }
+          }
+        }
+      }
+    });
+
+    return citas.map(c => this._formatCitaResponse(c));
+  }
+
+
 
 
   // Helper para formatear cita y aplanar estructuras

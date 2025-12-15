@@ -215,6 +215,24 @@ export class PagoController {
   }
 
   /**
+   * GET /pagos/admin/recent
+   * Obtener pagos recientes para el dashboard de admin
+   */
+  async obtenerPagosRecientes(req: Request, res: Response, next: NextFunction) {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const pagos = await pagoService.obtenerPagosRecientes(limit);
+
+      res.json({
+        success: true,
+        data: pagos
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /pagos/medico/ganancias/:idMedico
    * Obtener desglose de ganancias del médico
    */

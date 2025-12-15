@@ -147,6 +147,9 @@ export default function ConsultationsPage() {
                           <h3 className="font-semibold text-gray-900 text-lg">
                             {paciente.nombre} {paciente.apellido}
                           </h3>
+                          <span className="px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full text-xs font-medium">
+                            {paciente.totalConsultas} {paciente.totalConsultas === 1 ? 'consulta' : 'consultas'}
+                          </span>
                           {edad && (
                             <span className="text-sm text-gray-500">
                               {edad} años
@@ -154,23 +157,33 @@ export default function ConsultationsPage() {
                           )}
                         </div>
 
-                        <div className="flex items-center gap-4 mt-1.5 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-4 h-4" />
-                            {paciente.totalConsultas} {paciente.totalConsultas === 1 ? 'consulta' : 'consultas'}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            Última: {formatDate(paciente.ultimaConsulta)}
-                          </span>
+                        {/* Última consulta con diagnóstico */}
+                        <div className="flex items-center gap-2 mt-1.5 text-sm text-gray-600">
+                          <Calendar className="w-4 h-4 text-gray-400" />
+                          <span>Última: {formatDate(paciente.ultimaConsulta)}</span>
+                          {paciente.ultimoDiagnostico && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <span className="text-gray-700 font-medium">{paciente.ultimoDiagnostico}</span>
+                            </>
+                          )}
                         </div>
 
-                        {paciente.proximaCita && (
-                          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                            <Clock className="w-3.5 h-3.5" />
-                            Próxima cita: {formatDate(paciente.proximaCita)}
-                          </div>
-                        )}
+                        {/* Recetas activas */}
+                        <div className="flex items-center gap-3 mt-2">
+                          {paciente.recetasActivas !== undefined && paciente.recetasActivas > 0 && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
+                              <Pill className="w-3.5 h-3.5" />
+                              {paciente.recetasActivas} {paciente.recetasActivas === 1 ? 'receta activa' : 'recetas activas'}
+                            </span>
+                          )}
+                          {paciente.proximaCita && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                              <Clock className="w-3.5 h-3.5" />
+                              Próxima cita: {formatDate(paciente.proximaCita)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 

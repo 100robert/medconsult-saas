@@ -333,6 +333,8 @@ export class AuthService {
       activo: usuario.activo,
       imagenPerfil: usuario.imagenPerfil,
       telefono: usuario.telefono,
+      medicoId,
+      pacienteId,
     };
 
     return {
@@ -426,6 +428,8 @@ export class AuthService {
       activo: tokenDB.usuario.activo,
       imagenPerfil: tokenDB.usuario.imagenPerfil,
       telefono: tokenDB.usuario.telefono,
+      medicoId,
+      pacienteId,
     };
 
     return {
@@ -773,13 +777,22 @@ export class AuthService {
       throw new NotFoundError('Usuario no encontrado');
     }
 
-    // Obtener información de Pro si es paciente
+    // Obtener información según el rol
     let isPro = false;
+    let medicoId: string | undefined;
+    let pacienteId: string | undefined;
+
     if (usuario.rol === 'PACIENTE') {
       const paciente = await prisma.paciente.findUnique({
         where: { idUsuario: userId }
       });
       isPro = paciente?.esPro || false;
+      pacienteId = paciente?.id;
+    } else if (usuario.rol === 'MEDICO') {
+      const medico = await prisma.medico.findUnique({
+        where: { idUsuario: userId }
+      });
+      medicoId = medico?.id;
     }
 
     return {
@@ -798,6 +811,8 @@ export class AuthService {
           genero: usuario.genero,
           imagenPerfil: usuario.imagenPerfil,
           isPro,
+          medicoId,
+          pacienteId,
         },
       },
     };

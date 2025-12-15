@@ -44,6 +44,17 @@ export interface Paciente {
     nombre: string;
     apellido: string;
   };
+  // Datos médicos
+  grupoSanguineo?: string;
+  alergias?: string;
+  condicionesCronicas?: string;
+  medicamentosActuales?: string;
+  contactoEmergencia?: string;
+  telefonoEmergencia?: string;
+  // Para lista de pacientes
+  ultimoDiagnostico?: string;
+  ultimoTratamiento?: string;
+  recetasActivas?: number | any[];
 }
 
 
@@ -202,7 +213,16 @@ export async function getPacienteById(id: string): Promise<Paciente | null> {
 
 export async function getHistorialPaciente(idPaciente: string): Promise<any[]> {
   try {
-    const response = await api.get<any>(`/consultas/paciente/${idPaciente}`);
+    // Aumentamos el límite para obtener todas las consultas
+    const response = await api.get<any>(`/consultas/paciente/${idPaciente}?limit=100`);
+    console.log('📋 [getHistorialPaciente] Response:', response.data);
+
+    // El backend devuelve { success: true, data: [...], pagination: {...} }
+    const data = response.data.data;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    // Fallback por si viene en otro formato
     return response.data.data?.consultas || response.data.consultas || [];
   } catch (error: any) {
     console.error('Error al obtener historial:', error);

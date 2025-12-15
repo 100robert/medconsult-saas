@@ -66,6 +66,8 @@ export interface UserData {
   fechaNacimiento?: Date | null;
   genero?: string | null;
   isPro?: boolean; // Plan Pro/Premium para pacientes
+  medicoId?: string; // ID del registro Medico (si rol es MEDICO)
+  pacienteId?: string; // ID del registro Paciente (si rol es PACIENTE)
 }
 
 export interface MessageResponse {

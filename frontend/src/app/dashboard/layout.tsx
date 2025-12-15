@@ -162,6 +162,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const menuItems = getMenuItems();
 
+  // Detectar si estamos en una página de videollamada (sala de consulta)
+  // Patrón: /dashboard/consultations/[uuid]
+  const isVideoConsultationPage = pathname?.match(/^\/dashboard\/consultations\/[a-f0-9-]+$/i);
+
+  // Si estamos en videollamada, mostrar solo el contenido sin layout
+  if (isVideoConsultationPage) {
+    return <>{children}</>;
+  }
+
   if (!isAuthenticated && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

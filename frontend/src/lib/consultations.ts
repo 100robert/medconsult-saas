@@ -113,6 +113,10 @@ export interface PacienteAtendido {
   totalConsultas: number;
   proximaCita?: string;
   imagenPerfil?: string;
+  // Nuevos campos según diseño
+  ultimoDiagnostico?: string;
+  ultimoTratamiento?: string;
+  recetasActivas?: number;
 }
 
 // Obtener pacientes atendidos por el médico (para historial)

@@ -63,6 +63,13 @@ router.get('/medico/:idMedico/pacientes',
   citaController.obtenerPacientes
 );
 
+// Obtener citas recientes (Admin Dashboard)
+router.get('/admin/recent',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['ADMIN']),
+  citaController.obtenerCitasRecientes
+);
+
 // Obtener citas de un médico
 router.get('/medico/:idMedico',
   authMiddleware.verifyToken,

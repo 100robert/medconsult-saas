@@ -187,27 +187,62 @@ export default function AppointmentsPage() {
   };
 
   // Función para unirse a la videoconsulta
-  const handleJoinConsultation = async (citaId: string) => {
+  const handleJoinConsultation = async (citaId: string, appointment: Appointment) => {
     try {
       setJoiningConsultation(citaId);
 
       // Buscar si ya existe una consulta para esta cita
-      const response = await api.get(`/consultas/cita/${citaId}`);
-      const consulta = response.data.data || response.data;
+      try {
+        const response = await api.get(`/consultas/cita/${citaId}`);
+        const consulta = response.data.data || response.data;
 
-      if (consulta && consulta.id) {
-        toast.success('Conectando a la sala de videoconsulta...');
-        router.push(`/dashboard/consultations/${consulta.id}`);
-      } else {
-        toast.error('El médico aún no ha iniciado la consulta');
+        if (consulta && consulta.id) {
+          toast.success('Conectando a la sala de videoconsulta...');
+          router.push(`/dashboard/consultations/${consulta.id}`);
+          return;
+        }
+      } catch (getError: any) {
+        // Si es 404, significa que no existe la consulta
+        if (getError.response?.status === 404) {
+          // Si es médico, crear la consulta automáticamente
+          if (user?.rol === 'MEDICO') {
+            toast.info('Iniciando consulta...');
+            try {
+              // Determinar el tipo de consulta basado en el tipo de cita
+              const tipoConsulta = ((appointment.tipo as string) === 'VIDEOCONSULTA' || (appointment.tipo as string) === 'VIRTUAL')
+                ? 'VIDEO'
+                : 'PRESENCIAL';
+
+              const createResponse = await api.post('/consultas', {
+                idCita: citaId,
+                tipoConsulta: tipoConsulta,
+                notas: ''
+              });
+
+              const nuevaConsulta = createResponse.data.data || createResponse.data;
+
+              if (nuevaConsulta && nuevaConsulta.id) {
+                toast.success('Consulta iniciada. Conectando a la sala...');
+                router.push(`/dashboard/consultations/${nuevaConsulta.id}`);
+                return;
+              }
+            } catch (createError: any) {
+              console.error('Error creando consulta:', createError);
+              toast.error(createError.response?.data?.message || 'Error al iniciar la consulta');
+              return;
+            }
+          } else {
+            // Si es paciente, mostrar mensaje de espera
+            toast.error('El médico aún no ha iniciado la consulta. Por favor espera.');
+            return;
+          }
+        } else {
+          throw getError;
+        }
       }
     } catch (error: any) {
       console.error('Error uniéndose a consulta:', error);
-      if (error.response?.status === 404) {
-        toast.error('El médico aún no ha iniciado la consulta. Por favor espera.');
-      } else {
-        toast.error('Error al conectar con la consulta');
-      }
+      toast.error('Error al conectar con la consulta');
     } finally {
       setJoiningConsultation(null);
     }
@@ -430,7 +465,7 @@ export default function AppointmentsPage() {
                                 variant="primary"
                                 size="sm"
                                 className="shadow-lg"
-                                onClick={() => handleJoinConsultation(appointment.id)}
+                                onClick={() => handleJoinConsultation(appointment.id, appointment)}
                                 disabled={joiningConsultation === appointment.id}
                               >
                                 {joiningConsultation === appointment.id ? (

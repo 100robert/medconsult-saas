@@ -32,6 +32,13 @@ router.get('/admin/comisiones',
   pagoController.obtenerComisionesAdmin
 );
 
+// Obtener pagos recientes (Admin Dashboard)
+router.get('/admin/recent',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['ADMIN']),
+  pagoController.obtenerPagosRecientes
+);
+
 // ========== RUTAS DE GANANCIAS (MÉDICO) ==========
 
 // Obtener mis ganancias (médico autenticado)

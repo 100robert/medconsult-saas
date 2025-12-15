@@ -68,7 +68,7 @@ export async function getAllUsers(params?: GetUsersParams): Promise<GetUsersResp
 
     const url = `/auth/admin/users${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await api.get<any>(url);
-    
+
     return {
       usuarios: response.data.data?.usuarios || response.data.usuarios || [],
       total: response.data.data?.total || response.data.total || 0,
@@ -241,16 +241,16 @@ export interface CreateUserData {
   idiomas?: string[];
 }
 
-export async function createUser(data: CreateUserData): Promise<{ success: boolean; user?: User; error?: string; errors?: Array<{campo: string; mensaje: string}> }> {
+export async function createUser(data: CreateUserData): Promise<{ success: boolean; user?: User; error?: string; errors?: Array<{ campo: string; mensaje: string }> }> {
   try {
     const response = await api.post<any>('/auth/admin/create-user', data);
-    return { 
-      success: true, 
-      user: response.data.data?.usuario || response.data.usuario || response.data 
+    return {
+      success: true,
+      user: response.data.data?.usuario || response.data.usuario || response.data
     };
   } catch (error: any) {
     console.error('Error al crear usuario:', error.response?.data);
-    
+
     // Si hay errores de validación detallados
     const validationErrors = error.response?.data?.errors;
     if (validationErrors && Array.isArray(validationErrors)) {
@@ -259,17 +259,17 @@ export async function createUser(data: CreateUserData): Promise<{ success: boole
         campo: e.campo || e.path?.join('.') || 'desconocido',
         mensaje: e.mensaje || e.message || 'Error de validación'
       }));
-      
+
       // Crear mensaje legible
       const errorMessage = formattedErrors.map((e: any) => `${e.campo}: ${e.mensaje}`).join('\n');
-      
-      return { 
-        success: false, 
+
+      return {
+        success: false,
         error: errorMessage,
         errors: formattedErrors
       };
     }
-    
+
     const errorMessage = error.response?.data?.mensaje || error.response?.data?.message || 'Error al crear usuario';
     return { success: false, error: errorMessage };
   }
@@ -298,16 +298,16 @@ export interface UpdateUserData {
   correoVerificado?: boolean;
 }
 
-export async function updateUser(id: string, data: UpdateUserData): Promise<{ success: boolean; user?: User; error?: string; errors?: Array<{campo: string; mensaje: string}> }> {
+export async function updateUser(id: string, data: UpdateUserData): Promise<{ success: boolean; user?: User; error?: string; errors?: Array<{ campo: string; mensaje: string }> }> {
   try {
     const response = await api.patch<any>(`/auth/admin/users/${id}`, data);
-    return { 
-      success: true, 
-      user: response.data.data?.usuario || response.data.usuario || response.data 
+    return {
+      success: true,
+      user: response.data.data?.usuario || response.data.usuario || response.data
     };
   } catch (error: any) {
     console.error('Error al actualizar usuario:', error.response?.data);
-    
+
     // Si hay errores de validación detallados
     const validationErrors = error.response?.data?.errors;
     if (validationErrors && Array.isArray(validationErrors)) {
@@ -318,8 +318,232 @@ export async function updateUser(id: string, data: UpdateUserData): Promise<{ su
       const errorMessage = formattedErrors.map((e: any) => `${e.campo}: ${e.mensaje}`).join('\n');
       return { success: false, error: errorMessage, errors: formattedErrors };
     }
-    
+
     const errorMessage = error.response?.data?.mensaje || error.response?.data?.message || 'Error al actualizar usuario';
     return { success: false, error: errorMessage };
+  }
+}
+
+// ============ ACTIVIDAD DE LA PLATAFORMA ============
+
+export interface PlatformActivity {
+  id: string;
+  type: 'cita' | 'consulta' | 'pago' | 'registro' | 'resena';
+  title: string;
+  description: string;
+  timestamp: string;
+  user?: string;
+  amount?: number;
+  status?: string;
+}
+
+// ... (interfaces previous)
+
+export interface GraphDataPoint {
+  name: string; // Fecha o Mes
+  citas: number;
+  ingresos: number;
+  fullDate: string; // Para sorting y key única
+}
+
+export interface ActivitySummary {
+  citasHoy: number;
+  citasSemana: number;
+  consultasCompletadas: number;
+  ingresosMes: number;
+  activities: PlatformActivity[];
+  graphData: GraphDataPoint[];
+}
+
+export async function getPlatformActivity(range: '30d' | '90d' | '1y' = '30d'): Promise<ActivitySummary> {
+  try {
+    // Calcular fechas según rango
+    const now = new Date();
+    const startDate = new Date();
+    let limit = 100; // Default limit
+
+    if (range === '30d') {
+      startDate.setDate(now.getDate() - 30);
+      limit = 300; // Intentar traer suficientes registros para 30 días
+    } else if (range === '90d') {
+      startDate.setDate(now.getDate() - 90);
+      limit = 1000;
+    } else {
+      startDate.setFullYear(now.getFullYear() - 1);
+      limit = 5000;
+    }
+
+    // Obtener datos del sistema (con límites más altos para tener historial)
+    const [citasResponse, pagosResponse] = await Promise.all([
+      api.get<any>(`/citas/admin/recent?limit=${limit}`).catch(() => ({ data: { data: [] } })),
+      api.get<any>(`/pagos/admin/recent?limit=${limit}`).catch(() => ({ data: { data: [] } }))
+    ]);
+
+    const citas = citasResponse.data?.data || citasResponse.data || [];
+    const pagos = pagosResponse.data?.data || pagosResponse.data || [];
+
+    // --- Procesar Actividades Recientes (Feed) ---
+    const activities: PlatformActivity[] = [];
+
+    if (Array.isArray(citas)) {
+      citas.slice(0, 20).forEach((cita: any) => { // Solo las 20 más recientes para el feed
+        const pacienteNombre = cita.paciente?.usuario?.nombre || cita.paciente?.nombre || 'Paciente';
+        const medicoNombre = cita.medico?.usuario?.nombre || cita.medico?.nombre || 'Médico';
+
+        activities.push({
+          id: cita.id,
+          type: 'cita',
+          title: 'Nueva cita programada',
+          description: `${pacienteNombre} con Dr. ${medicoNombre}`,
+          timestamp: cita.fechaCreacion || cita.fechaHoraCita || new Date().toISOString(),
+          status: cita.estado
+        });
+      });
+    }
+
+    if (Array.isArray(pagos)) {
+      pagos.slice(0, 20).forEach((pago: any) => {
+        activities.push({
+          id: pago.id,
+          type: 'pago',
+          title: 'Pago recibido',
+          description: `S/ ${Number(pago.monto || 0).toFixed(2)}`,
+          timestamp: pago.fechaPago || pago.fechaCreacion || new Date().toISOString(),
+          amount: Number(pago.monto || 0),
+          status: pago.estado
+        });
+      });
+    }
+
+    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    // --- Calcular KPIs Generales ---
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const inicioDeSemana = new Date(hoy);
+    inicioDeSemana.setDate(hoy.getDate() - hoy.getDay());
+
+    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+    let citasHoy = 0;
+    let citasSemana = 0;
+    let consultasCompletadas = 0;
+    let ingresosMes = 0;
+
+    if (Array.isArray(citas)) {
+      citas.forEach((cita: any) => {
+        const fechaCita = new Date(cita.fechaHoraCita || cita.fechaCreacion);
+        if (fechaCita >= hoy) citasHoy++;
+        if (fechaCita >= inicioDeSemana) citasSemana++;
+        if (cita.estado === 'COMPLETADA') consultasCompletadas++;
+      });
+    }
+
+    if (Array.isArray(pagos)) {
+      pagos.forEach((pago: any) => {
+        const fechaPago = new Date(pago.fechaPago || pago.fechaCreacion);
+        if (fechaPago >= inicioMes && (pago.estado === 'COMPLETADO' || pago.estado === 'APROBADO')) {
+          ingresosMes += Number(pago.monto) || 0;
+        }
+      });
+    }
+
+    // --- Generar Datos para la Gráfica ---
+    // Agrupar por fecha o mes según el rango
+    const graphMap = new Map<string, { citas: number; ingresos: number; date: Date }>();
+
+    // Inicializar el mapa con todos los puntos del rango para que no queden huecos
+    const currentDate = new Date(startDate);
+    while (currentDate <= now) {
+      let key = '';
+      if (range === '1y') {
+        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        key = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear().toString().substr(-2)}`; // Ene 24
+      } else {
+        key = `${currentDate.getDate()}/${currentDate.getMonth() + 1}`; // 15/12
+      }
+
+      if (!graphMap.has(key)) {
+        graphMap.set(key, { citas: 0, ingresos: 0, date: new Date(currentDate) });
+      }
+
+      // Avanzar
+      if (range === '1y') {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      } else {
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+
+    // Llenar con datos de Citas
+    if (Array.isArray(citas)) {
+      citas.forEach((cita: any) => {
+        const date = new Date(cita.fechaHoraCita || cita.fechaCreacion);
+        if (date >= startDate && date <= now) {
+          let key = '';
+          if (range === '1y') {
+            const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            key = `${monthNames[date.getMonth()]} ${date.getFullYear().toString().substr(-2)}`;
+          } else {
+            key = `${date.getDate()}/${date.getMonth() + 1}`;
+          }
+
+          if (graphMap.has(key)) {
+            const entry = graphMap.get(key)!;
+            entry.citas += 1;
+          }
+        }
+      });
+    }
+
+    // Llenar con datos de Pagos
+    if (Array.isArray(pagos)) {
+      pagos.forEach((pago: any) => {
+        const date = new Date(pago.fechaPago || pago.fechaCreacion);
+        if (date >= startDate && date <= now && (pago.estado === 'COMPLETADO' || pago.estado === 'APROBADO')) {
+          let key = '';
+          if (range === '1y') {
+            const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            key = `${monthNames[date.getMonth()]} ${date.getFullYear().toString().substr(-2)}`;
+          } else {
+            key = `${date.getDate()}/${date.getMonth() + 1}`;
+          }
+
+          if (graphMap.has(key)) {
+            const entry = graphMap.get(key)!;
+            entry.ingresos += Number(pago.monto) || 0;
+          }
+        }
+      });
+    }
+
+    // Convertir mapa a array
+    const graphData: GraphDataPoint[] = Array.from(graphMap.entries()).map(([name, data]) => ({
+      name,
+      citas: data.citas,
+      ingresos: data.ingresos,
+      fullDate: data.date.toISOString()
+    }));
+
+    return {
+      citasHoy,
+      citasSemana,
+      consultasCompletadas,
+      ingresosMes,
+      activities: activities.slice(0, 10),
+      graphData
+    };
+
+  } catch (error: any) {
+    console.error('Error al obtener actividad de plataforma:', error);
+    return {
+      citasHoy: 0,
+      citasSemana: 0,
+      consultasCompletadas: 0,
+      ingresosMes: 0,
+      activities: [],
+      graphData: []
+    };
   }
 }

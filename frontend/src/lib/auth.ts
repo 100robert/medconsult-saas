@@ -16,6 +16,8 @@ export interface User {
   correoVerificado: boolean;
   activo: boolean;
   isPro?: boolean; // Plan Pro/Premium
+  medicoId?: string; // ID del registro Medico (si rol es MEDICO)
+  pacienteId?: string; // ID del registro Paciente (si rol es PACIENTE)
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +59,8 @@ interface BackendAuthResponse {
       imagenPerfil?: string | null;
       correoVerificado: boolean;
       activo: boolean;
+      medicoId?: string | null;
+      pacienteId?: string | null;
     };
     accessToken: string;
     refreshToken: string;
@@ -77,6 +81,8 @@ function transformUser(backendUser: BackendAuthResponse['data']['usuario']): Use
     imagenPerfil: backendUser.imagenPerfil || undefined,
     correoVerificado: backendUser.correoVerificado,
     activo: backendUser.activo,
+    medicoId: backendUser.medicoId || undefined,
+    pacienteId: backendUser.pacienteId || undefined,
     createdAt: '',
     updatedAt: '',
   };

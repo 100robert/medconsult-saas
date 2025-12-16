@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, Video, MapPin, User, Search, Filter, Plus, MoreVertical, ChevronRight, CalendarDays, CheckCircle2, XCircle, AlertCircle, Loader2, X, DollarSign } from 'lucide-react';
+import { Calendar, Clock, Video, MapPin, User, Search, Filter, Plus, MoreVertical, ChevronRight, CalendarDays, CheckCircle2, XCircle, AlertCircle, Loader2, X } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/ui';
-import { getMisCitas, cancelarCita, type Appointment, type Medico } from '@/lib/appointments';
+import { getMisCitas, cancelarCita, reprogramarCita, getAvailableSlots, type Appointment, type Medico, type Slot } from '@/lib/appointments';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 
@@ -26,6 +26,11 @@ function getSpecialtyName(medico?: Medico): string {
 
 function safeDate(dateStr: string): Date | null {
   if (!dateStr) return null;
+  // If dateStr is likely "YYYY-MM-DD", parse as local date to avoid UTC confusion
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
   const d = new Date(dateStr);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -93,6 +98,15 @@ export default function AppointmentsPage() {
   const [loadingRefundInfo, setLoadingRefundInfo] = useState(false);
   const [cancellingInProgress, setCancellingInProgress] = useState(false);
 
+  // Estado para reprogramación
+  const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+  const [reschedulingAppointment, setReschedulingAppointment] = useState<Appointment | null>(null);
+  const [newDate, setNewDate] = useState<string>('');
+  const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [reschedulingInProgress, setReschedulingInProgress] = useState(false);
+
   // Cargar citas del backend
   useEffect(() => {
     async function fetchAppointments() {
@@ -145,6 +159,84 @@ export default function AppointmentsPage() {
       descripcion: descripcion,
       horasRestantes: Math.max(0, horasRestantes)
     });
+  };
+
+  // Verificar si se puede reprogramar (política de 3 horas)
+  const canReschedule = (appointment: Appointment) => {
+    const fechaCita = new Date(appointment.fecha + 'T' + appointment.horaInicio);
+    const ahora = new Date();
+    const diffMs = fechaCita.getTime() - ahora.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours >= 3;
+  };
+
+  // Abrir modal de reprogramación
+  const openRescheduleModal = (appointment: Appointment) => {
+    setReschedulingAppointment(appointment);
+    setRescheduleModalOpen(true);
+    setNewDate('');
+    setAvailableSlots([]);
+    setSelectedSlot(null);
+  };
+
+  // Manejar cambio de fecha para reprogramación
+  const handleDateChange = async (date: string) => {
+    setNewDate(date);
+    setSelectedSlot(null);
+    if (!reschedulingAppointment?.medico?.id) return;
+
+    setLoadingSlots(true);
+    try {
+      const slots = await getAvailableSlots(reschedulingAppointment.medico.id, date);
+      setAvailableSlots(slots);
+    } catch (err) {
+      console.error('Error cargando slots:', err);
+      toast.error('Error al cargar horarios disponibles');
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  // Confirmar reprogramación
+  const confirmReschedule = async () => {
+    if (!reschedulingAppointment || !selectedSlot) return;
+
+    setReschedulingInProgress(true);
+    try {
+      // Necesitamos ID de disponibilidad y la nueva fecha completa ISO
+      // selectedSlot.fechaHora ya viene en formato ISO correcto esperamos
+
+      await reprogramarCita(
+        reschedulingAppointment.id,
+        selectedSlot.fechaHora,
+        selectedSlot.disponibilidadId
+      );
+
+      toast.success('Cita reprogramada exitosamente');
+
+      // Actualizar lista
+      setAppointments(prev =>
+        prev.map(apt => {
+          if (apt.id === reschedulingAppointment.id) {
+            // Actualizar fecha y hora visibles
+            const [fecha, hora] = selectedSlot.fechaHora.split('T');
+            return {
+              ...apt,
+              fecha: fecha,
+              horaInicio: hora.substring(0, 5)
+            };
+          }
+          return apt;
+        })
+      );
+
+      setRescheduleModalOpen(false);
+      setReschedulingAppointment(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al reprogramar la cita');
+    } finally {
+      setReschedulingInProgress(false);
+    }
   };
 
   // Cerrar modal de cancelación
@@ -481,12 +573,20 @@ export default function AppointmentsPage() {
                                 )}
                               </Button>
                             )}
-                            {(appointment.estado === 'PROGRAMADA' || appointment.estado === 'PENDIENTE') && (
+                            {(appointment.estado === 'PROGRAMADA' || appointment.estado === 'PENDIENTE' || appointment.estado === 'CONFIRMADA') && (
                               <button
                                 onClick={() => openCancelModal(appointment)}
                                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
                               >
                                 Cancelar cita
+                              </button>
+                            )}
+                            {(appointment.estado === 'PROGRAMADA' || appointment.estado === 'CONFIRMADA') && canReschedule(appointment) && (
+                              <button
+                                onClick={() => openRescheduleModal(appointment)}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm ml-2"
+                              >
+                                Reprogramar
                               </button>
                             )}
                           </div>
@@ -623,7 +723,11 @@ export default function AppointmentsPage() {
               ) : refundInfo && (
                 <div className={`rounded-xl p-4 ${refundInfo.porcentajeReembolso > 0 ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className={`w-5 h-5 ${refundInfo.porcentajeReembolso > 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+                    <div className="p-3 bg-green-100 rounded-xl">
+                      <span className="flex items-center justify-center w-5 h-5 text-green-600 font-bold text-base">
+                        S/
+                      </span>
+                    </div>
                     <span className={`font-semibold ${refundInfo.porcentajeReembolso > 0 ? 'text-emerald-800' : 'text-red-800'}`}>
                       Reembolso: {refundInfo.porcentajeReembolso}%
                     </span>
@@ -670,6 +774,115 @@ export default function AppointmentsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Reprogramación */}
+      {
+        rescheduleModalOpen && reschedulingAppointment && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="flex items-center justify-between p-5 border-b flex-shrink-0">
+                <h3 className="text-lg font-semibold text-gray-900">Reprogramar Cita</h3>
+                <button
+                  onClick={() => setRescheduleModalOpen(false)}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-5 space-y-4 overflow-y-auto">
+                {/* Info Actual */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <p className="text-blue-800 text-sm font-medium mb-1">Cita Actual:</p>
+                  <div className="text-sm text-blue-700">
+                    <p>Fecha: {new Date(reschedulingAppointment.fecha).toLocaleDateString('es-ES')}</p>
+                    <p>Hora: {reschedulingAppointment.horaInicio}</p>
+                    <p>Dr. {reschedulingAppointment.medico?.usuario?.nombre || reschedulingAppointment.medico?.nombre} {reschedulingAppointment.medico?.usuario?.apellido || reschedulingAppointment.medico?.apellido}</p>
+                  </div>
+                </div>
+
+                {/* Selector de Nueva Fecha */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Selecciona Nueva Fecha
+                  </label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split('T')[0]}
+                    value={newDate}
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  />
+                </div>
+
+                {/* Selector de Slots */}
+                {newDate && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Horarios Disponibles
+                    </label>
+                    {loadingSlots ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+                      </div>
+                    ) : availableSlots.length > 0 ? (
+                      <div className="grid grid-cols-3 gap-2">
+                        {availableSlots.map((slot) => {
+                          const isSelected = selectedSlot?.disponibilidadId === slot.disponibilidadId && selectedSlot?.horaInicio === slot.horaInicio;
+                          return (
+                            <button
+                              key={`${slot.disponibilidadId}-${slot.horaInicio}`}
+                              onClick={() => setSelectedSlot(slot)}
+                              className={`px-2 py-2 text-sm rounded-lg border transition-all ${isSelected
+                                ? 'bg-teal-600 text-white border-teal-600 shadow-md'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-teal-300 hover:bg-teal-50'
+                                }`}
+                            >
+                              {slot.horaInicio.substring(0, 5)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 text-center py-2 bg-gray-50 rounded-lg">
+                        No hay horarios disponibles para esta fecha.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+              </div>
+
+              {/* Footer */}
+              <div className="flex gap-3 p-5 border-t bg-gray-50 rounded-b-2xl flex-shrink-0">
+                <button
+                  onClick={() => setRescheduleModalOpen(false)}
+                  disabled={reschedulingInProgress}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmReschedule}
+                  disabled={!selectedSlot || reschedulingInProgress}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {reschedulingInProgress ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Procesando...
+                    </>
+                  ) : (
+                    'Confirmar Cambio'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      }
     </div>
   );
 }

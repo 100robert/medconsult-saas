@@ -73,8 +73,16 @@ export async function getMisCitas(): Promise<Appointment[]> {
 
       if (cita.fechaHoraCita) {
         const fechaHora = new Date(cita.fechaHoraCita);
-        fecha = fechaHora.toISOString().split('T')[0]; // "2025-12-09"
-        horaInicio = fechaHora.toTimeString().slice(0, 5); // "09:00"
+        // "2025-12-09" (Formatted in local time to avoid shifting to previous day)
+        const year = fechaHora.getFullYear();
+        const month = String(fechaHora.getMonth() + 1).padStart(2, '0');
+        const day = String(fechaHora.getDate()).padStart(2, '0');
+        fecha = `${year}-${month}-${day}`;
+
+        // "09:00" (Formatted in local time)
+        const hours = String(fechaHora.getHours()).padStart(2, '0');
+        const minutes = String(fechaHora.getMinutes()).padStart(2, '0');
+        horaInicio = `${hours}:${minutes}`;
       }
 
       return {
@@ -177,6 +185,18 @@ export async function actualizarNotasCita(id: string, notas: string): Promise<Ap
   const response = await api.put<BackendResponse<{ cita: Appointment }>>(
     `/citas/${id}/notas`,
     { notas }
+  );
+  return response.data.data.cita;
+}
+
+// Reprogramar cita (paciente)
+export async function reprogramarCita(id: string, newDate: string, newAvailabilityId: string): Promise<Appointment> {
+  const response = await api.patch<BackendResponse<{ cita: Appointment }>>(
+    `/citas/${id}/reprogramar`,
+    {
+      newDate,
+      newAvailabilityId
+    }
   );
   return response.data.data.cita;
 }

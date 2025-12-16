@@ -141,9 +141,14 @@ export class DisponibilidadController {
       const fechaDesde = req.query.desde
         ? new Date(req.query.desde as string)
         : new Date();
-      const fechaHasta = req.query.hasta
+      let fechaHasta = req.query.hasta
         ? new Date(req.query.hasta as string)
         : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 días por defecto
+
+      // Asegurar que fechaHasta cubra todo el día (23:59:59.999)
+      // Esto es crucial para que la query a BD encuentre las citas de ese día
+      fechaHasta.setUTCHours(23, 59, 59, 999);
+
       const duracion = parseInt(req.query.duracion as string) || 30;
 
       const slots = await disponibilidadService.obtenerSlotsDisponibles(

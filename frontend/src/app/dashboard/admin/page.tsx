@@ -23,8 +23,7 @@ import {
   Settings,
   FileText,
   CreditCard,
-  CalendarCheck,
-  DollarSign
+  CalendarCheck
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
@@ -272,8 +271,10 @@ export default function AdminDashboardPage() {
           className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-              <DollarSign className="w-6 h-6" />
+            <div className="p-3 bg-green-100 rounded-xl">
+              <span className="flex items-center justify-center w-5 h-5 text-green-600 font-bold text-base">
+                S/
+              </span>
             </div>
             <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full flex items-center gap-1">
               <TrendingUp className="w-3 h-3" /> +8%
@@ -356,7 +357,11 @@ export default function AdminDashboardPage() {
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-2 text-violet-600 mb-1">
-                  <DollarSign className="w-5 h-5" />
+                  <div className="p-3 bg-green-100 rounded-xl">
+                    <span className="flex items-center justify-center w-5 h-5 text-green-600 font-bold text-base">
+                      S/
+                    </span>
+                  </div>
                   <span className="text-2xl font-bold">S/ {activityData.ingresosMes.toFixed(0)}</span>
                 </div>
                 <p className="text-sm text-gray-500">Ingresos del mes</p>
@@ -368,47 +373,84 @@ export default function AdminDashboardPage() {
               {activityData.graphData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={activityData.graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    {/* Definir gradientes para las áreas */}
+                    <defs>
+                      <linearGradient id="colorCitas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0d9488" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis
                       dataKey="name"
-                      axisLine={false}
+                      stroke="#64748b"
+                      style={{ fontSize: '12px' }}
                       tickLine={false}
-                      tick={{ fontSize: 11, fill: '#9ca3af' }}
+                      axisLine={{ stroke: '#e2e8f0' }}
                       dy={10}
                       interval={timeRange === '30d' ? 2 : 1}
                     />
                     <YAxis
                       yAxisId="left"
-                      axisLine={false}
+                      stroke="#64748b"
+                      style={{ fontSize: '12px' }}
                       tickLine={false}
-                      tick={{ fontSize: 11, fill: '#9ca3af' }}
+                      axisLine={{ stroke: '#e2e8f0' }}
                     />
                     <YAxis
                       yAxisId="right"
                       orientation="right"
-                      axisLine={false}
+                      stroke="#64748b"
+                      style={{ fontSize: '12px' }}
                       tickLine={false}
-                      tick={{ fontSize: 11, fill: '#9ca3af' }}
+                      axisLine={{ stroke: '#e2e8f0' }}
                     />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f9fafb' }} />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                    <Bar
+                    <Tooltip
+                      content={<CustomTooltip />}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                      }}
+                    />
+                    <Legend
+                      iconType="circle"
+                      wrapperStyle={{
+                        fontSize: '14px',
+                        paddingTop: '20px',
+                        fontWeight: '500'
+                      }}
+                    />
+
+                    {/* Cambiar Bar por Area para el efecto elegante */}
+                    <Area
                       yAxisId="left"
+                      type="monotone"
                       dataKey="citas"
                       name="Citas"
-                      fill="#0d9488"
-                      radius={[4, 4, 0, 0]}
-                      barSize={timeRange === '1y' ? 20 : 8}
+                      stroke="#0d9488"
+                      strokeWidth={3}
+                      fill="url(#colorCitas)"
+                      dot={false}
+                      activeDot={{ r: 5, fill: '#0d9488' }}
                     />
-                    <Line
+
+                    <Area
                       yAxisId="right"
                       type="monotone"
                       dataKey="ingresos"
                       name="Ingresos (S/)"
                       stroke="#10b981"
-                      strokeWidth={2}
+                      strokeWidth={3}
+                      fill="url(#colorIngresos)"
                       dot={false}
-                      activeDot={{ r: 4 }}
+                      activeDot={{ r: 5, fill: '#10b981' }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>

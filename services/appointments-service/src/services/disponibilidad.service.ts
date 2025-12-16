@@ -289,6 +289,10 @@ export class DisponibilidadService {
 
     let fecha = new Date(fechaDesde);
 
+    console.log(`[DEBUG] Generando slots para médico ${idMedico} del ${fechaDesde.toISOString()} al ${fechaHasta.toISOString()}`);
+    console.log(`[DEBUG] Citas existentes encontradas encontradas: ${citasExistentes.length}`);
+    citasExistentes.forEach(c => console.log(`  - Cita: ${c.fechaHoraCita.toISOString()} Estado: ${(c as any).estado} ID: ${c.idDisponibilidad}`));
+
     while (fecha <= fechaHasta) {
       const fechaStr = fecha.toISOString().split('T')[0];
 
@@ -315,11 +319,57 @@ export class DisponibilidadService {
           const slotHora = Math.floor(slotInicio / 60);
           const slotMinuto = slotInicio % 60;
 
-          const fechaHoraSlot = new Date(fecha);
-          fechaHoraSlot.setHours(slotHora, slotMinuto, 0, 0);
+          // Construct date using string to ensure it interprets as local time (matching appointment creation)
+          // fechaStr is YYYY-MM-DD. slotHora/Minuto are local hours.
+          // This creates "YYYY-MM-DDTHH:MM:00" which Date() parses as local time -> correct UTC
+          const horaStr = `${String(slotHora).padStart(2, '0')}:${String(slotMinuto).padStart(2, '0')}`;
+          const fechaHoraSlot = new Date(`${fechaStr}T${horaStr}:00`);
 
-          // Verificar si el slot está ocupado
-          if (!citasSet.has(fechaHoraSlot.toISOString())) {
+          // Verificar si el slot está ocupado usando superposición de intervalos (más robusto que comparación de strings)
+          // Slot: [fechaHoraSlot, slotFin]
+          // Verificar si el slot está ocupado usando superposición de intervalos
+          // Implementamos chequeo doble para manejar discrepancias de Timezone (UTC vs Local -5)
+          const slotInicioMs = fechaHoraSlot.getTime();
+          const slotFinMs = slotInicioMs + (duracionConsulta * 60 * 1000);
+
+          // Shift de 5 horas (18000000 ms) para alinear UTC server con Data Local (UTC-5)
+          const TIMEZONE_OFFSET_MS = 5 * 60 * 60 * 1000;
+          const slotInicioMsShifted = slotInicioMs + TIMEZONE_OFFSET_MS;
+          const slotFinMsShifted = slotFinMs + TIMEZONE_OFFSET_MS;
+
+          const isOccupied = citasExistentes.some(cita => {
+            const citaInicioMs = cita.fechaHoraCita.getTime();
+            // Asumimos que las citas duran lo mismo que la consulta programada o usamos un default
+            const citaFinMs = citaInicioMs + (duracionConsulta * 60 * 1000);
+
+            // 1. Chequeo Normal (Si server y DB están en misma zona)
+            const overlapNormal = slotInicioMs < citaFinMs && slotFinMs > citaInicioMs;
+
+            // 2. Chequeo Shifted (Si server es UTC y DB es Local/-5)
+            // Esto corrige el caso donde slot 13:00 se genera como 13:00 UTC pero la cita es 18:00 UTC (13:00 Local)
+            const overlapShifted = slotInicioMsShifted < citaFinMs && slotFinMsShifted > citaInicioMs;
+
+            // DEBUG EXPLICITAMENTE PARA LAS 13:00
+            if (horaStr === '13:00') {
+              console.log(`[DEBUG 13:00] Comparando Slot ${fechaHoraSlot.toISOString()} vs Cita ${cita.fechaHoraCita.toISOString()}`);
+              console.log(`    Normal: ${overlapNormal} | Shifted: ${overlapShifted}`);
+              console.log(`   SlotMs: ${slotInicioMs} | CitaMs: ${citaInicioMs}`);
+            }
+
+            // Debug log solo si hay overlap para rastrear
+            if (overlapNormal || overlapShifted) {
+              console.log(`🔒 Conflicto detectado para slot ${horaStr}:`, {
+                slot: fechaHoraSlot.toISOString(),
+                cita: cita.fechaHoraCita.toISOString(),
+                normal: overlapNormal,
+                shifted: overlapShifted
+              });
+            }
+
+            return overlapNormal || overlapShifted;
+          });
+
+          if (!isOccupied) {
             slots.push({
               fecha: fechaStr,
               horaInicio: `${String(slotHora).padStart(2, '0')}:${String(slotMinuto).padStart(2, '0')}`,

@@ -45,6 +45,7 @@ export class CitaController {
         fechaHoraCita = new Date(req.body.fechaHoraCita);
       } else if (req.body.fecha && req.body.horaInicio) {
         // Formato: "2025-12-05" + "09:00" -> "2025-12-05T09:00:00"
+        // New Date() on this string parses as Local Time -> UTC, matching slot generation logic.
         fechaHoraCita = new Date(`${req.body.fecha}T${req.body.horaInicio}:00`);
       } else {
         return res.status(400).json({
@@ -276,6 +277,35 @@ export class CitaController {
       return res.json({
         success: true,
         message: 'Notas actualizadas exitosamente',
+        data: cita
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
+   * PATCH /citas/:id/reprogramar
+   * Reprogramar cita
+   */
+  async reprogramar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { newDate, newAvailabilityId } = req.body;
+      const userId = req.user!.userId;
+
+      if (!newDate || !newAvailabilityId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Se requiere la nueva fecha y el ID de disponibilidad'
+        });
+      }
+
+      const cita = await citaService.reprogramar(id, newDate, newAvailabilityId, userId);
+
+      return res.json({
+        success: true,
+        message: 'Cita reprogramada exitosamente',
         data: cita
       });
     } catch (error) {

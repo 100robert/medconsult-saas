@@ -145,21 +145,33 @@ export default function DashboardPage() {
         const citas = await getMisCitas();
 
         const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        const manana = new Date(hoy);
-        manana.setDate(manana.getDate() + 1);
+        const year = hoy.getFullYear();
+        const month = hoy.getMonth();
+        const day = hoy.getDate();
+
+        // Define today midnight and tomorrow midnight correctly in local time
+        const startOfToday = new Date(year, month, day);
+        const startOfTomorrow = new Date(year, month, day + 1);
 
         console.log('🔍 DEBUG: Total citas recibidas:', citas.length);
         console.log('🔍 DEBUG: Estados de las citas:', citas.map((c: any) => c.estado));
 
         // Filtrar citas de hoy
         const citasHoy = citas.filter((c: any) => {
-          const fechaCita = new Date(c.fechaHoraCita || c.fecha);
-          const hoyFecha = new Date();
-          hoyFecha.setHours(0, 0, 0, 0);
-          const mananaFecha = new Date(hoyFecha);
-          mananaFecha.setDate(mananaFecha.getDate() + 1);
-          return fechaCita >= hoyFecha && fechaCita < mananaFecha && c.estado !== 'CANCELADA';
+          let fechaCita: Date;
+          // Handle 'YYYY-MM-DD' vs ISO string
+          const dateStr = c.fechaHoraCita || c.fecha;
+          if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            fechaCita = new Date(y, m - 1, d);
+          } else {
+            fechaCita = new Date(dateStr);
+          }
+
+          // Normalize to midnight for fair comparison if it has time
+          const fechaCitaMidnight = new Date(fechaCita.getFullYear(), fechaCita.getMonth(), fechaCita.getDate());
+
+          return fechaCitaMidnight.getTime() === startOfToday.getTime() && c.estado !== 'CANCELADA';
         });
 
         // TEMPORAL: Mostrar TODAS las citas sin ningún filtro para depuración
@@ -184,7 +196,19 @@ export default function DashboardPage() {
 
 
         const citasFormateadas = citasOrdenadas.map((cita: any, index: number) => {
-          const fechaCita = new Date(cita.fechaHoraCita || cita.fecha);
+          let fechaCita: Date;
+          const dateStr = cita.fechaHoraCita || cita.fecha;
+          if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            fechaCita = new Date(y, m - 1, d);
+            // If it has a time, we might set it, but for date checks this is enough
+            if (cita.horaInicio) {
+              const [h, min] = cita.horaInicio.split(':').map(Number);
+              fechaCita.setHours(h, min);
+            }
+          } else {
+            fechaCita = new Date(dateStr);
+          }
           const ahora = new Date();
           const esHoy = fechaCita.toDateString() === ahora.toDateString();
           const mananaDate = new Date(ahora);

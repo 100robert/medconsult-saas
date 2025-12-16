@@ -262,6 +262,19 @@ router.put(
 );
 
 /**
+ * @route   POST /auth/change-password
+ * @desc    Cambiar contraseña del usuario autenticado
+ * @access  Private
+ * @body    { currentPassword, newPassword }
+ * @returns { success, message }
+ */
+router.post(
+  '/change-password',
+  authMiddleware,
+  authController.changePassword.bind(authController)
+);
+
+/**
  * @route   GET /auth/admin/users
  * @desc    Listar todos los usuarios (solo admin)
  * @access  Private (ADMIN)

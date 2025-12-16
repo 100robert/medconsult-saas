@@ -617,6 +617,90 @@ export class CitaService {
   }
 
   /**
+   * Reprogramar cita
+   */
+  async reprogramar(id: string, newDate: Date, newAvailabilityId: string, userId: string) {
+    const cita = await prisma.cita.findUnique({
+      where: { id },
+      include: {
+        paciente: { select: { idUsuario: true } }
+      }
+    });
+
+    if (!cita) {
+      throw new NotFoundError('Cita no encontrada');
+    }
+
+    // Permitir si es el dueño de la cita (paciente)
+    if (cita.paciente.idUsuario !== userId) {
+      throw new ForbiddenError('No tienes permisos para reprogramar esta cita');
+    }
+
+    // Política: 3 horas antes
+    const now = new Date();
+    const originalDate = new Date(cita.fechaHoraCita);
+    const timeDiff = originalDate.getTime() - now.getTime();
+    const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+    if (hoursDiff < 3) {
+      throw new ValidationError('No se puede reprogramar con menos de 3 horas de anticipación');
+    }
+
+    // Validar nueva fecha
+    if (new Date(newDate) < now) {
+      throw new ValidationError('No se puede reprogramar al pasado');
+    }
+
+    // Verificar disponibilidad (reutilizando lógica similar a crear)
+    const disponibilidad = await prisma.disponibilidad.findUnique({
+      where: { id: newAvailabilityId }
+    });
+
+    if (!disponibilidad || !disponibilidad.activo) {
+      throw new NotFoundError('Disponibilidad no encontrada o no activa');
+    }
+
+    // Verificar conflictos
+    const citaExistente = await prisma.cita.findFirst({
+      where: {
+        idDisponibilidad: newAvailabilityId,
+        fechaHoraCita: newDate,
+        estado: { in: ['PROGRAMADA', 'CONFIRMADA'] },
+        id: { not: id } // Excluir la propia cita
+      }
+    });
+
+    if (citaExistente) {
+      throw new ConflictError('Ya existe una cita programada para este horario');
+    }
+
+    const reprogramada = await prisma.cita.update({
+      where: { id },
+      data: {
+        fechaHoraCita: newDate,
+        idDisponibilidad: newAvailabilityId,
+        fechaActualizacion: new Date(),
+        // Increment version to handle concurrency optimist locking if implemented, or just for tracking
+        // version: { increment: 1 } 
+      },
+      include: {
+        paciente: {
+          include: {
+            usuario: { select: { nombre: true, apellido: true } }
+          }
+        },
+        medico: {
+          include: {
+            usuario: { select: { nombre: true, apellido: true } }
+          }
+        }
+      }
+    });
+
+    return this._formatCitaResponse(reprogramada);
+  }
+
+  /**
    * Obtener próximas citas del día (para dashboard de médico)
    */
   async obtenerCitasHoy(idMedico: string) {

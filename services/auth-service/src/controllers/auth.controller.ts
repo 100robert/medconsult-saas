@@ -462,6 +462,42 @@ export class AuthController {
   }
 
   // ==========================================
+  // ENDPOINT: POST /auth/change-password
+  // ==========================================
+  async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = (req as any).user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'No autenticado',
+        });
+        return;
+      }
+
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        res.status(400).json({
+          success: false,
+          message: 'Se requieren la contraseña actual y la nueva contraseña',
+        });
+        return;
+      }
+
+      const resultado = await authService.changePassword(userId, {
+        currentPassword,
+        newPassword
+      });
+
+      res.status(200).json(resultado);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
   // ENDPOINT: GET /auth/admin/users
   // ==========================================
   // Lista todos los usuarios (solo admin)
@@ -550,7 +586,7 @@ export class AuthController {
 
       // Validaciones básicas
       const updateData: any = {};
-      
+
       if (nombre !== undefined) {
         if (typeof nombre !== 'string' || nombre.trim().length < 2) {
           res.status(400).json({

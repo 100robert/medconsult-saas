@@ -115,7 +115,7 @@ export async function getAllMedicos(): Promise<Medico[]> {
 
 export async function getMedicosPendientes(): Promise<Medico[]> {
   try {
-    const response = await api.get<any>('/medicos?verificado=false');
+    const response = await api.get<any>('/medicos?estado=PENDIENTE');
     return response.data.data?.medicos || response.data.medicos || [];
   } catch (error: any) {
     console.error('Error al obtener médicos pendientes:', error);
@@ -417,12 +417,15 @@ export async function getPlatformActivity(range: '30d' | '90d' | '1y' = '30d'): 
 
     activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-    // --- Calcular KPIs Generales ---
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
 
     const inicioDeSemana = new Date(hoy);
-    inicioDeSemana.setDate(hoy.getDate() - hoy.getDay());
+    inicioDeSemana.setDate(hoy.getDate() - hoy.getDay()); // Domingo
+    const finDeSemana = new Date(inicioDeSemana);
+    finDeSemana.setDate(finDeSemana.getDate() + 7);
 
     const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
@@ -434,8 +437,13 @@ export async function getPlatformActivity(range: '30d' | '90d' | '1y' = '30d'): 
     if (Array.isArray(citas)) {
       citas.forEach((cita: any) => {
         const fechaCita = new Date(cita.fechaHoraCita || cita.fechaCreacion);
-        if (fechaCita >= hoy) citasHoy++;
-        if (fechaCita >= inicioDeSemana) citasSemana++;
+
+        // Citas Hoy: Entre hoy 00:00 y mañana 00:00
+        if (fechaCita >= hoy && fechaCita < manana) citasHoy++;
+
+        // Citas Semana: Entre inicio semana y fin semana
+        if (fechaCita >= inicioDeSemana && fechaCita < finDeSemana) citasSemana++;
+
         if (cita.estado === 'COMPLETADA') consultasCompletadas++;
       });
     }

@@ -117,6 +117,13 @@ router.put('/:id/notas',
   citaController.actualizarNotas
 );
 
+// Reprogramar cita (pacientes)
+router.patch('/:id/reprogramar',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['PACIENTE', 'ADMIN']),
+  citaController.reprogramar
+);
+
 // ========== RUTAS DE NO-SHOW ==========
 
 // Registrar conexión a sala de videollamada

@@ -21,7 +21,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getMedicoStats, MedicoStats, confirmarCita, getMiPerfilMedico } from '@/lib/medico';
-import { getMisCitas, Appointment } from '@/lib/appointments';
+import { getMisCitas, Appointment, cancelarCita } from '@/lib/appointments';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 
@@ -31,6 +31,7 @@ interface TodayAppointment {
     nombre: string;
     apellido: string;
   };
+  fecha: string;
   horaInicio: string;
   horaFin: string;
   tipo: 'VIDEOCONSULTA' | 'PRESENCIAL';
@@ -51,8 +52,14 @@ export default function DoctorDashboardPage() {
     ingresosMes: 0,
     consultasCompletadas: 0,
   });
+
   const [todayAppointments, setTodayAppointments] = useState<TodayAppointment[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Estado para cancelar cita
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     // Protección de ruta
@@ -91,7 +98,11 @@ export default function DoctorDashboardPage() {
       // 3. Procesar Citas
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
+
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const todayStr = `${year}-${month}-${day}`;
 
       console.log('🔍 MÉDICO DEBUG: Total citas recibidas:', allCitas.length);
       console.log('🔍 MÉDICO DEBUG: Estados:', allCitas.map(c => c.estado));
@@ -140,6 +151,7 @@ export default function DoctorDashboardPage() {
           nombre: c.paciente?.nombre || c.paciente?.usuario?.nombre || 'Paciente',
           apellido: c.paciente?.apellido || c.paciente?.usuario?.apellido || ''
         },
+        fecha: c.fecha,
         horaInicio: c.horaInicio || new Date(c.fecha).toTimeString().slice(0, 5),
         horaFin: c.horaFin || '00:30',
         tipo: (c.tipo as any) || 'PRESENCIAL',
@@ -181,7 +193,20 @@ export default function DoctorDashboardPage() {
 
   const handleIniciarConsulta = async (citaId: string) => {
     try {
-      // Crear la consulta asociada a la cita
+      // 1. Intentar obtener consulta existente primero
+      try {
+        const existing = await api.get(`/consultas/cita/${citaId}`);
+        const consultaExistente = existing.data.data || existing.data;
+        if (consultaExistente?.id) {
+          toast.success('Reingresando a consulta...');
+          router.push(`/dashboard/consultations/${consultaExistente.id}`);
+          return;
+        }
+      } catch (e) {
+        // Ignorar 404, significa que no existe y debemos crearla
+      }
+
+      // 2. Crear nueva consulta si no existe
       const response = await api.post('/consultas', {
         idCita: citaId
       });
@@ -196,13 +221,47 @@ export default function DoctorDashboardPage() {
       }
     } catch (error: any) {
       console.error('Error iniciando consulta:', error);
-      // Si la consulta ya existe, el backend podría devolverla
-      if (error.response?.data?.data?.id) {
-        router.push(`/dashboard/consultations/${error.response.data.data.id}`);
-      } else {
-        toast.error(error.response?.data?.message || 'Error al iniciar la consulta');
+      // Si el error dice que ya existe, intentamos redirigir de todos modos
+      if (error.response?.data?.message?.includes('ya existe') || error.response?.status === 400) {
+        // Fallback: tratar de ir a la consulta si el backend devolvió ID
+        const id = error.response?.data?.data?.id;
+        if (id) {
+          router.push(`/dashboard/consultations/${id}`);
+          return;
+        }
       }
+      toast.error(error.response?.data?.message || 'Error al iniciar la consulta');
     }
+  };
+
+  const handleCancelarCita = async () => {
+    if (!appointmentToCancel) return;
+
+    setCancelling(true);
+    try {
+      await cancelarCita(appointmentToCancel, 'Cancelado por el médico');
+      toast.success('Cita cancelada correctamente');
+
+      // Actualizar UI
+      setTodayAppointments(prev => prev.filter(c => c.id !== appointmentToCancel));
+      setStats(prev => ({
+        ...prev,
+        citasPendientes: Math.max(0, prev.citasPendientes - 1),
+        citasHoy: Math.max(0, prev.citasHoy - 1)
+      }));
+      setCancelModalOpen(false);
+      setAppointmentToCancel(null);
+    } catch (error: any) {
+      console.error('Error cancelando cita:', error);
+      toast.error(error.response?.data?.message || 'Error al cancelar la cita');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const openCancelModal = (id: string) => {
+    setAppointmentToCancel(id);
+    setCancelModalOpen(true);
   };
 
   const getEstadoConfig = (estado: string) => {
@@ -290,7 +349,15 @@ export default function DoctorDashboardPage() {
               todayAppointments.map((apt) => {
                 const config = getEstadoConfig(apt.estado);
                 const Icon = config.icon;
-                const isPast = apt.horaFin < getCurrentTimeSlot();
+
+                // Calcular isPast usando fecha y hora
+                const [year, month, day] = apt.fecha.split('-').map(Number);
+                const aptDate = new Date(year, month - 1, day);
+                const [endH, endM] = apt.horaFin.split(':').map(Number);
+                aptDate.setHours(endH, endM, 0, 0);
+
+                const now = new Date();
+                const isPast = aptDate < now;
 
                 return (
                   <div key={apt.id} className={`p-4 transition-colors ${isPast ? 'bg-gray-50/50' : 'hover:bg-gray-50'}`}>
@@ -332,12 +399,21 @@ export default function DoctorDashboardPage() {
                             Confirmar
                           </button>
                         )}
-                        {apt.estado === 'CONFIRMADA' && apt.tipo === 'VIDEOCONSULTA' && !isPast && (
+                        {(apt.estado === 'CONFIRMADA' || apt.estado === 'COMPLETADA') && (
                           <button
                             onClick={() => handleIniciarConsulta(apt.id)}
                             className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 flex items-center gap-1"
                           >
-                            <Video className="w-3 h-3" /> Iniciar
+                            <Video className="w-3 h-3" /> {apt.estado === 'COMPLETADA' ? 'Reingresar' : 'Iniciar'}
+                          </button>
+                        )}
+                        {(apt.estado === 'PENDIENTE' || apt.estado === 'PROGRAMADA' || apt.estado === 'CONFIRMADA') && !isPast && (
+                          <button
+                            onClick={() => openCancelModal(apt.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                            title="Cancelar Cita"
+                          >
+                            <XCircle className="w-4 h-4" />
                           </button>
                         )}
                         <Link href={`/dashboard/appointments/${apt.id}`} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg">

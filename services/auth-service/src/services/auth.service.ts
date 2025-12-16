@@ -1104,6 +1104,40 @@ export class AuthService {
   }
 
   // ==========================================
+  // MÉTODO: CAMBIAR CONTRASEÑA
+  // ==========================================
+  async changePassword(userId: string, data: { currentPassword: string; newPassword: string }): Promise<MessageResponse> {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+
+    if (!usuario) {
+      throw new NotFoundError('Usuario no encontrado');
+    }
+
+    // Verificar contraseña actual
+    const contrasenaValida = await comparePassword(data.currentPassword, usuario.hashContrasena);
+
+    if (!contrasenaValida) {
+      throw new AuthenticationError('La contraseña actual es incorrecta');
+    }
+
+    // Hashear nueva contraseña
+    const hashContrasena = await hashPassword(data.newPassword);
+
+    // Actualizar contraseña
+    await prisma.usuario.update({
+      where: { id: userId },
+      data: { hashContrasena },
+    });
+
+    return {
+      success: true,
+      message: 'Contraseña actualizada correctamente',
+    };
+  }
+
+  // ==========================================
   // MÉTODO: ELIMINAR USUARIO (ADMIN)
   // ==========================================
 

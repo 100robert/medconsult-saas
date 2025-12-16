@@ -240,7 +240,7 @@ function NewAppointmentContent() {
     if (selectedDoctorId) {
       cargarDisponibilidad();
     }
-  }, [selectedDoctorId]); // Solo recargar si cambia el médico
+  }, [selectedDoctorId, selectedDate]); // Refresh when doctor OR date changes to ensure freshness
 
   // Cargar la disponibilidad general del médico (horarios configurados)
   useEffect(() => {
@@ -306,9 +306,24 @@ function NewAppointmentContent() {
     return cachedSlots.filter(s => s.fecha === date).length;
   };
 
+  // Helper para parsear fechas de forma segura y evitar desfases de zona horaria
+  // "2025-12-21" -> Date(2025, 11, 21) [Local Midnight]
+  const parseSafeDate = (dateStr: string) => {
+    if (!dateStr) return new Date();
+    const parts = dateStr.split('-');
+    // Asegurar que tenemos año, mes y día
+    if (parts.length !== 3) return new Date(dateStr);
+
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // Meses en JS son 0-11
+    const day = parseInt(parts[2], 10);
+
+    return new Date(year, month, day);
+  };
+
   // Generar todos los slots posibles para una fecha basándose en la disponibilidad del médico
   const generateAllSlotsForDate = (date: string): { horaInicio: string; horaFin: string; isAvailable: boolean }[] => {
-    const dateObj = new Date(date + 'T00:00:00');
+    const dateObj = parseSafeDate(date);
     const dayOfWeek = dateObj.getDay(); // 0 = Domingo, 1 = Lunes, etc.
 
     // Mapear número de día a nombre de día (como lo usa el backend)
@@ -324,7 +339,6 @@ function NewAppointmentContent() {
     const diaSemanaStr = diasSemanaMap[dayOfWeek];
 
     // Filtrar disponibilidades para este día de la semana
-    // La disponibilidad puede venir como número (0-6) o como string ('LUNES', etc.)
     const disponibilidadesDia = doctorDisponibilidad.filter(d => {
       if (typeof d.diaSemana === 'number') {
         return d.diaSemana === dayOfWeek && d.activo;
@@ -335,8 +349,6 @@ function NewAppointmentContent() {
     const allSlots: { horaInicio: string; horaFin: string; isAvailable: boolean }[] = [];
     const duracionConsulta = 30; // 30 minutos por defecto
 
-    // IMPORTANTE: Usar cachedSlots filtrado por la fecha específica, no availableSlots
-    // availableSlots puede estar desincronizado con la fecha que estamos generando
     const slotsForThisDate = cachedSlots.filter(s => s.fecha === date);
     const availableHoursSet = new Set(slotsForThisDate.map(s => s.horaInicio));
 
@@ -376,14 +388,22 @@ function NewAppointmentContent() {
     for (let i = 1; i <= 45; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      // Incluir todos los días incluyendo fines de semana
-      // (el médico puede tener disponibilidad los sábados, por ejemplo)
-      dates.push(date.toISOString().split('T')[0]);
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      dates.push(`${year}-${month}-${day}`);
     }
     return dates;
   };
 
   const availableDates = getAvailableDates();
+
+  // Step 2 Render Helper
+  const isDateAvailable = (date: string) => {
+    return cachedSlots.some(s => s.fecha === date);
+  };
+
 
   const handleBooking = async () => {
     if (!selectedDoctorId || !selectedDate || !selectedTime) {
@@ -501,10 +521,7 @@ function NewAppointmentContent() {
 
   // ... (render part later)
 
-  // Step 2 Render Helper
-  const isDateAvailable = (date: string) => {
-    return cachedSlots.some(s => s.fecha === date);
-  };
+
 
 
   // Modal de upgrade a Pro cuando se alcanza el límite
@@ -1037,10 +1054,11 @@ function NewAppointmentContent() {
           <CardHeader>
             <CardTitle>Selecciona un Horario</CardTitle>
             <CardDescription>
-              {selectedDate && new Date(selectedDate).toLocaleDateString('es-ES', {
+              {selectedDate && new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-ES', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
+                timeZone: 'UTC'
               })}
             </CardDescription>
           </CardHeader>
@@ -1051,6 +1069,9 @@ function NewAppointmentContent() {
                 <span className="ml-2 text-gray-600">Buscando horarios disponibles...</span>
               </div>
             ) : (() => {
+              // Ensure we don't render stale data if loading
+              if (loadingSlots) return <div className="p-8 text-center text-gray-500">Actualizando disponibilidad...</div>;
+
               const allSlots = selectedDate ? generateAllSlotsForDate(selectedDate) : [];
 
               if (allSlots.length === 0) {
@@ -1154,7 +1175,7 @@ function NewAppointmentContent() {
                   <div>
                     <p className="text-sm text-gray-500">Fecha</p>
                     <p className="font-medium">
-                      {selectedDate && new Date(selectedDate).toLocaleDateString('es-ES', {
+                      {selectedDate && new Date(selectedDate + 'T00:00:00').toLocaleDateString('es-ES', {
                         weekday: 'long',
                         day: 'numeric',
                         month: 'long',

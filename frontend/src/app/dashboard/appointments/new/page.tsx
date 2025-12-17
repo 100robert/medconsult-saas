@@ -217,7 +217,7 @@ function NewAppointmentContent() {
         try {
           const today = new Date();
           const endDate = new Date(today);
-          endDate.setDate(today.getDate() + 45); // 45 días de rango para cubrir al menos 37 días hábiles
+          endDate.setDate(today.getDate() + 20); // 45 días de rango para cubrir al menos 37 días hábiles
 
           const todayStr = today.toISOString().split('T')[0];
           const endDateStr = endDate.toISOString().split('T')[0];
@@ -489,9 +489,10 @@ function NewAppointmentContent() {
       }
 
       setSuccess(true);
-      setTimeout(() => {
-        router.push('/dashboard/appointments');
-      }, 3000);
+      // Eliminamos el setTimeout para que el usuario vea la boleta el tiempo que necesite
+      // setTimeout(() => {
+      //   router.push('/dashboard/appointments');
+      // }, 3000);
     } catch (err: any) {
       console.error('Error al crear cita:', err);
       const errorMessage = err.response?.data?.message || err.message || '';

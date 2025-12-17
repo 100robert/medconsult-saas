@@ -465,130 +465,139 @@ export default function PaymentsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 print:bg-white print:p-0">
           <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:rounded-none">
             {/* Header del modal */}
-            <div className="flex items-center justify-between p-4 border-b print:hidden">
-              <h2 className="text-lg font-semibold text-gray-900">Comprobante de Pago</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrint}
-                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Imprimir"
-                >
-                  <Printer className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setShowReceipt(false)}
-                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+            <div className="bg-teal-600 p-6 text-center text-white relative">
+              <button
+                onClick={() => setShowReceipt(false)}
+                className="absolute top-4 right-4 p-2 text-white/80 hover:bg-white/10 rounded-full transition-colors print:hidden"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                <CheckCircle className="w-8 h-8 text-white" />
               </div>
+              <h2 className="text-2xl font-bold">
+                {selectedPayment.estado === 'REEMBOLSADO' ? 'Reembolso Procesado' : '¡Pago Exitoso!'}
+              </h2>
+              <p className="text-teal-100 mt-1">
+                {selectedPayment.estado === 'REEMBOLSADO'
+                  ? 'El monto ha sido devuelto a su cuenta'
+                  : 'Transacción completada correctamente'}
+              </p>
             </div>
 
-            {/* Contenido del comprobante */}
-            <div className="p-6">
-              {/* Logo y título */}
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <FileText className="w-8 h-8 text-white" />
+            <div className="p-6 bg-white">
+              <div className="border border-gray-200 rounded-lg p-6 bg-gray-50/50">
+                {/* Cabecera de Boleta */}
+                <div className="flex justify-between items-start mb-6 border-b border-gray-200 pb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">MEDCONSULT S.A.C.</h3>
+                    <p className="text-xs text-gray-500">RUC: 20123456789</p>
+                    <p className="text-xs text-gray-500">Av. Javier Prado Este 1234, Lima</p>
+                  </div>
+                  <div className="text-right">
+                    <h3 className="text-lg font-bold text-gray-900">BOLETA DE VENTA</h3>
+                    <p className="text-sm text-gray-500">ELECTRONICA</p>
+                    <p className="text-xs font-mono text-gray-400">
+                      #{selectedPayment.id.slice(0, 12).toUpperCase()}
+                    </p>
+                  </div>
                 </div>
-                <h1 className="text-xl font-bold text-gray-900">MedConsult</h1>
-                <p className="text-sm text-gray-500">Comprobante de Pago</p>
-              </div>
 
-              {/* Número de transacción */}
-              <div className="bg-gray-50 rounded-xl p-4 mb-6 text-center">
-                <p className="text-xs text-gray-500 mb-1">Nº de Transacción</p>
-                <p className="font-mono text-lg font-bold text-gray-900">
-                  #{selectedPayment.id.slice(0, 12).toUpperCase()}
-                </p>
-              </div>
+                {/* Detalles principales */}
+                <div className="space-y-4 mb-6">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Fecha de Emisión:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {new Date(selectedPayment.fecha).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Paciente:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {selectedPayment.paciente ? `${selectedPayment.paciente.nombre} ${selectedPayment.paciente.apellido}` : 'No registrado'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Médico:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {selectedPayment.medico ? `Dr. ${selectedPayment.medico.nombre} ${selectedPayment.medico.apellido}` : 'No asignado'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Especialidad:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {selectedPayment.medico?.especialidad || 'General'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Método de Pago:</span>
+                    <span className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-gray-400" />
+                      {selectedPayment.metodoPago}
+                    </span>
+                  </div>
+                </div>
 
-              {/* Estado del pago */}
-              <div className="flex justify-center mb-6">
-                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${selectedPayment.estado === 'COMPLETADO' ? 'bg-green-100 text-green-700' :
-                  selectedPayment.estado === 'REEMBOLSADO' ? 'bg-orange-100 text-orange-700' :
-                    selectedPayment.estado === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                  }`}>
-                  {selectedPayment.estado === 'COMPLETADO' && <CheckCircle className="w-4 h-4" />}
-                  {selectedPayment.estado === 'REEMBOLSADO' && <AlertCircle className="w-4 h-4" />}
-                  {selectedPayment.estado === 'PENDIENTE' && <Clock className="w-4 h-4" />}
-                  {selectedPayment.estado === 'FALLIDO' && <XCircle className="w-4 h-4" />}
-                  {selectedPayment.estado}
-                </span>
-              </div>
+                {/* Tabla de Items */}
+                <div className="border-t border-b border-gray-200 py-4 mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-900">Descripción</span>
+                    <span className="text-sm font-medium text-gray-900">Importe</span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-600">{selectedPayment.concepto}</span>
+                      {selectedPayment.estadoCita && (
+                        <span className={`text-xs mt-1 font-medium ${selectedPayment.estadoCita === 'CANCELADA' ? 'text-red-500' :
+                            selectedPayment.estadoCita === 'COMPLETADA' ? 'text-green-500' : 'text-gray-400'
+                          }`}>
+                          Estado Cita: {selectedPayment.estadoCita}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">
+                      S/. {selectedPayment.monto.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
 
-              {/* Detalles */}
-              <div className="space-y-4">
-                <div className="flex justify-between py-3 border-b border-gray-100">
-                  <span className="text-gray-500">Fecha</span>
-                  <span className="font-medium text-gray-900">
-                    {new Date(selectedPayment.fecha).toLocaleDateString('es-ES', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
+                {/* Totales */}
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span className="text-gray-900">TOTAL</span>
+                  <span className={`text-teal-600 ${selectedPayment.estado === 'REEMBOLSADO' ? 'line-through text-gray-400' : ''}`}>
+                    S/. {selectedPayment.monto.toFixed(2)}
                   </span>
                 </div>
 
-                <div className="flex justify-between py-3 border-b border-gray-100">
-                  <span className="text-gray-500">Concepto</span>
-                  <span className="font-medium text-gray-900">{selectedPayment.concepto}</span>
-                </div>
-
-                {selectedPayment.medico && (
-                  <div className="flex justify-between py-3 border-b border-gray-100">
-                    <span className="text-gray-500">Médico</span>
-                    <span className="font-medium text-gray-900">
-                      Dr. {selectedPayment.medico.nombre} {selectedPayment.medico.apellido}
-                    </span>
-                  </div>
-                )}
-
-                {selectedPayment.paciente && (
-                  <div className="flex justify-between py-3 border-b border-gray-100">
-                    <span className="text-gray-500">Paciente</span>
-                    <span className="font-medium text-gray-900">
-                      {selectedPayment.paciente.nombre} {selectedPayment.paciente.apellido}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex justify-between py-3 border-b border-gray-100">
-                  <span className="text-gray-500">Método de pago</span>
-                  <span className="font-medium text-gray-900 flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-gray-400" />
-                    {selectedPayment.metodoPago}
-                  </span>
-                </div>
-
-                {selectedPayment.estadoCita && (
-                  <div className="flex justify-between py-3 border-b border-gray-100">
-                    <span className="text-gray-500">Estado de cita</span>
-                    <span className={`font-medium ${selectedPayment.estadoCita === 'CANCELADA' ? 'text-red-600' :
-                      selectedPayment.estadoCita === 'COMPLETADA' ? 'text-green-600' :
-                        'text-gray-900'
-                      }`}>
-                      {selectedPayment.estadoCita}
-                    </span>
+                {selectedPayment.estado === 'REEMBOLSADO' && (
+                  <div className="mt-2 flex justify-between items-center text-red-500 font-bold border-t border-red-100 pt-2">
+                    <span>REEMBOLSADO</span>
+                    <span>- S/. {selectedPayment.monto.toFixed(2)}</span>
                   </div>
                 )}
               </div>
 
-              {/* Monto total */}
-              <div className="mt-6 bg-teal-50 rounded-xl p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-teal-700 font-medium">Total pagado</span>
-                  <span className="text-2xl font-bold text-teal-700">
-                    S/. {selectedPayment.monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
+              {/* Acciones */}
+              <div className="mt-8 flex gap-3 print:hidden">
+                <button
+                  onClick={() => setShowReceipt(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  Descargar PDF
+                </button>
               </div>
 
-              {/* Footer del comprobante */}
-              <div className="mt-6 text-center text-xs text-gray-400">
+              <div className="mt-6 text-center text-xs text-gray-400 print:mt-12">
                 <p>Este documento es un comprobante electrónico de pago.</p>
-                <p className="mt-1">MedConsult - Plataforma de Telemedicina</p>
+                <p className="mt-1">Gracias por confiar en MedConsult.</p>
               </div>
             </div>
           </div>

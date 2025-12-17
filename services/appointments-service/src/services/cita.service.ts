@@ -915,6 +915,57 @@ export class CitaService {
   }
 
   /**
+   * Obtener todas las citas (Admin)
+   */
+  async obtenerTodas(filtros: any = {}) {
+    console.log('📋 obtenerTodas - Filtros:', filtros);
+    const { estado, fechaDesde, fechaHasta, page = 1, limit = 10 } = filtros;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (estado) where.estado = estado;
+    if (fechaDesde || fechaHasta) {
+      where.fechaHoraCita = {};
+      if (fechaDesde) where.fechaHoraCita.gte = fechaDesde;
+      if (fechaHasta) where.fechaHoraCita.lte = fechaHasta;
+    }
+
+    const [citas, total] = await Promise.all([
+      prisma.cita.findMany({
+        where,
+        include: {
+          paciente: {
+            include: {
+              usuario: { select: { nombre: true, apellido: true, correo: true } }
+            }
+          },
+          medico: {
+            include: {
+              usuario: { select: { nombre: true, apellido: true } },
+              especialidad: true
+            }
+          }
+        },
+        orderBy: { fechaHoraCita: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.cita.count({ where })
+    ]);
+
+    return {
+      data: citas,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  /**
    * Obtener citas recientes (Admin Dashboard)
    */
   async obtenerCitasRecientes(limit: number) {

@@ -585,6 +585,58 @@ export class PagoService {
   }
 
   /**
+   * Obtener todos los pagos (Admin)
+   */
+  async obtenerTodos(filtros: PagoFilters = {}) {
+    const { estado, metodoPago, fechaDesde, fechaHasta, page = 1, limit = 10 } = filtros;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (estado) where.estado = estado;
+    if (metodoPago) where.metodoPago = metodoPago;
+    if (fechaDesde || fechaHasta) {
+      where.fechaCreacion = {};
+      if (fechaDesde) where.fechaCreacion.gte = fechaDesde;
+      if (fechaHasta) where.fechaCreacion.lte = fechaHasta;
+    }
+
+    const [pagos, total] = await Promise.all([
+      prisma.pago.findMany({
+        where,
+        include: {
+          cita: true,
+          paciente: {
+            include: {
+              usuario: { select: { nombre: true, apellido: true, correo: true } }
+            }
+          },
+          medico: {
+            include: {
+              usuario: { select: { nombre: true, apellido: true } },
+              especialidad: true
+            }
+          }
+        },
+        orderBy: { fechaCreacion: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.pago.count({ where })
+    ]);
+
+    return {
+      data: pagos,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  /**
    * Obtener pagos recientes (Admin Dashboard)
    */
   async obtenerPagosRecientes(limit: number) {

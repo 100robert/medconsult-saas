@@ -57,43 +57,13 @@ export default function PaymentsPage() {
 
       let data: Payment[] = [];
 
-      if (user.rol === 'ADMIN') {
-        // Simular datos para Admin ya que no tenemos endpoint de "listar todo" aún
-        data = [
-          {
-            id: 'PAY-001',
-            idPaciente: 'p1', idMedico: 'm1',
-            paciente: { nombre: 'María', apellido: 'González', email: 'maria@email.com' },
-            medico: { nombre: 'Dr. Carlos', apellido: 'Méndez' },
-            monto: 150,
-            estado: 'COMPLETADO',
-            metodoPago: 'Tarjeta de Crédito',
-            fecha: '2025-12-04',
-            concepto: 'Consulta de Cardiología',
-            creadoEn: '', actualizadoEn: ''
-          },
-          {
-            id: 'PAY-002',
-            idPaciente: 'p2', idMedico: 'm2',
-            paciente: { nombre: 'Juan', apellido: 'Pérez', email: 'juan@email.com' },
-            medico: { nombre: 'Dra. María', apellido: 'García' },
-            monto: 100,
-            estado: 'COMPLETADO',
-            metodoPago: 'Mercado Pago',
-            fecha: '2025-12-04',
-            concepto: 'Consulta General',
-            creadoEn: '', actualizadoEn: ''
-          },
-        ];
-      } else {
-        // Cargar datos reales de la API
-        data = await getMisPagos(user);
+      // Cargar datos reales de la API
+      data = await getMisPagos(user);
 
-        // Si es médico, también cargar el desglose de ganancias
-        if (user.rol === 'MEDICO') {
-          const gananciasMedico = await getMisGanancias();
-          setGanancias(gananciasMedico);
-        }
+      // Si es médico, también cargar el desglose de ganancias
+      if (user.rol === 'MEDICO') {
+        const gananciasMedico = await getMisGanancias();
+        setGanancias(gananciasMedico);
       }
 
       setPayments(data);

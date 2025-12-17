@@ -2,36 +2,40 @@
 
 import { useState, useEffect } from 'react';
 import {
-  BarChart3,
-  TrendingUp,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
+import {
   Download,
   Calendar,
   Users,
   Stethoscope,
-  Activity,
   FileText,
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
+import { getReportsData, type ReportData } from '@/lib/admin';
 
 export default function ReportsPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('month');
-  const [reportData, setReportData] = useState({
-    ingresos: { actual: 45680, anterior: 38500, variacion: 18.6 },
-    citas: { total: 342, completadas: 298, canceladas: 44 },
-    usuarios: { nuevos: 89, activos: 1180, medicos: 45 },
-    especialidades: [
-      { nombre: 'Medicina General', citas: 120, ingresos: 12000 },
-      { nombre: 'Cardiología', citas: 85, ingresos: 17000 },
-      { nombre: 'Dermatología', citas: 65, ingresos: 9750 },
-      { nombre: 'Pediatría', citas: 45, ingresos: 4500 },
-      { nombre: 'Traumatología', citas: 27, ingresos: 5400 },
-    ]
+  const [reportData, setReportData] = useState<ReportData>({
+    ingresos: { actual: 0, anterior: 0, variacion: 0 },
+    citas: { total: 0, completadas: 0, canceladas: 0 },
+    usuarios: { nuevos: 0, activos: 0, medicos: 0 },
+    especialidades: [],
+    graphData: []
   });
 
   useEffect(() => {
@@ -45,8 +49,8 @@ export default function ReportsPage() {
   const fetchReportData = async () => {
     try {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // Los datos ya están en el estado inicial
+      const data = await getReportsData(period as 'week' | 'month' | 'quarter' | 'year');
+      setReportData(data);
     } catch (error) {
       console.error('Error al cargar reportes:', error);
     } finally {
@@ -90,6 +94,7 @@ export default function ReportsPage() {
 
       {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* INGRESOS */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-start justify-between">
             <div className="p-3 bg-green-100 rounded-xl">
@@ -107,6 +112,7 @@ export default function ReportsPage() {
           <p className="text-xs text-gray-400 mt-2">vs S/ {reportData.ingresos.anterior.toLocaleString()} periodo anterior</p>
         </div>
 
+        {/* CITAS */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-start justify-between">
             <div className="p-3 bg-blue-100 rounded-xl">
@@ -121,6 +127,7 @@ export default function ReportsPage() {
           </div>
         </div>
 
+        {/* USUARIOS */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-start justify-between">
             <div className="p-3 bg-violet-100 rounded-xl">
@@ -132,6 +139,7 @@ export default function ReportsPage() {
           <p className="text-xs text-gray-400 mt-2">{reportData.usuarios.activos} usuarios activos</p>
         </div>
 
+        {/* MÉDICOS */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-start justify-between">
             <div className="p-3 bg-teal-100 rounded-xl">
@@ -146,27 +154,76 @@ export default function ReportsPage() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart Placeholder */}
+        {/* Revenue Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Ingresos por Período</h2>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <div className="text-center text-gray-500">
-              <BarChart3 className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-              <p>Gráfico de ingresos</p>
-              <p className="text-sm">Integrar con Recharts o Chart.js</p>
-            </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={reportData.graphData}>
+                <defs>
+                  <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0d9488" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                  tickFormatter={(value) => `S/${value}`}
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="ingresos"
+                  stroke="#0d9488"
+                  fillOpacity={1}
+                  fill="url(#colorIngresos)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Appointments Chart Placeholder */}
+        {/* Appointments Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Citas por Día</h2>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <div className="text-center text-gray-500">
-              <Activity className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-              <p>Gráfico de citas</p>
-              <p className="text-sm">Integrar con Recharts o Chart.js</p>
-            </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={reportData.graphData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6b7280', fontSize: 12 }}
+                />
+                <Tooltip
+                  cursor={{ fill: '#f3f4f6' }}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar
+                  dataKey="citas"
+                  fill="#3b82f6"
+                  radius={[4, 4, 0, 0]}
+                  barSize={30}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
@@ -187,35 +244,43 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {reportData.especialidades.map((esp, index) => {
-                const totalIngresos = reportData.especialidades.reduce((acc, e) => acc + e.ingresos, 0);
-                const percentage = Math.round((esp.ingresos / totalIngresos) * 100);
-                return (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
-                          <Stethoscope className="w-4 h-4 text-teal-600" />
+              {reportData.especialidades.length > 0 ? (
+                reportData.especialidades.map((esp, index) => {
+                  const totalIngresos = reportData.especialidades.reduce((acc, e) => acc + e.ingresos, 0);
+                  const percentage = totalIngresos > 0 ? Math.round((esp.ingresos / totalIngresos) * 100) : 0;
+                  return (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                            <Stethoscope className="w-4 h-4 text-teal-600" />
+                          </div>
+                          <span className="font-medium text-gray-900">{esp.nombre}</span>
                         </div>
-                        <span className="font-medium text-gray-900">{esp.nombre}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">{esp.citas}</td>
-                    <td className="px-6 py-4 text-gray-700">S/ {esp.ingresos.toLocaleString()}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-gray-100 rounded-full max-w-[100px]">
-                          <div
-                            className="h-full bg-teal-500 rounded-full"
-                            style={{ width: `${percentage}%` }}
-                          />
+                      </td>
+                      <td className="px-6 py-4 text-gray-700">{esp.citas}</td>
+                      <td className="px-6 py-4 text-gray-700">S/ {esp.ingresos.toLocaleString()}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-gray-100 rounded-full max-w-[100px]">
+                            <div
+                              className="h-full bg-teal-500 rounded-full"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-gray-600">{percentage}%</span>
                         </div>
-                        <span className="text-sm text-gray-600">{percentage}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    No hay datos disponibles para el periodo seleccionado
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

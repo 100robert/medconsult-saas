@@ -20,6 +20,13 @@ router.post('/',
   citaController.crear
 );
 
+// Obtener todas las citas (Admin)
+router.get('/',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['ADMIN']),
+  citaController.obtenerTodas
+);
+
 // ========== RUTAS ESPECÍFICAS PRIMERO ==========
 // (deben ir antes de /:id para que Express las matchee correctamente)
 

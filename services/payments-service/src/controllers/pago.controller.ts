@@ -27,6 +27,32 @@ export class PagoController {
   }
 
   /**
+   * GET /pagos
+   * Obtener todos los pagos (Admin)
+   */
+  async obtenerTodos(req: Request, res: Response, next: NextFunction) {
+    try {
+      const filtros = {
+        estado: req.query.estado as EstadoPago | undefined,
+        metodoPago: req.query.metodo as MetodoPago | undefined,
+        fechaDesde: req.query.desde ? new Date(req.query.desde as string) : undefined,
+        fechaHasta: req.query.hasta ? new Date(req.query.hasta as string) : undefined,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 10,
+      };
+
+      const resultado = await pagoService.obtenerTodos(filtros);
+
+      res.json({
+        success: true,
+        ...resultado
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /pagos/:id
    * Obtener pago por ID
    */

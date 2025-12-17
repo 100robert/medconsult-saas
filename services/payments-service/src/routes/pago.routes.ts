@@ -16,6 +16,13 @@ router.post('/',
   pagoController.crear
 );
 
+// Obtener todos los pagos (Admin)
+router.get('/',
+  authMiddleware.verifyToken,
+  authMiddleware.requireRoles(['ADMIN']),
+  pagoController.obtenerTodos
+);
+
 // Obtener resumen de pagos (admin y médicos)
 router.get('/resumen',
   authMiddleware.verifyToken,

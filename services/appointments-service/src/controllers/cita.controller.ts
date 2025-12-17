@@ -78,6 +78,31 @@ export class CitaController {
   }
 
   /**
+   * GET /citas
+   * Obtener todas las citas (Admin)
+   */
+  async obtenerTodas(req: Request, res: Response, next: NextFunction) {
+    try {
+      const filtros = {
+        estado: req.query.estado as EstadoCita | undefined,
+        fechaDesde: req.query.desde ? new Date(req.query.desde as string) : undefined,
+        fechaHasta: req.query.hasta ? new Date(req.query.hasta as string) : undefined,
+        page: parseInt(req.query.page as string) || 1,
+        limit: parseInt(req.query.limit as string) || 10,
+      };
+
+      const resultado = await citaService.obtenerTodas(filtros);
+
+      return res.json({
+        success: true,
+        ...resultado
+      });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  /**
    * GET /citas/mis-citas
    * Obtener citas del usuario autenticado
    */

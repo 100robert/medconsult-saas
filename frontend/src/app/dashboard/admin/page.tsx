@@ -7,39 +7,27 @@ import {
   Stethoscope,
   Calendar,
   TrendingUp,
-  TrendingDown,
   Activity,
   UserCheck,
-  UserX,
   Clock,
   AlertCircle,
   CheckCircle2,
   BarChart3,
   ArrowUpRight,
-  ArrowDownRight,
-  RefreshCw,
   Sparkles,
   Shield,
-  Settings,
-  FileText,
   CreditCard,
-  CalendarCheck
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { getAdminStats, AdminStats, getAllUsers, User, getPlatformActivity, type PlatformActivity, type ActivitySummary, getMedicosPendientes } from '@/lib/admin';
 import {
-  BarChart,
-  Bar,
-  Line,
   ComposedChart,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  AreaChart,
   Area
 } from 'recharts';
 
@@ -58,10 +46,10 @@ export default function AdminDashboardPage() {
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
   const [pendingDoctors, setPendingDoctors] = useState<any[]>([]);
   const [activityData, setActivityData] = useState<ActivitySummary>({
-    citasHoy: 0,
-    citasSemana: 0,
+    totalCitas: 0,
+    citasCanceladas: 0,
     consultasCompletadas: 0,
-    ingresosMes: 0,
+    totalIngresos: 0,
     activities: [],
     graphData: []
   });
@@ -74,7 +62,7 @@ export default function AdminDashboardPage() {
       return;
     }
     fetchDashboardData();
-  }, [user, router, timeRange]); // Add timeRange dependency
+  }, [user, router, timeRange]);
 
   const fetchDashboardData = async () => {
     try {
@@ -114,72 +102,45 @@ export default function AdminDashboardPage() {
     return 'Buenas noches';
   };
 
-  const formatRelativeTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Ahora mismo';
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
-    return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'cita': return <Calendar className="w-4 h-4 text-teal-600" />;
-      case 'consulta': return <Stethoscope className="w-4 h-4 text-blue-600" />;
-      case 'pago': return <CreditCard className="w-4 h-4 text-emerald-600" />;
-      case 'registro': return <Users className="w-4 h-4 text-violet-600" />;
-      default: return <Activity className="w-4 h-4 text-gray-600" />;
+  const getPeriodLabel = () => {
+    switch (timeRange) {
+      case '30d': return '30 días';
+      case '90d': return 'Trimestre';
+      case '1y': return 'Año';
+      default: return '';
     }
   };
 
   const getActivityBgColor = (type: string) => {
     switch (type) {
-      case 'cita': return 'bg-teal-100';
-      case 'consulta': return 'bg-blue-100';
-      case 'pago': return 'bg-emerald-100';
-      case 'registro': return 'bg-violet-100';
-      default: return 'bg-gray-100';
+      case 'cita': return 'bg-teal-50';
+      case 'consulta': return 'bg-blue-50';
+      case 'pago': return 'bg-emerald-50';
+      case 'registro': return 'bg-violet-50';
+      default: return 'bg-gray-50';
     }
-  };
-
-  const getStatusBadge = (status?: string) => {
-    if (!status) return null;
-    const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-      'CONFIRMADA': { bg: 'bg-green-100', text: 'text-green-700', label: 'Confirmada' },
-      'PROGRAMADA': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Programada' },
-      'COMPLETADA': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Completada' },
-      'CANCELADA': { bg: 'bg-red-100', text: 'text-red-700', label: 'Cancelada' },
-      'COMPLETADO': { bg: 'bg-green-100', text: 'text-green-700', label: 'Completado' },
-      'PENDIENTE': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Pendiente' },
-    };
-    const config = statusConfig[status] || { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-        {config.label}
-      </span>
-    );
   };
 
   // Custom Tooltip for Chart
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-xl text-xs">
-          <p className="font-bold text-gray-900 mb-1">{label}</p>
-          <div className="space-y-1">
-            <p className="text-teal-600 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-              Citas: {payload[0].value}
+        <div className="bg-white/90 backdrop-blur-sm p-4 border border-gray-100 shadow-xl rounded-2xl text-xs">
+          <p className="font-bold text-gray-900 mb-2 border-b border-gray-100 pb-1">{label}</p>
+          <div className="space-y-2">
+            <p className="text-teal-600 flex items-center justify-between gap-4">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-teal-500 shadow-[0_0_8px_rgba(20,184,166,0.5)]"></span>
+                Citas
+              </span>
+              <span className="font-semibold">{payload[0].value}</span>
             </p>
-            <p className="text-emerald-600 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              Ingresos: S/ {payload[1].value}
+            <p className="text-emerald-600 flex items-center justify-between gap-4">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                Ingresos
+              </span>
+              <span className="font-semibold">S/ {payload[1].value}</span>
             </p>
           </div>
         </div>
@@ -189,246 +150,279 @@ export default function AdminDashboardPage() {
   };
 
   if (loading) {
-    // ... (loading state)
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full border-2 border-teal-100 border-t-teal-600 animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-teal-600"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-2xl p-8 text-white shadow-lg overflow-hidden relative">
-        <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-        <div className="absolute left-0 bottom-0 w-48 h-48 bg-black/5 rounded-full blur-2xl -ml-10 -mb-10"></div>
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
 
-        <div className="relative z-10">
-          <h1 className="text-3xl font-bold mb-2">
-            {getGreeting()}, Admin
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }
+    }
+  };
+
+  return (
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8 pb-10"
+    >
+      {/* Welcome Banner */}
+      <motion.div
+        variants={itemVariants}
+        className="relative overflow-hidden bg-gradient-to-br from-teal-600 via-teal-700 to-emerald-800 rounded-3xl p-8 md:p-10 text-white shadow-2xl shadow-teal-900/10"
+      >
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-black/10 rounded-full blur-2xl -ml-20 -mb-20 pointer-events-none"></div>
+
+        <div className="relative z-10 max-w-2xl">
+          <div className="flex items-center gap-2 text-teal-100 mb-2 text-sm font-medium tracking-wide uppercase">
+            <Sparkles className="w-4 h-4" />
+            <span>Panel de Administración</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+            {getGreeting()}, <span className="text-teal-200">Admin</span>
           </h1>
-          <p className="text-teal-50 opacity-90 text-lg max-w-xl">
-            Aquí tienes un resumen de la actividad de MedConsult. Tienes {stats.medicosPendientes} médicos esperando verificación.
+          <p className="text-teal-50 text-lg md:text-xl font-light leading-relaxed opacity-90">
+            Resumen en tiempo real de tu plataforma. Tienes <strong className="text-white font-semibold">{stats.medicosPendientes} solicitudes</strong> de médicos esperando tu aprobación.
           </p>
         </div>
-      </div>
+
+        <div className="absolute right-8 bottom-8 hidden md:block opacity-20 transform rotate-12">
+          <Activity className="w-32 h-32" />
+        </div>
+      </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <motion.div
-          whileHover={{ y: -2 }}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+          variants={itemVariants}
+          whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(59, 130, 246, 0.15)" }}
+          onClick={() => router.push('/dashboard/admin/users')}
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100/80 transition-all duration-300 cursor-pointer hover:border-blue-200 group"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3.5 bg-blue-50/80 text-blue-600 rounded-2xl group-hover:bg-blue-100 transition-colors">
               <Users className="w-6 h-6" />
             </div>
-            <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full flex items-center gap-1">
+            <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50 px-2.5 py-1 rounded-full flex items-center gap-1">
               <TrendingUp className="w-3 h-3" /> +12%
             </span>
           </div>
-          <h3 className="text-gray-500 text-sm font-medium">Total Usuarios</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalUsuarios}</p>
+          <div>
+            <h3 className="text-gray-400 text-sm font-medium mb-1 group-hover:text-blue-600 transition-colors">Total Usuarios</h3>
+            <p className="text-3xl font-bold text-gray-900 tracking-tight">{stats.totalUsuarios}</p>
+          </div>
         </motion.div>
 
         <motion.div
-          whileHover={{ y: -2 }}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+          variants={itemVariants}
+          whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(20, 184, 166, 0.15)" }}
+          onClick={() => router.push('/dashboard/admin/doctors')}
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100/80 transition-all duration-300 cursor-pointer hover:border-teal-200 group"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-teal-50 text-teal-600 rounded-lg">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3.5 bg-teal-50/80 text-teal-600 rounded-2xl group-hover:bg-teal-100 transition-colors">
               <Stethoscope className="w-6 h-6" />
             </div>
-            {stats.medicosPendientes > 0 && (
-              <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-1 rounded-full flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {stats.medicosPendientes} pendientes
+            {stats.medicosPendientes > 0 ? (
+              <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-100/50 px-2.5 py-1 rounded-full flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {stats.medicosPendientes} nuevos
+              </span>
+            ) : (
+              <span className="text-xs font-semibold text-gray-500 bg-gray-50 border border-gray-100/50 px-2.5 py-1 rounded-full">
+                Al día
               </span>
             )}
           </div>
-          <h3 className="text-gray-500 text-sm font-medium">Total Médicos</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalMedicos}</p>
+          <div>
+            <h3 className="text-gray-400 text-sm font-medium mb-1 group-hover:text-teal-600 transition-colors">Total Médicos</h3>
+            <p className="text-3xl font-bold text-gray-900 tracking-tight">{stats.totalMedicos}</p>
+          </div>
         </motion.div>
 
         <motion.div
-          whileHover={{ y: -2 }}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+          variants={itemVariants}
+          whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(139, 92, 246, 0.15)" }}
+          onClick={() => router.push('/dashboard/admin/patients')}
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100/80 transition-all duration-300 cursor-pointer hover:border-violet-200 group"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-violet-50 text-violet-600 rounded-lg">
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3.5 bg-violet-50/80 text-violet-600 rounded-2xl group-hover:bg-violet-100 transition-colors">
               <UserCheck className="w-6 h-6" />
             </div>
-            <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-full">
-              Activos: {stats.usuariosActivos}
-            </span>
           </div>
-          <h3 className="text-gray-500 text-sm font-medium">Total Pacientes</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalPacientes}</p>
+          <div>
+            <h3 className="text-gray-400 text-sm font-medium mb-1 group-hover:text-violet-600 transition-colors">Total Pacientes</h3>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-bold text-gray-900 tracking-tight">{stats.totalPacientes}</p>
+              <span className="text-sm text-gray-400 font-medium">Activos: {stats.usuariosActivos}</span>
+            </div>
+          </div>
         </motion.div>
 
         <motion.div
-          whileHover={{ y: -2 }}
-          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100"
+          variants={itemVariants}
+          whileHover={{ y: -5, boxShadow: "0 10px 30px -10px rgba(16, 185, 129, 0.15)" }}
+          onClick={() => router.push('/dashboard/admin/finances')}
+          className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100/80 transition-all duration-300 cursor-pointer hover:border-emerald-200 group"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-3 bg-green-100 rounded-xl">
-              <span className="flex items-center justify-center w-5 h-5 text-green-600 font-bold text-base">
-                S/
-              </span>
+          <div className="flex items-start justify-between mb-4">
+            <div className="p-3.5 bg-emerald-50/80 text-emerald-600 rounded-2xl group-hover:bg-emerald-100 transition-colors">
+              <span className="flex items-center justify-center text-lg font-bold">S/</span>
             </div>
-            <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full flex items-center gap-1">
+            <span className="text-xs font-semibold text-green-700 bg-green-50 border border-green-100/50 px-2.5 py-1 rounded-full flex items-center gap-1">
               <TrendingUp className="w-3 h-3" /> +8%
             </span>
           </div>
-          <h3 className="text-gray-500 text-sm font-medium">Ingresos Mes</h3>
-          <p className="text-2xl font-bold text-gray-900">S/ {activityData.ingresosMes.toFixed(0)}</p>
+          <div>
+            <h3 className="text-gray-400 text-sm font-medium mb-1 group-hover:text-emerald-600 transition-colors">Ingresos ({getPeriodLabel()})</h3>
+            <p className="text-3xl font-bold text-gray-900 tracking-tight">S/ {activityData.totalIngresos.toFixed(0)}</p>
+          </div>
         </motion.div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Chart */}
-        <div className="lg:col-span-2 space-y-6">
+        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-8">
           {/* Actividad de la Plataforma */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-teal-100 rounded-lg">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-8 border-b border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-teal-600" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-gray-900">Actividad de la Plataforma</h2>
+                    Actividad de la Plataforma
+                  </h2>
+                  <p className="text-sm text-gray-500 mt-1">Comparativa de citas e ingresos por periodo</p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="flex p-1 bg-gray-100 rounded-lg">
-                    <button
-                      onClick={() => setTimeRange('30d')}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${timeRange === '30d' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                    >
-                      30 Días
-                    </button>
-                    <button
-                      onClick={() => setTimeRange('90d')}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${timeRange === '90d' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                    >
-                      Trimestre
-                    </button>
-                    <button
-                      onClick={() => setTimeRange('1y')}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${timeRange === '1y' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
-                    >
-                      Año
-                    </button>
-                  </div>
+                <div className="flex items-center gap-3 bg-gray-50 p-1.5 rounded-xl border border-gray-200/50">
                   <button
-                    onClick={fetchDashboardData}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Actualizar"
+                    onClick={() => setTimeRange('30d')}
+                    className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${timeRange === '30d' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
-                    <RefreshCw className="w-5 h-5 text-gray-500" />
+                    30 Días
+                  </button>
+                  <button
+                    onClick={() => setTimeRange('90d')}
+                    className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${timeRange === '90d' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Trimestre
+                  </button>
+                  <button
+                    onClick={() => setTimeRange('1y')}
+                    className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${timeRange === '1y' ? 'bg-white text-teal-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Año
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Quick Stats Row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b border-gray-100 bg-gray-50">
-              {/* ... (Stats content same as before) ... */}
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-teal-600 mb-1">
-                  <CalendarCheck className="w-5 h-5" />
-                  <span className="text-2xl font-bold">{activityData.citasHoy}</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-gray-100 bg-gray-50/30">
+              <div className="p-6 text-center hover:bg-gray-50 transition-colors">
+                <div className="text-2xl font-bold text-gray-900 mb-1">{activityData.totalCitas}</div>
+                <div className="text-xs text-gray-500 font-medium uppercase tracking-wide flex items-center justify-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                  Citas ({getPeriodLabel()})
                 </div>
-                <p className="text-sm text-gray-500">Citas hoy</p>
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-blue-600 mb-1">
-                  <Calendar className="w-5 h-5" />
-                  <span className="text-2xl font-bold">{activityData.citasSemana}</span>
+              <div className="p-6 text-center hover:bg-gray-50 transition-colors">
+                <div className="text-2xl font-bold text-gray-900 mb-1">{activityData.citasCanceladas}</div>
+                <div className="text-xs text-gray-500 font-medium uppercase tracking-wide flex items-center justify-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                  Canceladas
                 </div>
-                <p className="text-sm text-gray-500">Citas esta semana</p>
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-emerald-600 mb-1">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span className="text-2xl font-bold">{activityData.consultasCompletadas}</span>
+              <div className="p-6 text-center hover:bg-gray-50 transition-colors">
+                <div className="text-2xl font-bold text-gray-900 mb-1">{activityData.consultasCompletadas}</div>
+                <div className="text-xs text-gray-500 font-medium uppercase tracking-wide flex items-center justify-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Completadas
                 </div>
-                <p className="text-sm text-gray-500">Consultas completadas</p>
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 text-violet-600 mb-1">
-                  <div className="p-3 bg-green-100 rounded-xl">
-                    <span className="flex items-center justify-center w-5 h-5 text-green-600 font-bold text-base">
-                      S/
-                    </span>
-                  </div>
-                  <span className="text-2xl font-bold">S/ {activityData.ingresosMes.toFixed(0)}</span>
+              <div className="p-6 text-center hover:bg-gray-50 transition-colors">
+                <div className="text-2xl font-bold text-gray-900 mb-1">S/ {activityData.totalIngresos.toFixed(0)}</div>
+                <div className="text-xs text-gray-500 font-medium uppercase tracking-wide flex items-center justify-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                  Ingresos ({getPeriodLabel()})
                 </div>
-                <p className="text-sm text-gray-500">Ingresos del mes</p>
               </div>
             </div>
 
             {/* Chart Area */}
-            <div className="p-6 h-80">
+            <div className="p-8 h-[400px]">
               {activityData.graphData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={activityData.graphData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    {/* Definir gradientes para las áreas */}
+                  <ComposedChart data={activityData.graphData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorCitas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0d9488" stopOpacity={0.3} />
+                        <stop offset="5%" stopColor="#0d9488" stopOpacity={0.2} />
                         <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                       </linearGradient>
                     </defs>
 
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis
                       dataKey="name"
-                      stroke="#64748b"
-                      style={{ fontSize: '12px' }}
+                      stroke="#94a3b8"
+                      style={{ fontSize: '11px', fontWeight: 500 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e2e8f0' }}
-                      dy={10}
+                      axisLine={false}
+                      dy={15}
                       interval={timeRange === '30d' ? 2 : 1}
                     />
                     <YAxis
                       yAxisId="left"
-                      stroke="#64748b"
-                      style={{ fontSize: '12px' }}
+                      stroke="#94a3b8"
+                      style={{ fontSize: '11px', fontWeight: 500 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e2e8f0' }}
+                      axisLine={false}
                     />
                     <YAxis
                       yAxisId="right"
                       orientation="right"
-                      stroke="#64748b"
-                      style={{ fontSize: '12px' }}
+                      stroke="#94a3b8"
+                      style={{ fontSize: '11px', fontWeight: 500 }}
                       tickLine={false}
-                      axisLine={{ stroke: '#e2e8f0' }}
+                      axisLine={false}
                     />
                     <Tooltip
                       content={<CustomTooltip />}
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
-                      }}
-                    />
-                    <Legend
-                      iconType="circle"
-                      wrapperStyle={{
-                        fontSize: '14px',
-                        paddingTop: '20px',
-                        fontWeight: '500'
-                      }}
+                      cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
 
-                    {/* Cambiar Bar por Area para el efecto elegante */}
                     <Area
                       yAxisId="left"
                       type="monotone"
@@ -437,8 +431,7 @@ export default function AdminDashboardPage() {
                       stroke="#0d9488"
                       strokeWidth={3}
                       fill="url(#colorCitas)"
-                      dot={false}
-                      activeDot={{ r: 5, fill: '#0d9488' }}
+                      activeDot={{ r: 6, fill: '#fff', stroke: '#0d9488', strokeWidth: 3 }}
                     />
 
                     <Area
@@ -448,117 +441,130 @@ export default function AdminDashboardPage() {
                       name="Ingresos (S/)"
                       stroke="#10b981"
                       strokeWidth={3}
-                      fill="url(#colorIngresos)"
-                      dot={false}
-                      activeDot={{ r: 5, fill: '#10b981' }}
+                      fill="url(#colorIngresos)" // Using same color for now, could be distinct
+                      activeDot={{ r: 6, fill: '#fff', stroke: '#10b981', strokeWidth: 3 }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                  <BarChart3 className="w-12 h-12 mb-2 opacity-20" />
-                  <p>No hay datos suficientes para mostrar la gráfica</p>
+                <div className="h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50/30 rounded-2xl border-2 border-dashed border-gray-100">
+                  <div className="p-4 bg-gray-50 rounded-full mb-3">
+                    <BarChart3 className="w-8 h-8 opacity-40" />
+                  </div>
+                  <p className="font-medium">No hay datos suficientes para mostrar la gráfica</p>
                 </div>
               )}
             </div>
-
-            {/* Recent Activity List (Optional / Secondary) */}
-            <div className="border-t border-gray-100">
-              <div className="px-6 py-4 bg-gray-50/50">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">Actividad Reciente</h3>
-                <div className="space-y-3">
-                  {activityData.activities.slice(0, 5).map((activity) => (
-                    <div key={activity.id} className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${getActivityBgColor(activity.type).replace('bg-', 'bg-').replace('-100', '-500')}`}></div>
-                        <span className="text-gray-700 truncate max-w-[200px]">{activity.description}</span>
-                      </div>
-                      <span className="text-gray-400 text-xs">{formatRelativeTime(activity.timestamp)}</span>
-                    </div>
-                  ))}
-                  {activityData.activities.length === 0 && (
-                    <p className="text-gray-500 text-xs text-center py-2">No hay actividad reciente</p>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Right Column */}
-        <div className="space-y-6">
+        <motion.div variants={itemVariants} className="space-y-8">
           {/* Pending Doctors */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Médicos Pendientes</h3>
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-amber-500" />
+                Médicos Pendientes
+              </h3>
               {pendingDoctors.length > 0 && (
-                <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
-                  {pendingDoctors.length} nuevos
+                <span className="flex items-center justify-center w-6 h-6 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">
+                  {pendingDoctors.length}
                 </span>
               )}
             </div>
 
             <div className="space-y-4">
               {pendingDoctors.slice(0, 3).map((doctor: any) => (
-                <div key={doctor.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors border border-gray-50">
-                  <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold">
-                    {doctor.usuario?.nombre?.[0] || 'D'}
+                <div key={doctor.id} className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-all duration-200 border border-gray-100 hover:border-gray-200 hover:shadow-sm">
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-100 to-emerald-100 flex items-center justify-center text-teal-700 font-bold text-lg shadow-inner">
+                      {doctor.usuario?.nombre?.[0] || 'D'}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-amber-400 border-2 border-white rounded-full flex items-center justify-center">
+                      <Clock className="w-3 h-3 text-white" />
+                    </div>
                   </div>
+
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-bold text-gray-900 truncate">
                       Dr. {doctor.usuario?.nombre} {doctor.usuario?.apellido}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">{doctor.especialidad?.nombre || 'General'}</p>
+                    <p className="text-xs text-gray-500 truncate font-medium">{doctor.especialidad?.nombre || 'General'}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Esperando desde hace 2h</p>
                   </div>
+
                   <button
                     onClick={() => router.push('/dashboard/admin/doctors')}
-                    className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                    className="p-2 text-gray-300 hover:text-teal-600 hover:bg-teal-50 rounded-xl transition-all"
+                    title="Ver detalle"
                   >
-                    <ArrowUpRight className="w-4 h-4" />
+                    <ArrowUpRight className="w-5 h-5" />
                   </button>
                 </div>
               ))}
 
               {pendingDoctors.length === 0 && (
-                <div className="text-center py-6 text-gray-400">
-                  <CheckCircle2 className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                  <p className="text-sm">No hay solicitudes pendientes</p>
+                <div className="text-center py-10 px-4 border-2 border-dashed border-gray-100 rounded-2xl">
+                  <div className="w-12 h-12 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">¡Todo al día!</p>
+                  <p className="text-xs text-gray-500 mt-1">No hay solicitudes de médicos pendientes.</p>
                 </div>
               )}
 
               {pendingDoctors.length > 3 && (
                 <button
                   onClick={() => router.push('/dashboard/admin/doctors')}
-                  className="w-full text-center text-xs text-teal-600 font-medium hover:text-teal-700 mt-2"
+                  className="w-full py-3 text-xs text-teal-600 font-semibold hover:bg-teal-50 rounded-xl transition-colors flex items-center justify-center gap-1 group"
                 >
-                  Ver todos ({pendingDoctors.length})
+                  Ver los {pendingDoctors.length} pendientes
+                  <ArrowUpRight className="w-3 h-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </button>
               )}
             </div>
           </div>
 
           {/* Recent Users */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Usuarios Recientes</h3>
-            <div className="space-y-4">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <Users className="w-5 h-5 text-indigo-500" />
+                Usuarios Recientes
+              </h3>
+            </div>
+
+            <div className="space-y-1">
               {recentUsers.slice(0, 5).map((user) => (
-                <div key={user.id} className="flex items-center justify-between">
+                <div key={user.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-default group">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-xs font-bold">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shadow-sm ${user.rol === 'MEDICO' ? 'bg-teal-100 text-teal-700' :
+                      user.rol === 'ADMIN' ? 'bg-purple-100 text-purple-700' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
                       {user.nombre[0]}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{user.nombre} {user.apellido}</p>
-                      <p className="text-xs text-gray-500">{user.rol}</p>
+                      <p className="text-sm font-medium text-gray-900 group-hover:text-teal-700 transition-colors">{user.nombre} {user.apellido}</p>
+                      <p className="text-[11px] text-gray-500 font-medium bg-gray-100 inline-block px-1.5 py-0.5 rounded text-center min-w-[50px] mt-0.5">
+                        {user.rol === 'MEDICO' ? 'Médico' :
+                          user.rol === 'PACIENTE' ? 'Paciente' :
+                            user.rol}
+                      </p>
                     </div>
                   </div>
-                  <div className={`w-2 h-2 rounded-full ${user.activo ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  <div className={`w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm ${user.activo ? 'bg-emerald-500' : 'bg-gray-300'}`} title={user.activo ? 'Activo' : 'Inactivo'}></div>
                 </div>
               ))}
             </div>
+
+            <button className="w-full mt-4 py-2 text-xs text-gray-500 font-medium hover:text-gray-900 transition-colors border-t border-gray-100 pt-4">
+              Ver directorio completo
+            </button>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div >
+    </motion.div>
   );
 }

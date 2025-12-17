@@ -54,8 +54,8 @@ export async function getMisPagos(user: User): Promise<Payment[]> {
     console.log('💳 getMisPagos - Iniciando con user:', user);
     try {
         if (user.rol === 'ADMIN') {
-            console.log('💳 getMisPagos - Usuario es ADMIN, retornando array vacío');
-            return [];
+            console.log('💳 getMisPagos - Usuario es ADMIN, redirigiendo a getAllPagos');
+            return getAllPagos();
         }
 
         const profileId = await getProfileId(user.rol);
@@ -75,57 +75,59 @@ export async function getMisPagos(user: User): Promise<Payment[]> {
 
         console.log('💳 getMisPagos - Llamando a endpoint:', endpoint);
         const response = await api.get<any>(endpoint);
-        console.log('💳 getMisPagos - Response completa:', response);
-        console.log('💳 getMisPagos - Response.data:', response.data);
-        console.log('💳 getMisPagos - Response.data.data:', response.data?.data);
 
-        // La respuesta del controller es { success: true, data: [...pagos], pagination: {...} }
         const rawPagos = response.data?.data || [];
-        console.log('💳 getMisPagos - rawPagos length:', rawPagos.length);
+        if (rawPagos.length === 0) return [];
 
-        if (rawPagos.length === 0) {
-            console.log('💳 getMisPagos - No hay pagos para este usuario');
-            return [];
-        }
-
-        // Mapear los datos del backend al formato esperado por el frontend
-        const mappedPagos = rawPagos.map((pago: any) => {
-            console.log('💳 getMisPagos - Mapeando pago:', pago.id, pago);
-            return {
-                id: pago.id,
-                idPaciente: pago.idPaciente,
-                idMedico: pago.idMedico,
-                idCita: pago.idCita,
-                monto: Number(pago.monto),
-                estado: pago.estado,
-                metodoPago: pago.metodoPago,
-                fecha: pago.fechaCreacion || pago.fechaProcesamiento || new Date().toISOString(),
-                concepto: pago.cita?.motivo || 'Consulta médica',
-                referencia: pago.idTransaccion,
-                paciente: pago.paciente?.usuario ? {
-                    nombre: pago.paciente.usuario.nombre,
-                    apellido: pago.paciente.usuario.apellido,
-                    email: pago.paciente.usuario.correo || ''
-                } : undefined,
-                medico: pago.medico?.usuario ? {
-                    nombre: pago.medico.usuario.nombre,
-                    apellido: pago.medico.usuario.apellido,
-                    especialidad: pago.medico.especialidad?.nombre || ''
-                } : undefined,
-                creadoEn: pago.fechaCreacion,
-                actualizadoEn: pago.fechaActualizacion
-            };
-        });
-
-        console.log('💳 getMisPagos - Pagos mapeados:', mappedPagos);
-        return mappedPagos;
+        return mapPagosResponse(rawPagos);
 
     } catch (error: any) {
         console.error('💳 getMisPagos - ERROR:', error);
-        console.error('💳 getMisPagos - Error mensaje:', error?.message);
-        console.error('💳 getMisPagos - Error response:', error?.response?.data);
         return [];
     }
+}
+
+// Obtener todos los pagos (ADMIN)
+export async function getAllPagos(): Promise<Payment[]> {
+    try {
+        console.log('💳 getAllPagos - Iniciando fetch full');
+        // Traemos un limite alto para "simular" traer todo y que el frontend pagine
+        const response = await api.get<any>('/pagos?limit=1000');
+        const rawPagos = response.data?.data || [];
+        return mapPagosResponse(rawPagos);
+    } catch (error) {
+        console.error('Error getAllPagos:', error);
+        return [];
+    }
+}
+
+function mapPagosResponse(rawPagos: any[]): Payment[] {
+    return rawPagos.map((pago: any) => {
+        return {
+            id: pago.id,
+            idPaciente: pago.idPaciente,
+            idMedico: pago.idMedico,
+            idCita: pago.idCita,
+            monto: Number(pago.monto),
+            estado: pago.estado,
+            metodoPago: pago.metodoPago,
+            fecha: pago.fechaCreacion || pago.fechaProcesamiento || new Date().toISOString(),
+            concepto: pago.cita?.motivo || 'Consulta médica',
+            referencia: pago.idTransaccion,
+            paciente: pago.paciente?.usuario ? {
+                nombre: pago.paciente.usuario.nombre,
+                apellido: pago.paciente.usuario.apellido,
+                email: pago.paciente.usuario.correo || ''
+            } : undefined,
+            medico: pago.medico?.usuario ? {
+                nombre: pago.medico.usuario.nombre,
+                apellido: pago.medico.usuario.apellido,
+                especialidad: pago.medico.especialidad?.nombre || ''
+            } : undefined,
+            creadoEn: pago.fechaCreacion,
+            actualizadoEn: pago.fechaActualizacion
+        };
+    });
 }
 
 // Obtener un pago por ID

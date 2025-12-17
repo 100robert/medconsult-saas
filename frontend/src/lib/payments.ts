@@ -12,6 +12,7 @@ export interface Payment {
     fecha: string;
     concepto: string;
     referencia?: string;
+    estadoCita?: string; // Estado de la cita asociada (CANCELADA, COMPLETADA, etc.)
     paciente?: {
         nombre: string;
         apellido: string;
@@ -114,6 +115,7 @@ function mapPagosResponse(rawPagos: any[]): Payment[] {
             fecha: pago.fechaCreacion || pago.fechaProcesamiento || new Date().toISOString(),
             concepto: pago.cita?.motivo || 'Consulta médica',
             referencia: pago.idTransaccion,
+            estadoCita: pago.cita?.estado, // Mapear estado de la cita
             paciente: pago.paciente?.usuario ? {
                 nombre: pago.paciente.usuario.nombre,
                 apellido: pago.paciente.usuario.apellido,

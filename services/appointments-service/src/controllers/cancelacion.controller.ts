@@ -4,18 +4,18 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { citaService } from '../services/cita.service';
+import { cancelacionService } from '../services/cancelacion.service';
 
 class CancelacionController {
     /**
      * PATCH /citas/:id/cancelar
-     * Cancelar una cita usando el servicio existente de citas
+     * Cancelar una cita y procesar reembolso automáticamente
      */
     async cancelarCita(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { id } = req.params;
             const { motivo } = req.body;
             const user = (req as any).user;
-            const userId = user?.userId;
             const userRole = user?.rol;
 
             // Determinar quién cancela
@@ -26,45 +26,30 @@ class CancelacionController {
                 canceladoPor = 'SISTEMA';
             }
 
-            // Usar el servicio de citas existente que funciona
-            const citaActualizada = await citaService.cancelar(
+            // Usar cancelacionService que SÍ procesa reembolsos
+            const resultado = await cancelacionService.cancelarCita(
                 id,
-                {
-                    razonCancelacion: motivo || 'Cancelado por el usuario',
-                    canceladaPor: canceladoPor
-                },
-                userId,
-                userRole
+                canceladoPor,
+                motivo || 'Cancelado por el usuario'
             );
 
-            // Calcular reembolso basado en el tiempo restante
-            const ahora = new Date();
-            const fechaCita = new Date(citaActualizada.fechaHoraCita);
-            const horasRestantes = (fechaCita.getTime() - ahora.getTime()) / (1000 * 60 * 60);
-
-            let porcentajeReembolso = 0;
-            let descripcion = '';
-
-            if (horasRestantes >= 24) {
-                porcentajeReembolso = 95;
-                descripcion = 'Reembolso completo (95% - menos 5% tarifa de procesamiento)';
-            } else if (horasRestantes >= 2) {
-                porcentajeReembolso = 50;
-                descripcion = 'Reembolso parcial (50% - cancelación con menos de 24 horas)';
-            } else {
-                porcentajeReembolso = 0;
-                descripcion = 'Sin reembolso (cancelación con menos de 2 horas de anticipación)';
+            if (!resultado.exito) {
+                res.status(400).json({
+                    success: false,
+                    message: resultado.mensaje
+                });
+                return;
             }
 
             res.json({
                 success: true,
                 message: 'Cita cancelada exitosamente',
                 data: {
-                    cita: citaActualizada,
+                    cita: resultado.cita,
                     reembolso: {
-                        porcentaje: porcentajeReembolso,
-                        monto: 0, // TODO: calcular con el pago real
-                        descripcion: descripcion
+                        porcentaje: resultado.porcentajeReembolso,
+                        monto: resultado.montoReembolso,
+                        descripcion: resultado.mensaje
                     }
                 }
             });

@@ -17,7 +17,10 @@ import {
   TrendingUp,
   AlertCircle,
   Percent,
-  Wallet
+  Wallet,
+  X,
+  FileText,
+  Printer
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
@@ -35,6 +38,10 @@ export default function PaymentsPage() {
 
   // Estado para ganancias del médico
   const [ganancias, setGanancias] = useState<GananciasMedico | null>(null);
+
+  // Estado para modal de comprobante
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
 
   const [stats, setStats] = useState({
     totalIngresos: 0,
@@ -106,10 +113,6 @@ export default function PaymentsPage() {
     link.click();
   };
 
-  const handleViewDetail = (payment: Payment) => {
-    alert(`Detalle del Pago\n\nID: ${payment.id}\nConcepto: ${payment.concepto}\nMonto: S/. ${payment.monto}\nEstado: ${payment.estado}\nFecha: ${new Date(payment.fecha).toLocaleString()}`);
-  };
-
   const getStatusConfig = (estado: string) => {
     const config = {
       COMPLETADO: { bg: 'bg-green-100', text: 'text-green-700', icon: CheckCircle, label: 'Completado' },
@@ -164,6 +167,17 @@ export default function PaymentsPage() {
       case 'PACIENTE': return 'Historial de pagos de tus consultas médicas';
       default: return 'Detalle de pagos';
     }
+  };
+
+  // Abrir modal de comprobante
+  const handleViewDetail = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setShowReceipt(true);
+  };
+
+  // Imprimir comprobante
+  const handlePrint = () => {
+    window.print();
   };
 
   if (loading) {
@@ -382,10 +396,20 @@ export default function PaymentsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
-                          <StatusIcon className="w-3 h-3" />
-                          {statusConfig.label}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {statusConfig.label}
+                          </span>
+                          {payment.estadoCita && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${payment.estadoCita === 'CANCELADA' ? 'bg-red-100 text-red-700' :
+                              payment.estadoCita === 'COMPLETADA' ? 'bg-green-100 text-green-700' :
+                                'bg-gray-100 text-gray-600'
+                              }`}>
+                              Cita: {payment.estadoCita}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-4 text-right">
                         <button
@@ -435,6 +459,141 @@ export default function PaymentsPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de Comprobante de Pago */}
+      {showReceipt && selectedPayment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 print:bg-white print:p-0">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-h-none print:rounded-none">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between p-4 border-b print:hidden">
+              <h2 className="text-lg font-semibold text-gray-900">Comprobante de Pago</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePrint}
+                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Imprimir"
+                >
+                  <Printer className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setShowReceipt(false)}
+                  className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido del comprobante */}
+            <div className="p-6">
+              {/* Logo y título */}
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <FileText className="w-8 h-8 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-gray-900">MedConsult</h1>
+                <p className="text-sm text-gray-500">Comprobante de Pago</p>
+              </div>
+
+              {/* Número de transacción */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-6 text-center">
+                <p className="text-xs text-gray-500 mb-1">Nº de Transacción</p>
+                <p className="font-mono text-lg font-bold text-gray-900">
+                  #{selectedPayment.id.slice(0, 12).toUpperCase()}
+                </p>
+              </div>
+
+              {/* Estado del pago */}
+              <div className="flex justify-center mb-6">
+                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${selectedPayment.estado === 'COMPLETADO' ? 'bg-green-100 text-green-700' :
+                  selectedPayment.estado === 'REEMBOLSADO' ? 'bg-orange-100 text-orange-700' :
+                    selectedPayment.estado === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-red-100 text-red-700'
+                  }`}>
+                  {selectedPayment.estado === 'COMPLETADO' && <CheckCircle className="w-4 h-4" />}
+                  {selectedPayment.estado === 'REEMBOLSADO' && <AlertCircle className="w-4 h-4" />}
+                  {selectedPayment.estado === 'PENDIENTE' && <Clock className="w-4 h-4" />}
+                  {selectedPayment.estado === 'FALLIDO' && <XCircle className="w-4 h-4" />}
+                  {selectedPayment.estado}
+                </span>
+              </div>
+
+              {/* Detalles */}
+              <div className="space-y-4">
+                <div className="flex justify-between py-3 border-b border-gray-100">
+                  <span className="text-gray-500">Fecha</span>
+                  <span className="font-medium text-gray-900">
+                    {new Date(selectedPayment.fecha).toLocaleDateString('es-ES', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </span>
+                </div>
+
+                <div className="flex justify-between py-3 border-b border-gray-100">
+                  <span className="text-gray-500">Concepto</span>
+                  <span className="font-medium text-gray-900">{selectedPayment.concepto}</span>
+                </div>
+
+                {selectedPayment.medico && (
+                  <div className="flex justify-between py-3 border-b border-gray-100">
+                    <span className="text-gray-500">Médico</span>
+                    <span className="font-medium text-gray-900">
+                      Dr. {selectedPayment.medico.nombre} {selectedPayment.medico.apellido}
+                    </span>
+                  </div>
+                )}
+
+                {selectedPayment.paciente && (
+                  <div className="flex justify-between py-3 border-b border-gray-100">
+                    <span className="text-gray-500">Paciente</span>
+                    <span className="font-medium text-gray-900">
+                      {selectedPayment.paciente.nombre} {selectedPayment.paciente.apellido}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between py-3 border-b border-gray-100">
+                  <span className="text-gray-500">Método de pago</span>
+                  <span className="font-medium text-gray-900 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-gray-400" />
+                    {selectedPayment.metodoPago}
+                  </span>
+                </div>
+
+                {selectedPayment.estadoCita && (
+                  <div className="flex justify-between py-3 border-b border-gray-100">
+                    <span className="text-gray-500">Estado de cita</span>
+                    <span className={`font-medium ${selectedPayment.estadoCita === 'CANCELADA' ? 'text-red-600' :
+                      selectedPayment.estadoCita === 'COMPLETADA' ? 'text-green-600' :
+                        'text-gray-900'
+                      }`}>
+                      {selectedPayment.estadoCita}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Monto total */}
+              <div className="mt-6 bg-teal-50 rounded-xl p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-teal-700 font-medium">Total pagado</span>
+                  <span className="text-2xl font-bold text-teal-700">
+                    S/. {selectedPayment.monto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer del comprobante */}
+              <div className="mt-6 text-center text-xs text-gray-400">
+                <p>Este documento es un comprobante electrónico de pago.</p>
+                <p className="mt-1">MedConsult - Plataforma de Telemedicina</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

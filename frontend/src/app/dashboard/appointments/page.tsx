@@ -107,6 +107,14 @@ export default function AppointmentsPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [reschedulingInProgress, setReschedulingInProgress] = useState(false);
 
+  // Estado para confirmación de reembolso exitoso
+  const [refundSuccessModal, setRefundSuccessModal] = useState(false);
+  const [refundSuccessData, setRefundSuccessData] = useState<{
+    porcentaje: number;
+    monto: number;
+    descripcion: string;
+  } | null>(null);
+
   // Cargar citas del backend
   useEffect(() => {
     async function fetchAppointments() {
@@ -263,14 +271,20 @@ export default function AppointmentsPage() {
         prev.map(apt => apt.id === cancellingAppointment.id ? { ...apt, estado: 'CANCELADA' } : apt)
       );
 
-      // Mostrar info de reembolso
-      if (data?.reembolso?.porcentaje > 0) {
-        toast.success(`Cita cancelada. Recibirás un reembolso del ${data.reembolso.porcentaje}%`);
-      } else {
-        toast.info('Cita cancelada. No aplica reembolso por el tiempo de cancelación.');
-      }
-
+      // Cerrar modal de cancelación
       closeCancelModal();
+
+      // Mostrar modal de confirmación de reembolso
+      if (data?.reembolso) {
+        setRefundSuccessData({
+          porcentaje: data.reembolso.porcentaje,
+          monto: data.reembolso.monto || 0,
+          descripcion: data.reembolso.descripcion
+        });
+        setRefundSuccessModal(true);
+      } else {
+        toast.info('Cita cancelada exitosamente.');
+      }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al cancelar la cita');
     } finally {
@@ -769,6 +783,85 @@ export default function AppointmentsPage() {
                 ) : (
                   'Confirmar Cancelación'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación de Reembolso */}
+      {refundSuccessModal && refundSuccessData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            {/* Contenido */}
+            <div className="p-8 text-center">
+              {/* Icono de éxito */}
+              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                <CheckCircle2 className="w-10 h-10 text-white" />
+              </div>
+
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                ¡Cita Cancelada!
+              </h3>
+
+              <p className="text-gray-600 mb-6">
+                Tu cita ha sido cancelada exitosamente
+              </p>
+
+              {/* Información de reembolso */}
+              {refundSuccessData.porcentaje > 0 ? (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 mb-6">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <div className="p-2 bg-emerald-100 rounded-lg">
+                      <span className="text-emerald-600 font-bold">S/</span>
+                    </div>
+                    <span className="text-emerald-800 font-semibold text-lg">
+                      Reembolso Aprobado
+                    </span>
+                  </div>
+
+                  <div className="text-3xl font-bold text-emerald-700 mb-2">
+                    {refundSuccessData.porcentaje}%
+                  </div>
+
+                  {refundSuccessData.monto > 0 && (
+                    <p className="text-emerald-700 font-medium mb-2">
+                      Monto: S/. {refundSuccessData.monto.toFixed(2)}
+                    </p>
+                  )}
+
+                  <p className="text-emerald-600 text-sm">
+                    {refundSuccessData.descripcion}
+                  </p>
+
+                  <div className="mt-4 pt-4 border-t border-emerald-200">
+                    <p className="text-emerald-700 text-sm">
+                      💳 El reembolso se procesará a tu método de pago original en <strong>3-5 días hábiles</strong>
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-6">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600" />
+                    <span className="text-amber-800 font-semibold">
+                      Sin Reembolso
+                    </span>
+                  </div>
+                  <p className="text-amber-700 text-sm">
+                    {refundSuccessData.descripcion}
+                  </p>
+                </div>
+              )}
+
+              <button
+                onClick={() => {
+                  setRefundSuccessModal(false);
+                  setRefundSuccessData(null);
+                }}
+                className="w-full px-6 py-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors font-medium shadow-lg"
+              >
+                Entendido
               </button>
             </div>
           </div>

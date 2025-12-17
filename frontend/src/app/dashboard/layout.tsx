@@ -129,7 +129,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       return [
         { href: '/dashboard/admin', label: 'Panel Admin', icon: LayoutDashboard },
         { href: '/dashboard/users', label: 'Usuarios', icon: Users },
-        { href: '/dashboard/doctors', label: 'Médicos', icon: Stethoscope },
+        //{ href: '/dashboard/doctors', label: 'Médicos', icon: Stethoscope },
         //{ href: '/dashboard/appointments', label: 'Todas las Citas', icon: Calendar },
         { href: '/dashboard/payments', label: 'Pagos', icon: CreditCard },
         { href: '/dashboard/reports', label: 'Reportes', icon: FileText },

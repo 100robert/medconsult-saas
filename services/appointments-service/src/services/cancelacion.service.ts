@@ -19,7 +19,8 @@ interface ResultadoNoShow {
     noShowsMedico: number;
 }
 
-class CancelacionService {
+export class CancelacionService {
+
     /**
      * Calcula el porcentaje de reembolso según el tiempo restante antes de la cita
      * 

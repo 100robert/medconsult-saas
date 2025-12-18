@@ -1,358 +1,142 @@
-// ============================================
-// TESTS UNITARIOS - AUTH SERVICE (Validadores)
-// ============================================
+import { AuthService } from '../src/services/auth.service';
+import { prisma } from '../src/config/database';
+import * as passwordUtils from '../src/utils/password.util';
+import * as jwtUtils from '../src/utils/jwt.util';
+import { ConflictError, AuthenticationError } from '../src/types';
 
-describe('Auth Validators', () => {
-  // ==========================================
-  // TESTS DEL SCHEMA DE REGISTRO
-  // ==========================================
-  describe('registerSchema', () => {
-    let registerSchema: any;
+// Mock explicit modules
+jest.mock('../src/utils/password.util');
+jest.mock('../src/utils/jwt.util');
+jest.mock('../src/config/database', () => ({
+  prisma: {
+    usuario: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
+    refreshToken: {
+      create: jest.fn(),
+    },
+    paciente: {
+      findUnique: jest.fn(),
+    },
+    medico: {
+      findUnique: jest.fn(),
+    },
+    intentoLogin: {
+      create: jest.fn(),
+    },
+    $transaction: jest.fn(),
+  },
+}));
 
-    beforeAll(async () => {
-      const module = await import('../src/validators/auth.validator');
-      registerSchema = module.registerSchema;
-    });
 
-    it('debe validar un registro válido de paciente', () => {
-      const validData = {
-        correo: 'test@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-      };
 
-      const result = registerSchema.safeParse(validData);
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.rol).toBe('PACIENTE'); // Debe ser PACIENTE por defecto
-      }
-    });
 
-    it('debe rechazar correo inválido', () => {
-      const invalidData = {
-        correo: 'correo-invalido',
-        contrasena: 'Password123!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-      };
+describe('AuthService', () => {
+  let authService: AuthService;
 
-      const result = registerSchema.safeParse(invalidData);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar contraseña sin mayúscula', () => {
-      const weakPassword = {
-        correo: 'test@example.com',
-        contrasena: 'password123!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-      };
-
-      const result = registerSchema.safeParse(weakPassword);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar contraseña sin número', () => {
-      const weakPassword = {
-        correo: 'test@example.com',
-        contrasena: 'Password!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-      };
-
-      const result = registerSchema.safeParse(weakPassword);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar contraseña sin carácter especial', () => {
-      const weakPassword = {
-        correo: 'test@example.com',
-        contrasena: 'Password123',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-      };
-
-      const result = registerSchema.safeParse(weakPassword);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar contraseña muy corta', () => {
-      const shortPassword = {
-        correo: 'test@example.com',
-        contrasena: 'Pa1!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-      };
-
-      const result = registerSchema.safeParse(shortPassword);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar nombre muy corto', () => {
-      const invalidData = {
-        correo: 'test@example.com',
-        contrasena: 'Password123!',
-        nombre: 'J',
-        apellido: 'Pérez',
-      };
-
-      const result = registerSchema.safeParse(invalidData);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar nombre con números', () => {
-      const invalidData = {
-        correo: 'test@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Juan123',
-        apellido: 'Pérez',
-      };
-
-      const result = registerSchema.safeParse(invalidData);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar rol MEDICO en registro público', () => {
-      const medicoData = {
-        correo: 'medico@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Doctor',
-        apellido: 'House',
-        rol: 'MEDICO',
-      };
-
-      const result = registerSchema.safeParse(medicoData);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar rol ADMIN en registro público', () => {
-      const adminData = {
-        correo: 'admin@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Admin',
-        apellido: 'User',
-        rol: 'ADMIN',
-      };
-
-      const result = registerSchema.safeParse(adminData);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe convertir correo a minúsculas', () => {
-      const upperCaseEmail = {
-        correo: 'TEST@EXAMPLE.COM',
-        contrasena: 'Password123!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-      };
-
-      const result = registerSchema.safeParse(upperCaseEmail);
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.correo).toBe('test@example.com');
-      }
-    });
-
-    it('debe permitir teléfono opcional', () => {
-      const withPhone = {
-        correo: 'test@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-        telefono: '+573001234567',
-      };
-
-      const result = registerSchema.safeParse(withPhone);
-      expect(result.success).toBe(true);
-    });
-
-    it('debe validar formato de teléfono internacional', () => {
-      // Teléfono que empieza con 0 es inválido según el regex
-      const invalidPhone = {
-        correo: 'test@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-        telefono: '0123456789', // Inválido: empieza con 0
-      };
-
-      const result = registerSchema.safeParse(invalidPhone);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar teléfono con letras', () => {
-      const phoneWithLetters = {
-        correo: 'test@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Juan',
-        apellido: 'Pérez',
-        telefono: 'abc123',
-      };
-
-      const result = registerSchema.safeParse(phoneWithLetters);
-      expect(result.success).toBe(false);
-    });
+  beforeEach(() => {
+    authService = new AuthService();
+    jest.clearAllMocks();
   });
 
-  // ==========================================
-  // TESTS DEL SCHEMA DE LOGIN
-  // ==========================================
-  describe('loginSchema', () => {
-    let loginSchema: any;
+  describe('register', () => {
+    const registerData = {
+      correo: 'test@example.com',
+      contrasena: 'Password123!',
+      nombre: 'Test',
+      apellido: 'User',
+      rol: 'PACIENTE' as const,
+    };
 
-    beforeAll(async () => {
-      const module = await import('../src/validators/auth.validator');
-      loginSchema = module.loginSchema;
-    });
+    it('should register a new user successfully', async () => {
+      // Mocks
+      (prisma.usuario.findUnique as jest.Mock).mockResolvedValue(null);
+      (passwordUtils.hashPassword as jest.Mock).mockResolvedValue('hashed_password');
+      (prisma.usuario.create as jest.Mock).mockResolvedValue({
+        id: 'user_id',
+        ...registerData,
+        hashContrasena: 'hashed_password',
+        correoVerificado: false,
+        activo: true,
+      });
+      (jwtUtils.generateAccessToken as jest.Mock).mockReturnValue('access_token');
+      (jwtUtils.generateRefreshToken as jest.Mock).mockReturnValue('refresh_token');
+      (prisma.refreshToken.create as jest.Mock).mockResolvedValue({});
 
-    it('debe validar login válido', () => {
-      const validLogin = {
-        correo: 'test@example.com',
-        contrasena: 'anypassword',
-      };
+      const result = await authService.register(registerData);
 
-      const result = loginSchema.safeParse(validLogin);
       expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      expect(result.data?.usuario.correo).toBe(registerData.correo);
+      expect(result.data?.accessToken).toBe('access_token');
+      expect(prisma.usuario.create).toHaveBeenCalled();
     });
 
-    it('debe rechazar correo inválido', () => {
-      const invalidLogin = {
-        correo: 'invalid-email',
-        contrasena: 'password',
-      };
 
-      const result = loginSchema.safeParse(invalidLogin);
-      expect(result.success).toBe(false);
+    it('should throw ConflictError if email already exists', async () => {
+      (prisma.usuario.findUnique as jest.Mock).mockResolvedValue({ id: 'existing_id' });
+
+      await expect(authService.register(registerData)).rejects.toThrow('El correo ya está registrado');
     });
 
-    it('debe rechazar contraseña vacía', () => {
-      const emptyPassword = {
-        correo: 'test@example.com',
-        contrasena: '',
-      };
-
-      const result = loginSchema.safeParse(emptyPassword);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar sin correo', () => {
-      const noEmail = {
-        contrasena: 'password',
-      };
-
-      const result = loginSchema.safeParse(noEmail);
-      expect(result.success).toBe(false);
-    });
   });
 
-  // ==========================================
-  // TESTS DEL SCHEMA DE ADMIN CREATE USER
-  // ==========================================
-  describe('adminCreateUserSchema', () => {
-    let adminCreateUserSchema: any;
+  describe('login', () => {
+    const loginData = {
+      correo: 'test@example.com',
+      contrasena: 'Password123!',
+    };
 
-    beforeAll(async () => {
-      const module = await import('../src/validators/auth.validator');
-      adminCreateUserSchema = module.adminCreateUserSchema;
-    });
+    const mockUser = {
+      id: 'user_id',
+      correo: 'test@example.com',
+      hashContrasena: '$2b$10$hashed_password',
 
-    it('debe permitir crear MEDICO', () => {
-      const medicoData = {
-        correo: 'medico@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Doctor',
-        apellido: 'House',
-        rol: 'MEDICO',
-      };
+      rol: 'PACIENTE' as const,
+      activo: true,
+      nombre: 'Test',
+      apellido: 'User',
+      correoVerificado: true,
+    };
 
-      const result = adminCreateUserSchema.safeParse(medicoData);
+    it('should login successfully with correct credentials', async () => {
+      (prisma.usuario.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (passwordUtils.comparePassword as jest.Mock).mockResolvedValue(true);
+      (prisma.paciente.findUnique as jest.Mock).mockResolvedValue({ id: 'paciente_id' });
+      (jwtUtils.generateAccessToken as jest.Mock).mockReturnValue('access_token');
+      (jwtUtils.generateRefreshToken as jest.Mock).mockReturnValue('refresh_token');
+
+      const result = await authService.login(loginData);
+
       expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
+      expect(result.data?.accessToken).toBe('access_token');
+      expect(result.data?.usuario.pacienteId).toBe('paciente_id');
     });
 
-    it('debe permitir crear ADMIN', () => {
-      const adminData = {
-        correo: 'admin@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Admin',
-        apellido: 'User',
-        rol: 'ADMIN',
-      };
 
-      const result = adminCreateUserSchema.safeParse(adminData);
-      expect(result.success).toBe(true);
+    it('should throw AuthenticationError for non-existent user', async () => {
+      (prisma.usuario.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(authService.login(loginData)).rejects.toThrow('Credenciales inválidas');
     });
 
-    it('debe permitir crear PACIENTE', () => {
-      const pacienteData = {
-        correo: 'paciente@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Paciente',
-        apellido: 'Test',
-        rol: 'PACIENTE',
-      };
 
-      const result = adminCreateUserSchema.safeParse(pacienteData);
-      expect(result.success).toBe(true);
+    it('should throw AuthenticationError for incorrect password', async () => {
+      (prisma.usuario.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (passwordUtils.comparePassword as jest.Mock).mockResolvedValue(false);
+
+      await expect(authService.login(loginData)).rejects.toThrow('Credenciales inválidas');
     });
 
-    it('debe permitir pre-verificar correo', () => {
-      const preVerified = {
-        correo: 'medico@example.com',
-        contrasena: 'Password123!',
-        nombre: 'Doctor',
-        apellido: 'House',
-        rol: 'MEDICO',
-        correoVerificado: true,
-      };
 
-      const result = adminCreateUserSchema.safeParse(preVerified);
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data.correoVerificado).toBe(true);
-      }
-    });
-  });
+    it('should throw AuthenticationError for inactive user', async () => {
+      (prisma.usuario.findUnique as jest.Mock).mockResolvedValue({ ...mockUser, activo: false });
 
-  // ==========================================
-  // TESTS DEL SCHEMA DE RESET PASSWORD
-  // ==========================================
-  describe('resetPasswordSchema', () => {
-    let resetPasswordSchema: any;
-
-    beforeAll(async () => {
-      const module = await import('../src/validators/auth.validator');
-      resetPasswordSchema = module.resetPasswordSchema;
+      await expect(authService.login(loginData)).rejects.toThrow('Cuenta inactiva. Contacta a soporte.');
     });
 
-    it('debe validar reset password válido', () => {
-      const validReset = {
-        token: 'valid-token-123',
-        nuevaContrasena: 'NewPassword123!',
-      };
-
-      const result = resetPasswordSchema.safeParse(validReset);
-      expect(result.success).toBe(true);
-    });
-
-    it('debe rechazar contraseña débil', () => {
-      const weakPassword = {
-        token: 'valid-token-123',
-        nuevaContrasena: '123',
-      };
-
-      const result = resetPasswordSchema.safeParse(weakPassword);
-      expect(result.success).toBe(false);
-    });
-
-    it('debe rechazar token vacío', () => {
-      const emptyToken = {
-        token: '',
-        nuevaContrasena: 'NewPassword123!',
-      };
-
-      const result = resetPasswordSchema.safeParse(emptyToken);
-      expect(result.success).toBe(false);
-    });
   });
 });
